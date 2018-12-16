@@ -185,7 +185,7 @@ let client4 = jayson.client.http({
   port: 3002
 })
 
-const interval = 14
+const interval = 25
 
 function sendTx1 () {
   const userInfo = {
