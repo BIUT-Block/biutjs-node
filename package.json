@@ -1,0 +1,19 @@
+{
+  "name": "@sec-block/secjs-node",
+  "version": "1.0.0",
+  "description": "run secjs-core",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sec",
+    "blockchain",
+    "node"
+  ],
+  "author": "Weihan",
+  "license": "ISC",
+  "dependencies": {
+    "@sec-block/secjs-core": "^1.0.20"
+  }
+}
