@@ -14,7 +14,7 @@
   "author": "Weihan",
   "license": "ISC",
   "dependencies": {
-    "@sec-block/secjs-core": "^1.0.40",
+    "@sec-block/secjs-core": "^1.0.41",
     "@sec-block/secjs-rpc": "^1.0.7",
     "@sec-block/secjs-util": "^1.1.20",
     "jayson": "^2.1.0"
