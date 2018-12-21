@@ -28,6 +28,7 @@
     "@sec-block/secjs-transactionpool": "^1.0.9",
     "@sec-block/secjs-tx": "^0.1.31",
     "@sec-block/secjs-util": "^1.1.20",
+    "big.js": "^5.2.2",
     "chalk": "^2.4.1",
     "get-folder-size": "^2.0.0",
     "iplocation": "^6.0.4",

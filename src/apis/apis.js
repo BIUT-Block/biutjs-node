@@ -1,7 +1,10 @@
+const Big = require('big.js')
 const secTransaction = require('@sec-block/secjs-tx')
 const secUtils = require('@sec-block/secjs-util')
 const nodeData = require('../node/node-data')
 const getSize = require('get-folder-size')
+
+const DEC_NUM = 8
 
 class APIs {
   constructor (config) {
@@ -122,49 +125,6 @@ class APIs {
 
   // -------------------------  Other functions  ------------------------
 
-  /* calAccBalance (userAddress, callback) {
-    this.SECTokenDataHandler.findTxForUser(userAddress, (err, transactions) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        // find transactions in token pool
-        let tokenPool = this.CenterController.getBlockchain().TokenPool
-        let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-        // if (transactions.length === 0 && txArray.length === 0) {
-        //   err = new Error('transactions not found')
-        //   return callback(err, null)
-        // }
-
-        let bnUserBalance = 10 // TODO: for testing
-        transactions.forEach((tx) => {
-          if (tx.TxFrom === userAddress) {
-            bnUserBalance = bnUserBalance - parseFloat(tx.Value) - parseFloat(tx.TxFee)
-          }
-          if (tx.TxTo === userAddress) {
-            bnUserBalance = bnUserBalance + parseFloat(tx.Value)
-          }
-        })
-
-        txArray.forEach((tx) => {
-          if (tx.TxFrom === userAddress) {
-            bnUserBalance = bnUserBalance - parseFloat(tx.Value) - parseFloat(tx.TxFee)
-          }
-          if (tx.TxTo === userAddress) {
-            bnUserBalance = bnUserBalance + parseFloat(tx.Value)
-          }
-        })
-        bnUserBalance = bnUserBalance.toString()
-
-        if (isNaN(bnUserBalance)) {
-          err = new Error('invalid userBalance calculated, check input argument for more info')
-          callback(err, null)
-        } else {
-          callback(null, bnUserBalance)
-        }
-      }
-    })
-  } */
-
   /**
    * Calculate user account balance
    * @param  {String} userAddress - user account address
@@ -172,51 +132,32 @@ class APIs {
    */
   calAccBalance (userAddress, callback) {
     let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
-    let balance = 10
-    txBuffer.forEach((txInfo) => {
-      if (txInfo[0] === userAddress) {
-        balance = balance - txInfo[2] - txInfo[3]
-      }
-      if (txInfo[1] === userAddress) {
-        balance = balance + txInfo[2]
-      }
-    })
+    try {
+      let balance = new Big(10)
+      txBuffer.forEach((txInfo) => {
+        if (txInfo[0] === userAddress) {
+          balance = balance.minus(txInfo[2]).minus(txInfo[3])
+        }
+        if (txInfo[1] === userAddress) {
+          balance = balance.plus(txInfo[2])
+        }
+      })
 
-    let tokenPool = this.CenterController.getBlockchain().TokenPool
-    let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-    txArray.forEach((tx) => {
-      if (tx.TxFrom === userAddress) {
-        balance = balance - parseFloat(tx.Value) - parseFloat(tx.TxFee)
-      }
-      // should not get the money if the transaction is still in pool
-      // if (tx.TxTo === userAddress) {
-      //   balance = balance + parseFloat(tx.Value)
-      // }
-    })
+      let tokenPool = this.CenterController.getBlockchain().TokenPool
+      let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+      txArray.forEach((tx) => {
+        if (tx.TxFrom === userAddress) {
+          balance = balance.minus(tx.Value).minus(tx.TxFee)
+        }
+      })
 
-    if (isNaN(balance)) {
-      let err = new Error('invalid userBalance calculated, check input argument for more info')
-      callback(err, null)
-    } else {
+      balance = balance.toFixed(DEC_NUM)
       callback(null, balance)
+    } catch (e) {
+      let err = new Error(`Unexpected error occurs in calAccBalance(), error info: ${e}`)
+      callback(err, null)
     }
   }
-
-  /*
-  getUserTxNonce (userAddress, callback) {
-    let nonce = 0
-    this.getTokenTxForUser(userAddress, (err, dbTxArray) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        let poolTxArray = this.getTokenTxInPoolByAddress(userAddress)
-        nonce = dbTxArray.length + poolTxArray.length
-
-        let Nonce = nonce.toString()
-        callback(null, Nonce)
-      }
-    })
-  } */
 
   getUserTxNonce (userAddress, callback) {
     let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
