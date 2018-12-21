@@ -47,11 +47,14 @@ class SECConsensus {
     let blockBuffer = {}
     // Calculate pow difficulty
     let parentPOWCalcTime = 0
+    let lastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp
+    let secondLastBlockTimestamp = 0
     if (this.BlockChain.SECTokenBlockChain.getCurrentHeight() > 2) {
-      let lastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp
-      let secondLastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getSecondLastBlock().TimeStamp
+      secondLastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getSecondLastBlock().TimeStamp
       parentPOWCalcTime = this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp - this.secCircle.getGroupStartTime(this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp)
       parentPOWCalcTime += this.secCircle.getGroupStartTime(lastBlockTimestamp) - this.secCircle.getGroupStartTime(secondLastBlockTimestamp) - (SECConfig.SECBlock.circleConfig.intervalTime) * 1000
+    } else {
+      parentPOWCalcTime = lastBlockTimestamp - secondLastBlockTimestamp
     }
     blockBuffer = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenBlockChain)
     blockBuffer.Number = this.BlockChain.SECTokenBlockChain.getCurrentHeight() + 1

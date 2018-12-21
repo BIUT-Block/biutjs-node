@@ -152,6 +152,7 @@ class APIs {
       })
 
       balance = balance.toFixed(DEC_NUM)
+      balance = parseFloat(balance).toString()
       callback(null, balance)
     } catch (e) {
       let err = new Error(`Unexpected error occurs in calAccBalance(), error info: ${e}`)

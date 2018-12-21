@@ -19,8 +19,8 @@ const userInfo = {
 class MobileAppRpcClient {
   constructor (config = {}) {
     this.config = config
-    this.sec_getBalance()
-    // this.sec_sendRawTransaction()
+    // this.sec_getBalance()
+    this.sec_sendRawTransaction()
     // this.sec_getTransactions()
     // this.sec_freeCharge()
     // this.sec_getTokenChainSize()
@@ -57,6 +57,7 @@ class MobileAppRpcClient {
       from: '83da24368d250db335b6085f1442aa15468a75d8', // 40 bytes address
       to: 'fa9461cc20fbb1b0937aa07ec6afc5e660fe2afd', // 40 bytes address
       value: '10', // string
+      contractAddress: '', // smart contract address
       gasLimit: '0', // string, temporarily set to 0
       gas: '0', // string, temporarily set to 0
       gasPrice: '0', // string, temporarily set to 0
@@ -70,6 +71,7 @@ class MobileAppRpcClient {
       Buffer.from(request[0].from, 'hex'),
       Buffer.from(request[0].to, 'hex'),
       Buffer.from(request[0].value),
+      Buffer.from(request[0].contractAddress),
       Buffer.from(request[0].gasLimit),
       Buffer.from(request[0].gas),
       Buffer.from(request[0].gasPrice),
