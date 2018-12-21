@@ -1,22 +1,40 @@
 {
   "name": "@sec-block/secjs-node",
   "version": "1.0.0",
-  "description": "run secjs-core",
+  "description": "sec blockchain node",
   "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "sec",
-    "blockchain",
-    "node"
-  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/MongoX-SEC/secjs-node.git"
+  },
   "author": "Weihan",
   "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/MongoX-SEC/secjs-node/issues"
+  },
+  "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
   "dependencies": {
-    "@sec-block/secjs-core": "^1.0.45",
-    "@sec-block/secjs-rpc": "^1.0.7",
+    "@sec-block/secjs-blockchain": "^1.0.90",
+    "@sec-block/secjs-datahandler": "^1.1.28",
+    "@sec-block/secjs-devp2p": "^1.0.15",
+    "@sec-block/secjs-pow": "^1.0.13",
+    "@sec-block/secjs-randomdatagenerator": "^1.0.38",
+    "@sec-block/secjs-transactionpool": "^1.0.9",
+    "@sec-block/secjs-tx": "^0.1.31",
     "@sec-block/secjs-util": "^1.1.20",
-    "jayson": "^2.1.0"
+    "chalk": "^2.4.1",
+    "get-folder-size": "^2.0.0",
+    "iplocation": "^6.0.4",
+    "jayson": "^2.1.0",
+    "jsonwebtoken": "^8.4.0",
+    "lodash": "^4.17.11",
+    "public-ip": "^3.0.0",
+    "systeminformation": "^3.52.2"
   }
 }
