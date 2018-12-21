@@ -86,6 +86,7 @@ class SECConsensus {
           TxFrom: '0000000000000000000000000000000000000000',
           TxTo: this.BlockChain.SECAccount.getAddress(),
           Value: '2',
+          ContractAddress: '',
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',

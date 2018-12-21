@@ -257,6 +257,7 @@ let server = jayson.server({
       TxFrom: args.From,
       TxTo: args.To,
       Value: args.value,
+      ContractAddress: '',
       GasLimit: '6416',
       GasUsedByTxn: '729',
       GasPrice: '0.001',
