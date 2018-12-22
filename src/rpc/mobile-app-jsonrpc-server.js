@@ -141,7 +141,7 @@ let server = jayson.server({
           TxFrom: userInfo.secAddress,
           TxTo: args[0].to,
           Value: args[0].value,
-          ContractAddress: args[0].contractAddress,
+          ContractAddress: '',
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',

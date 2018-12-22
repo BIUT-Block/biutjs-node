@@ -51,11 +51,12 @@ class SECConsensus {
     let secondLastBlockTimestamp = 0
     if (this.BlockChain.SECTokenBlockChain.getCurrentHeight() > 2) {
       secondLastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getSecondLastBlock().TimeStamp
-      parentPOWCalcTime = this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp - this.secCircle.getGroupStartTime(this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp)
-      parentPOWCalcTime += this.secCircle.getGroupStartTime(lastBlockTimestamp) - this.secCircle.getGroupStartTime(secondLastBlockTimestamp) - (SECConfig.SECBlock.circleConfig.intervalTime) * 1000
+      parentPOWCalcTime = lastBlockTimestamp - this.secCircle.getGroupStartTime(lastBlockTimestamp)
+      parentPOWCalcTime += this.secCircle.getGroupStartTime(lastBlockTimestamp) - this.secCircle.getGroupStartTime(secondLastBlockTimestamp) - SECConfig.SECBlock.circleConfig.intervalTime
     } else {
       parentPOWCalcTime = lastBlockTimestamp - secondLastBlockTimestamp
     }
+
     blockBuffer = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenBlockChain)
     blockBuffer.Number = this.BlockChain.SECTokenBlockChain.getCurrentHeight() + 1
     blockBuffer.Beneficiary = this.BlockChain.SECAccount.getAddress()

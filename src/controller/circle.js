@@ -38,7 +38,7 @@ class SECJSTimeCircle {
   getLocalHostTime () {
     let localHostTime = 0
     try {
-      localHostTime = Math.round((new Date()).getTime() / 1000)
+      localHostTime = new Date().getTime()
     } catch (e) {
       console.log('ERROR：' + e)
     }
@@ -69,7 +69,7 @@ class SECJSTimeCircle {
         callback(err)
       } else {
         let localTime = this.getLocalHostTime()
-        this.timeDiff = remoteTime - localTime
+        this.timeDiff = 1000 * remoteTime - localTime
         callback()
       }
     })
@@ -160,7 +160,7 @@ class SECJSTimeCircle {
         callback(err)
       }
       let localTime = this.getLocalHostTime()
-      if (localTime + this.timeDiff - remoteTime >= this.timeTolerance) {
+      if (localTime + this.timeDiff - 1000 * remoteTime >= this.timeTolerance) {
         callback(new Error('time is not well calibrated'))
       } else {
         callback()
