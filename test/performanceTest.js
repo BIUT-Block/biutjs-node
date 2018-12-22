@@ -19,7 +19,7 @@ function sendTx1 () {
     timestamp: new Date().getTime(), // number
     from: 'fa9461cc20fbb1b0937aa07ec6afc5e660fe2afd', // 40 bytes address
     to: '8df9628de741b3d42c6f4a29ed4572b0f05fe8b4', // 40 bytes address
-    value: '1', // string
+    value: '0.01', // string
     contractAddress: '', // string, null
     gasLimit: '0', // string, temporarily set to 0
     gas: '0', // string, temporarily set to 0
@@ -47,7 +47,7 @@ function sendTx1 () {
   }
   client1.request('sec_sendRawTransaction', request, (err, response) => {
     if (err) console.log(err)
-    // console.log(response)
+    console.log(response)
   })
 }
 
