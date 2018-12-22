@@ -3,6 +3,7 @@ const ip = require('ip')
 const SECUtils = require('@sec-block/secjs-util')
 
 let myIp = ip.address()
+myIp = '35.158.171.46'
 
 let client1 = jayson.client.http({
   host: myIp,
@@ -51,7 +52,7 @@ function sendTx1 () {
   })
 }
 
-const interval = 1000
+const interval = 250
 const duration = 3 * 60 * 1000 // ms
 // 8tps, 3*180*8 = 4320
 
