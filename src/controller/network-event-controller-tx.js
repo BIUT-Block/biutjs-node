@@ -394,7 +394,7 @@ class NetworkEventTx {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
-        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
           this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), _blockBuffer])
         })
@@ -412,7 +412,7 @@ class NetworkEventTx {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
-        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
           this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), _blockBuffer])
         })

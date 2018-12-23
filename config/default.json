@@ -62,7 +62,7 @@
     },
     "circleConfig": {
       "timeServer": "de.pool.ntp.org",
-      "circleStartTime": 1500000000,
+      "circleStartTime": 1500000000000,
       "periodTime": 480000,
       "intervalTime": 40000,
       "timeResolution": 0.1,

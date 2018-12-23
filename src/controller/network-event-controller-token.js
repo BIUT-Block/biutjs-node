@@ -227,7 +227,7 @@ class NetworkEvent {
         if (block.getBlockHeaderHash() === blockHash.toString('hex')) {
           // verify that the beneficiary is in this group
           let beneAddress = payload[0][1].toString('utf-8')
-          let timestamp = Math.round(block.getBlockHeader().TimeStamp / 1000)
+          let timestamp = block.getBlockHeader().TimeStamp
           let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
           let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
           if (groupId !== BeneGroupId) {
@@ -418,7 +418,7 @@ class NetworkEvent {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
         })
-        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
           this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
         })
@@ -436,7 +436,7 @@ class NetworkEvent {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
         })
-        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
           this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
         })
