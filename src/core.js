@@ -4,14 +4,9 @@ const crypto = require('crypto')
 // -------------------------------  SEC LIBRARIES  -------------------------------
 const SECDatahandler = require('@sec-block/secjs-datahandler')
 
-const dbconfig = {
-  // DBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path,
-  ID: [
-    '1897984547'
-    // '1897984548'
-    // '1897984549',
-    // '1897984550'
-  ]
+let dbconfig = { ID: [] }
+if (process.env.txChain) {
+  dbconfig.ID.push('1897984547')
 }
 
 const Account = require('./account/account')
