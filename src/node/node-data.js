@@ -1,6 +1,5 @@
 const si = require('systeminformation')
 const publicIp = require('public-ip')
-const iplocation = require('iplocation')
 
 class NodeData {
   SysTime () {
@@ -58,19 +57,6 @@ class NodeData {
   }
   PublicIPV6 (callback) {
     publicIp.v6().then(callback).catch(() => {
-      callback()
-    })
-  }
-  Location (callback) {
-    publicIp.v4().then(ip => {
-      iplocation(ip, (error, res) => {
-        if (error) {
-          callback()
-        } else {
-          callback(res)
-        }
-      })
-    }).catch(() => {
       callback()
     })
   }

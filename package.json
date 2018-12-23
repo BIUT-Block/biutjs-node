@@ -31,11 +31,10 @@
     "big.js": "^5.2.2",
     "chalk": "^2.4.1",
     "get-folder-size": "^2.0.0",
-    "iplocation": "^6.0.4",
+    "public-ip": "2.4.0",
     "jayson": "^2.1.0",
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.11",
-    "public-ip": "^3.0.0",
     "systeminformation": "^3.52.2"
   }
 }

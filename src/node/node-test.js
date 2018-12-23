@@ -79,8 +79,3 @@ NodeData.PublicIPV6(data => {
   console.log('Public IP V6: ')
   console.log(data)
 })
-
-NodeData.Location(data => {
-  console.log('GEO Location: ')
-  console.log(data)
-})
