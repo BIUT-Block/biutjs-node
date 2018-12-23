@@ -5,6 +5,7 @@ const SECConfig = require('../../config/default.json')
 const util = require('util')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:network:tx')
+const _ = require('lodash')
 
 // -------------------------------  SEC LIBRARY  -------------------------------
 const SECDEVP2P = require('@sec-block/secjs-devp2p')
@@ -393,7 +394,10 @@ class NetworkEventTx {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), newBlockBuffers])
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        syncBlockBuffers.forEach(_blockBuffer => {
+          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), _blockBuffer])
+        })
       } else {
         debug('Fork founded!')
         let forkPosition = 0
@@ -408,7 +412,10 @@ class NetworkEventTx {
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), newBlockBuffers])
+        let syncBlockBuffers = _.chunk(newBlockBuffers, 100)
+        syncBlockBuffers.forEach(_blockBuffer => {
+          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(this.ID, 'utf-8'), _blockBuffer])
+        })
       }
     }
     debug(chalk.bold.yellow(`===== End NODE_DATA =====`))
