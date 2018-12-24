@@ -241,6 +241,8 @@ class NetworkEvent {
           // verify parent block hash
           let parentHash = block.getBlockHeader().ParentHash
           let lastBlockHash = this.BlockChain.SECTokenBlockChain.getLastBlockHash()
+          console.log('lastBlockHash:' + lastBlockHash)
+          console.log('parentHash:' + parentHash)
           if (lastBlockHash === parentHash) {
             isValidPayload = true
             setTimeout(() => {

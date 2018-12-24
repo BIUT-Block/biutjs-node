@@ -133,7 +133,7 @@ class SECConsensus {
   }
 
   resetPOW () {
-    if (process.env.pow || this.PowEnableFlag) {
+    if (process.env.pow || this.powEnableFlag) {
       console.log(chalk.magenta('Reset POW'))
       // this.logger.debug('reset POW')
       this.powWorker.kill()
