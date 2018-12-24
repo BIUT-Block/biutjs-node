@@ -238,16 +238,40 @@ class NetworkEvent {
             break
           }
 
-          isValidPayload = true
-          setTimeout(() => {
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-            requests.bodies.push(block)
-          }, ms('0.1s'))
-          break
+          // verify parent block hash
+          let parentHash = block.getBlockHeader().ParentHash
+          let lastBlockHash = this.BlockChain.SECTokenBlockChain.getLastBlockHash()
+          if (lastBlockHash === parentHash) {
+            isValidPayload = true
+            setTimeout(() => {
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
+              requests.bodies.push(block)
+            }, ms('0.1s'))
+            break
+          } else {
+            let newBlockNumber = block.getBlockHeader().Number
+            let localHeight = this.BlockChain.SECTokenBlockChain.getCurrentHeight()
+            if (newBlockNumber === localHeight + 1) {
+              // do nothing if two blockchains with the same length are forked
+            } else if (newBlockNumber > localHeight + 1) {
+              // if remote node has more blocks than local
+              let NodeData = [
+                SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
+                SECDEVP2P._util.int2buffer(localHeight),
+                Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
+                Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),
+                Buffer.from(JSON.stringify(this.BlockChain.SECTokenBlockChain.getHashList()))
+              ]
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), NodeData])
+            } else {
+              // if local db has more blocks than remote node
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
+            }
+          }
         }
       }
       if (!isValidPayload) {
-        debug(`${this.addr} received wrong block header ${block.getBlockHeaderHash()}`)
+        debug(`new block's parentHash does not match local block hash`)
       }
     }
     debug(chalk.bold.yellow(`===== End BLOCK_HEADERS =====`))
@@ -289,27 +313,17 @@ class NetworkEvent {
       let secblock = NewSECBlock.getBlock()
       secblock.Transactions = JSON.parse(JSON.stringify(secblock.Transactions))
       isValidPayload = true
-      if (secblock.Number === this.BlockChain.SECTokenBlockChain.getCurrentHeight() + 1) {
-        try {
-          this.BlockChain.SECTokenBlockChain.putBlockToDB(secblock, () => {
-            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain`))
-            let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
-            this.Consensus.resetPOW()
-            this._onNewBlock(newSECTokenBlock)
-          })
-        } catch (error) {
-          debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
-          // TODO: to be tested
-          let NodeData = [
-            SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
-            SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getCurrentHeight()),
-            Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
-            Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),
-            Buffer.from(JSON.stringify(this.BlockChain.SECTokenBlockChain.getHashList()))
-          ]
-          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), NodeData])
-        }
-      } else if (secblock.Number > this.BlockChain.SECTokenBlockChain.getCurrentHeight() + 1) {
+
+      try {
+        this.BlockChain.SECTokenBlockChain.putBlockToDB(secblock, () => {
+          debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain`))
+          let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
+          this.Consensus.resetPOW()
+          this._onNewBlock(newSECTokenBlock)
+        })
+      } catch (error) {
+        debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
+        // TODO: to be tested
         let NodeData = [
           SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
           SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getCurrentHeight()),
@@ -318,15 +332,7 @@ class NetworkEvent {
           Buffer.from(JSON.stringify(this.BlockChain.SECTokenBlockChain.getHashList()))
         ]
         this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), NodeData])
-      } else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
       }
-      // const isValid = await this._isValidBlock(block)
-      // if (isValid) {
-      //   isValidPayload = true
-      //   this._onNewBlock(block, this.peer)
-      //   break
-      // }
     }
     if (!isValidPayload) {
       debug(`${this.addr} received wrong block body`)
