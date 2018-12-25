@@ -175,16 +175,16 @@ class NetworkEvent {
       let _block = localTokenBlockchain.filter(_block => _block.Hash === blockHeaderHash)[0]
       if (_block) {
         let localTokenBlock = new SECBlockChain.SECTokenBlock(_block)
-        headers.push([localTokenBlock.getBlockHeaderBuffer(), Buffer.from(_block.Beneficiary)])
+        headers.push([localTokenBlock.getHeaderBuffer(), Buffer.from(_block.Beneficiary)])
       }
     } else {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
       if (SECDEVP2P._util.buffer2int(payload[0]) === this.CHECK_BLOCK_NR) {
         let block = this.BlockChain.SECTokenBlockChain.getBlockChain()[this.CHECK_BLOCK_NR - 1]
         let checkBlock = new SECBlockChain.SECTokenBlock(block)
-        headers.push([checkBlock.getBlockHeaderBuffer(), Buffer.from(checkBlock.getBlock().Beneficiary)])
+        headers.push([checkBlock.getHeaderBuffer(), Buffer.from(checkBlock.getBlock().Beneficiary)])
         debug('REMOTE CHECK_BLOCK_HEADER: ')
-        debug(util.inspect(checkBlock.getBlockHeaderBuffer(), false, null))
+        debug(util.inspect(checkBlock.getHeaderBuffer(), false, null))
       }
     }
     debug('SEC Send Message: BLOCK_HEADERS')
@@ -204,8 +204,8 @@ class NetworkEvent {
       debug(`Expected Hash: ${expectedHash}`)
       let block = new SECBlockChain.SECTokenBlock()
       block.setBlockHeaderFromBuffer(payload[0][0])
-      debug(`Remote Header Hash: ${block.getBlockHeaderHash()}`)
-      if (block.getBlockHeaderHash() === expectedHash) {
+      debug(`Remote Header Hash: ${block.getHeaderHash()}`)
+      if (block.getHeaderHash() === expectedHash) {
         debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
         clearTimeout(this.forkDrop)
         this.forkVerified = true
@@ -224,10 +224,10 @@ class NetworkEvent {
       while (requests.headers.length > 0) {
         const blockHash = requests.headers.shift()
         debug('Remote Block Header: ' + blockHash.toString('hex'))
-        if (block.getBlockHeaderHash() === blockHash.toString('hex')) {
+        if (block.getHeaderHash() === blockHash.toString('hex')) {
           // verify that the beneficiary is in this group
           let beneAddress = payload[0][1].toString('utf-8')
-          let timestamp = block.getBlockHeader().TimeStamp
+          let timestamp = block.getHeader().TimeStamp
           let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
           let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
           if (groupId !== BeneGroupId) {
@@ -239,7 +239,7 @@ class NetworkEvent {
           }
 
           // verify parent block hash
-          let parentHash = block.getBlockHeader().ParentHash
+          let parentHash = block.getHeader().ParentHash
           let lastBlockHash = this.BlockChain.SECTokenBlockChain.getLastBlockHash()
           console.log('lastBlockHash:' + lastBlockHash)
           console.log('parentHash:' + parentHash + ' | ' + this.addr)
@@ -251,7 +251,7 @@ class NetworkEvent {
             }, ms('0.1s'))
             break
           } else {
-            let newBlockNumber = block.getBlockHeader().Number
+            let newBlockNumber = block.getHeader().Number
             let localHeight = this.BlockChain.SECTokenBlockChain.getCurrentHeight()
             if (newBlockNumber === localHeight + 1) {
               // do nothing if two blockchains with the same length are forked
@@ -290,7 +290,7 @@ class NetworkEvent {
     if (_block) {
       let localTokenBlock = new SECBlockChain.SECTokenBlock(_block)
       debug('Beneficiary: ' + _block.Beneficiary)
-      bodies.push([localTokenBlock.getBlockBodyBuffer(), Buffer.from(_block.Beneficiary)])
+      bodies.push([localTokenBlock.getBodyBuffer(), Buffer.from(_block.Beneficiary)])
     }
     this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [Buffer.from('token', 'utf-8'), bodies])
 
@@ -348,12 +348,12 @@ class NetworkEvent {
     payload.forEach(_payload => {
       let newTokenBlock = new SECBlockChain.SECTokenBlock()
       newTokenBlock.setBlockFromBuffer(_payload)
-      if (!blocksCache.has(newTokenBlock.getBlockHeaderHash())) {
+      if (!blocksCache.has(newTokenBlock.getHeaderHash())) {
         let block = Object.assign({}, newTokenBlock.getBlock())
         try {
           this.BlockChain.SECTokenBlockChain.putBlockToDB(block, () => {
             console.log(chalk.green(`Sync New Block from: ${this.addr} and saved in local Blockchain`))
-            blocksCache.set(newTokenBlock.getBlockHeaderHash(), true)
+            blocksCache.set(newTokenBlock.getHeaderHash(), true)
             this.Consensus.resetPOW()
           })
         } catch (error) {
@@ -424,7 +424,7 @@ class NetworkEvent {
         debug('No Fork founded!')
         let newBlocks = this.BlockChain.SECTokenBlockChain.getBlockChain().slice(remoteHeight + 1)
         let newBlockBuffers = newBlocks.map(_block => {
-          return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+          return new SECBlockChain.SECTokenBlock(_block).getBuffer()
         })
         let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
@@ -442,7 +442,7 @@ class NetworkEvent {
         }
         let newBlocks = this.BlockChain.SECTokenBlockChain.getBlockChain().slice(forkPosition)
         let newBlockBuffers = newBlocks.map(_block => {
-          return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+          return new SECBlockChain.SECTokenBlock(_block).getBuffer()
         })
         let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
@@ -474,7 +474,7 @@ class NetworkEvent {
   }
 
   _onNewBlock (newSECTokenBlock) {
-    blocksCache.set(newSECTokenBlock.getBlockHeaderHash(), true)
+    blocksCache.set(newSECTokenBlock.getHeaderHash(), true)
     this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)

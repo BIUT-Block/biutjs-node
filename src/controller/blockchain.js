@@ -89,7 +89,7 @@ class BlockChain {
 
   sendNewTokenBlockHash (tokenBlock, excludePeer = { _socket: {} }) {
     debug(chalk.blue('Send Token Block Hash -> sendNewTokenBlockHash()'))
-    let blockHeaderHash = tokenBlock.getBlockHeaderHash()
+    let blockHeaderHash = tokenBlock.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
@@ -99,13 +99,6 @@ class BlockChain {
       } catch (err) {
         console.error(err)
       }
-    })
-  }
-
-  sendNewTokenBlock (tokenBlock) {
-    debug(chalk.blue(`Send Token Blocks -> sendNewTokenBlock() `))
-    this.rlp.getPeers().forEach(peer => {
-      peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), tokenBlock.getBlockBuffer()])
     })
   }
 
@@ -166,7 +159,7 @@ class BlockChain {
 
   sendNewTxBlockHash (txBlock, txChainID, excludePeer = { _socket: {} }) {
     debug(chalk.blue(`Send Transaction Block ${txChainID} Hash -> sendNewTxBlockHash()`))
-    let blockHeaderHash = txBlock.getBlockHeaderHash()
+    let blockHeaderHash = txBlock.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
@@ -176,13 +169,6 @@ class BlockChain {
       } catch (err) {
         console.error(err)
       }
-    })
-  }
-
-  sendNewTxBlock (txBlock, txChainID) {
-    debug(chalk.blue(`Send Transaction Blocks -> sendNewTxBlock(), chain ID: ${txChainID}`))
-    this.rlp.getPeers().forEach(peer => {
-      peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(txChainID, 'utf-8'), txBlock.getBlockBuffer()])
     })
   }
 

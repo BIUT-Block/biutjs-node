@@ -67,7 +67,7 @@ class SECConsensus {
       Number: blockBuffer.Number,
       Difficulty: this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty,
       parentPOWCalcTime: parentPOWCalcTime,
-      Header: blockHeader.getBlockHeaderPOWHashBuffer().toString('hex'),
+      Header: blockHeader.getPowHeaderBuffer().toString('hex'),
       cacheDBPath: this.cacheDBPath
     }
     console.log(chalk.magenta(`Starting POW with Difficulty ${blockForPOW.Difficulty} ...`))
