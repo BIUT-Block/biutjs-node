@@ -53,7 +53,7 @@ class NetworkEvent {
     }
     let status = {
       networkId: this.CHAIN_ID,
-      td: SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
+      td: Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
       bestHash: Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
       genesisHash: Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex')
     }
@@ -258,7 +258,7 @@ class NetworkEvent {
             } else if (newBlockNumber > localHeight + 1) {
               // if remote node has more blocks than local
               let NodeData = [
-                SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
+                Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
                 SECDEVP2P._util.int2buffer(localHeight),
                 Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
                 Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),
@@ -327,7 +327,7 @@ class NetworkEvent {
         debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
         // TODO: to be tested
         let NodeData = [
-          SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
+          Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
           SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getCurrentHeight()),
           Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
           Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),
@@ -394,7 +394,7 @@ class NetworkEvent {
   GET_NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_NODE_DATA =====`))
     let NodeData = [
-      SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
+      Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
       SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getCurrentHeight()),
       Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
       Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),

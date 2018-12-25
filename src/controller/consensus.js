@@ -65,20 +65,17 @@ class SECConsensus {
 
     let blockForPOW = {
       Number: blockBuffer.Number,
-      Difficulty: this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty,
+      Difficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
       parentPOWCalcTime: parentPOWCalcTime,
       Header: blockHeader.getPowHeaderBuffer().toString('hex'),
       cacheDBPath: this.cacheDBPath
     }
     console.log(chalk.magenta(`Starting POW with Difficulty ${blockForPOW.Difficulty} ...`))
-    // this.logger.debug(`DEBUG: Starting POW with Difficulty ${blockForPOW.Difficulty} ...`)
     this.powWorker.send(blockForPOW)
     this.isPowRunning = true
     this.powWorker.on('message', (result) => {
-      // this.logger.debug('DEBUG: pow result is: ', result)
-      // this.logger.debug('DEBUG: generated block height is: ', blockBuffer.Number)
       if (result.result) {
-        blockBuffer.Difficulty = result.Difficulty
+        blockBuffer.Difficulty = result.Difficulty.toString()
         blockBuffer.MixHash = result.MixHash
         blockBuffer.Nonce = result.Nonce
 
