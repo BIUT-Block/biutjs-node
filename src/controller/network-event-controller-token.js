@@ -203,7 +203,7 @@ class NetworkEvent {
       let expectedHash = this.BlockChain.SECTokenBlockChain.getGenesisBlockHash()
       debug(`Expected Hash: ${expectedHash}`)
       let block = new SECBlockChain.SECTokenBlock()
-      block.setHeaderFromBuffer(payload[0][0])
+      block.setHeader(payload[0][0])
       debug(`Remote Header Hash: ${block.getHeaderHash()}`)
       if (block.getHeaderHash() === expectedHash) {
         debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
@@ -220,7 +220,7 @@ class NetworkEvent {
       }
       let isValidPayload = false
       let block = new SECBlockChain.SECTokenBlock()
-      block.setHeaderFromBuffer(payload[0][0])
+      block.setHeader(payload[0][0])
       while (requests.headers.length > 0) {
         const blockHash = requests.headers.shift()
         debug('Remote Block Header: ' + blockHash.toString('hex'))
@@ -307,7 +307,7 @@ class NetworkEvent {
     let isValidPayload = false
     while (requests.bodies.length > 0) {
       const block = requests.bodies.shift()
-      block.setBodyFromBuffer(payload[0][0])
+      block.setBody(payload[0][0])
       let _block = block.getBlock()
       debug('Remote Beneficiary: ' + payload[0][1].toString())
       _block.Beneficiary = payload[0][1].toString()
