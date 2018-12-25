@@ -424,7 +424,7 @@ class NetworkEvent {
         debug('No Fork founded!')
         let newBlocks = this.BlockChain.SECTokenBlockChain.getBlockChain().slice(remoteHeight + 1)
         let newBlockBuffers = newBlocks.map(_block => {
-          return new SECBlockChain.SECTokenBlock(_block).getBuffer()
+          return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
         })
         let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
@@ -442,7 +442,7 @@ class NetworkEvent {
         }
         let newBlocks = this.BlockChain.SECTokenBlockChain.getBlockChain().slice(forkPosition)
         let newBlockBuffers = newBlocks.map(_block => {
-          return new SECBlockChain.SECTokenBlock(_block).getBuffer()
+          return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
         })
         let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
         syncBlockBuffers.forEach(_blockBuffer => {
