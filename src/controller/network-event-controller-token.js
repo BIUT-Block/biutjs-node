@@ -329,15 +329,6 @@ class NetworkEvent {
         })
       } catch (error) {
         debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
-        // TODO: to be tested
-        let NodeData = [
-          Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockDifficulty()),
-          SECDEVP2P._util.int2buffer(this.BlockChain.SECTokenBlockChain.getCurrentHeight()),
-          Buffer.from(this.BlockChain.SECTokenBlockChain.getLastBlockHash(), 'hex'),
-          Buffer.from(this.BlockChain.SECTokenBlockChain.getGenesisBlockHash(), 'hex'),
-          Buffer.from(JSON.stringify(this.BlockChain.SECTokenBlockChain.getHashList()))
-        ]
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), NodeData])
       }
     }
     if (!isValidPayload) {
