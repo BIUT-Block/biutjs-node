@@ -83,7 +83,7 @@ class NetworkEvent {
         return
       }
       payload = payload[1]
-      debug(chalk.bold.greenBright(`==================== On Message form ${this.addr} ====================`))
+      debug(chalk.bold.greenBright(`==================== On Message from ${this.addr} ====================`))
       debug('Requests: ')
       debug(requests)
       debug('Code: ' + code)
@@ -136,7 +136,7 @@ class NetworkEvent {
           this.RECEIPTS(payload, requests)
           break
       }
-      debug(chalk.bold.greenBright(`==================== End On Message form ${this.addr} ====================\n\n`))
+      debug(chalk.bold.greenBright(`==================== End On Message from ${this.addr} ====================\n\n`))
     })
   }
 
@@ -176,6 +176,8 @@ class NetworkEvent {
       if (_block) {
         let localTokenBlock = new SECBlockChain.SECTokenBlock(_block)
         headers.push([localTokenBlock.getHeaderBuffer(), Buffer.from(_block.Beneficiary)])
+      } else {
+        debug(`BLOCK_HEADERS: block header with hash ${blockHeaderHash} is not found`)
       }
     } else {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
@@ -187,8 +189,10 @@ class NetworkEvent {
         debug(util.inspect(checkBlock.getHeaderBuffer(), false, null))
       }
     }
-    debug('SEC Send Message: BLOCK_HEADERS')
-    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), headers])
+    if (headers.length > 0) {
+      debug('SEC Send Message: BLOCK_HEADERS')
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), headers])
+    }
     debug(chalk.bold.yellow(`===== End GET_BLOCK_HEADERS =====`))
   }
 
