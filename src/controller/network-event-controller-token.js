@@ -341,8 +341,7 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
     payload.forEach(_payload => {
-      let newTokenBlock = new SECBlockChain.SECTokenBlock()
-      newTokenBlock.setBlock(_payload)
+      let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
       if (!blocksCache.has(newTokenBlock.getHeaderHash())) {
         let block = Object.assign({}, newTokenBlock.getBlock())
         try {
