@@ -356,22 +356,6 @@ class NetworkEvent {
         }
       }
     })
-
-    // this.BlockChain.SECTokenBlockChain.updateBlockchain(blockArray[0].Number, blockArray, (err) => {
-    //   if (err) {
-    //     debug('ERROR: token chain NEW_BLOCK state, updateBlockchain function callback error: ', err)
-    //   } else {
-    //     debug(blockArray.length + ' Blocks updated')
-    //     debug('Update Token Blockchain Finished!')
-    //     debug(`DEBUG: Update Token Blockchain Finished! block number is ${blockArray[0].Number}`)
-    //     this.Consensus.resetPOW()
-    //     this.BlockChain.TokenPool.updateByBlockChain(this.BlockChain.SECTokenBlockChain)
-    //     debug(chalk.bold.yellow(`===== NEW_BLOCK End =====`))
-    //   }
-    // })
-
-    // const isValidNewBlock = await this._isValidBlock(newTokenBlock)
-    // if (isValidNewBlock) this._onNewBlock(newBlock, this.peer)
   }
 
   TX (payload, requests) {

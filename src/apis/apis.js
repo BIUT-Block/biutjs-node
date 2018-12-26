@@ -134,12 +134,12 @@ class APIs {
     let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
     try {
       let balance = new Big(10)
-      txBuffer.forEach((txInfo) => {
-        if (txInfo[0] === userAddress) {
-          balance = balance.minus(txInfo[2]).minus(txInfo[3])
+      Object.keys(txBuffer).forEach((key) => {
+        if (txBuffer[key][0] === userAddress) {
+          balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
         }
-        if (txInfo[1] === userAddress) {
-          balance = balance.plus(txInfo[2])
+        if (txBuffer[key][1] === userAddress) {
+          balance = balance.plus(txBuffer[key][2])
         }
       })
 
@@ -163,8 +163,8 @@ class APIs {
   getUserTxNonce (userAddress, callback) {
     let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
     let nonce = 0
-    txBuffer.forEach((txInfo) => {
-      if (txInfo[0] === userAddress || txInfo[1] === userAddress) {
+    Object.keys(txBuffer).forEach((key) => {
+      if (txBuffer[key][0] === userAddress || txBuffer[key][1] === userAddress) {
         nonce++
       }
     })
