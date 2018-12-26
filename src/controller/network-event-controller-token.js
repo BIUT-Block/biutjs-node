@@ -346,7 +346,7 @@ class NetworkEvent {
         let block = Object.assign({}, newTokenBlock.getBlock())
         try {
           this.BlockChain.SECTokenBlockChain.putBlockToDB(block, () => {
-            console.log(chalk.green(`Sync New Block from: ${this.addr} and saved in local Blockchain`))
+            console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             blocksCache.set(newTokenBlock.getHeaderHash(), true)
             this.Consensus.resetPOW()
           })
