@@ -218,7 +218,7 @@ class BlockChain {
 
   isTokenTxExist (txHash) {
     // check if token tx already in tokenPool
-    if (this.tokenPool.getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })) {
+    if (this.TokenPool.getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })) {
       return true
     }
 
