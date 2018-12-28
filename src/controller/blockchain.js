@@ -122,7 +122,10 @@ class BlockChain {
       return false
     }
 
-    this.TokenPool.addTxIntoPool(tokenTx.getTx())
+    if (!this.isTokenTxExist(tokenTx.getTxHash())) {
+      this.TokenPool.addTxIntoPool(tokenTx.getTx())
+    }
+
     debug(`this.TokenPool: ${JSON.stringify(this.TokenPool.getAllTxFromPool())}`)
     this.rlp.getPeers().forEach(peer => {
       try {

@@ -446,7 +446,10 @@ class NetworkEvent {
     const txHashHex = tx.getTxHash()
     if (txCache.has(txHashHex)) return
     txCache.set(txHashHex, true)
-    this.BlockChain.TokenPool.addTxIntoPool(tx.getTx())
+
+    if (!this.BlockChain.isTokenTxExist(tx.getTxHash())) {
+      this.BlockChain.TokenPool.addTxIntoPool(tx.getTx())
+    }
     this.BlockChain.sendNewTokenTx(tx, this.peer)
     console.log(`New Token Tx: ${tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
   }
