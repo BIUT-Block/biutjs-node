@@ -177,11 +177,11 @@ class BlockChain {
     let block = SECRandomData.generateTransactionBlock(SECTransactionBlockChain)
     block.Number = SECTransactionBlockChain.getCurrentHeight() + 1
     let TxsInPoll = this.TxPoolDict[TxChainID].getAllTxFromPool()
-    TxsInPoll.forEach((tx, index, TxsInPoll) => {
-      if (typeof TxsInPoll[index] !== 'object') {
-        TxsInPoll[index] = JSON.parse(TxsInPoll[index])
+    TxsInPoll.forEach((tx) => {
+      if (typeof tx !== 'object') {
+        tx = JSON.parse(tx)
       }
-      TxsInPoll[index].TxReceiptStatus = 'success'
+      tx.TxReceiptStatus = 'success'
     })
     block.Transactions = TxsInPoll
     block.Beneficiary = this.SECAccount.getAddress()
@@ -210,6 +210,24 @@ class BlockChain {
 
   getTxBlockchain (txChainID) {
     return this.SECTransactionBlockChainDict[txChainID]
+  }
+
+  // --------------------------------------------------------------------------------- //
+  // -------------------------------  Other Functions  ------------------------------- //
+  // --------------------------------------------------------------------------------- //
+
+  isTokenTxExist (txHash) {
+    // check if token tx already in tokenPool
+    if (this.tokenPool.getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })) {
+      return true
+    }
+
+    // check if token tx already in previous blocks
+    if (txHash in this.SECTokenBlockChain.tokenTx) {
+      return true
+    }
+
+    return false
   }
 }
 
