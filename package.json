@@ -20,11 +20,11 @@
   },
   "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
   "dependencies": {
-    "@sec-block/secjs-blockchain": "^1.0.105",
+    "@sec-block/secjs-blockchain": "^1.0.106",
     "@sec-block/secjs-datahandler": "^1.1.28",
     "@sec-block/secjs-devp2p": "^1.0.15",
     "@sec-block/secjs-pow": "^1.0.14",
-    "@sec-block/secjs-randomdatagenerator": "^1.0.40",
+    "@sec-block/secjs-randomdatagenerator": "^1.0.41",
     "@sec-block/secjs-transactionpool": "^1.0.9",
     "@sec-block/secjs-tx": "^0.1.33",
     "@sec-block/secjs-util": "^1.1.20",
@@ -35,6 +35,6 @@
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.11",
     "public-ip": "^2.5.0",
-    "systeminformation": "^3.52.2"
+    "systeminformation": "^3.53.1"
   }
 }
