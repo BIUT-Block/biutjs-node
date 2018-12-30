@@ -65,20 +65,17 @@ class SECConsensus {
 
     let blockForPOW = {
       Number: blockBuffer.Number,
-      Difficulty: this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty,
+      Difficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
       parentPOWCalcTime: parentPOWCalcTime,
-      Header: blockHeader.getBlockHeaderPOWHashBuffer().toString('hex'),
+      Header: blockHeader.getPowHeaderBuffer().toString('hex'),
       cacheDBPath: this.cacheDBPath
     }
     console.log(chalk.magenta(`Starting POW with Difficulty ${blockForPOW.Difficulty} ...`))
-    // this.logger.debug(`DEBUG: Starting POW with Difficulty ${blockForPOW.Difficulty} ...`)
     this.powWorker.send(blockForPOW)
     this.isPowRunning = true
     this.powWorker.on('message', (result) => {
-      // this.logger.debug('DEBUG: pow result is: ', result)
-      // this.logger.debug('DEBUG: generated block height is: ', blockBuffer.Number)
       if (result.result) {
-        blockBuffer.Difficulty = result.Difficulty
+        blockBuffer.Difficulty = result.Difficulty.toString()
         blockBuffer.MixHash = result.MixHash
         blockBuffer.Nonce = result.Nonce
 
@@ -103,12 +100,18 @@ class SECConsensus {
         TxsInPoll.unshift(rewardTx)
         let txHeight = 0
         TxsInPoll.forEach((tx, index, TxsInPoll) => {
-          if (typeof TxsInPoll[index] !== 'object') {
-            TxsInPoll[index] = JSON.parse(TxsInPoll[index])
+          if (typeof tx !== 'object') {
+            tx = JSON.parse(tx)
           }
-          TxsInPoll[index].TxReceiptStatus = 'success'
-          TxsInPoll[index].TxHeight = txHeight
-          txHeight = txHeight + 1
+
+          // if transaction already exists in previous blocks or in the tx pool, remove it
+          if (this.BlockChain.isTokenTxExist(tx.Hash)) {
+            TxsInPoll.splice(index, 1)
+          } else {
+            tx.TxReceiptStatus = 'success'
+            tx.TxHeight = txHeight
+            txHeight = txHeight + 1
+          }
         })
         blockBuffer.Transactions = TxsInPoll
         blockBuffer.TimeStamp = SECUtils.currentUnixTimeInMillisecond()

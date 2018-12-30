@@ -89,7 +89,7 @@ class BlockChain {
 
   sendNewTokenBlockHash (tokenBlock, excludePeer = { _socket: {} }) {
     debug(chalk.blue('Send Token Block Hash -> sendNewTokenBlockHash()'))
-    let blockHeaderHash = tokenBlock.getBlockHeaderHash()
+    let blockHeaderHash = tokenBlock.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
@@ -99,13 +99,6 @@ class BlockChain {
       } catch (err) {
         console.error(err)
       }
-    })
-  }
-
-  sendNewTokenBlock (tokenBlock) {
-    debug(chalk.blue(`Send Token Blocks -> sendNewTokenBlock() `))
-    this.rlp.getPeers().forEach(peer => {
-      peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), tokenBlock.getBlockBuffer()])
     })
   }
 
@@ -129,7 +122,10 @@ class BlockChain {
       return false
     }
 
-    this.TokenPool.addTxIntoPool(tokenTx.getTx())
+    if (!this.isTokenTxExist(tokenTx.getTxHash())) {
+      this.TokenPool.addTxIntoPool(tokenTx.getTx())
+    }
+
     debug(`this.TokenPool: ${JSON.stringify(this.TokenPool.getAllTxFromPool())}`)
     this.rlp.getPeers().forEach(peer => {
       try {
@@ -166,7 +162,7 @@ class BlockChain {
 
   sendNewTxBlockHash (txBlock, txChainID, excludePeer = { _socket: {} }) {
     debug(chalk.blue(`Send Transaction Block ${txChainID} Hash -> sendNewTxBlockHash()`))
-    let blockHeaderHash = txBlock.getBlockHeaderHash()
+    let blockHeaderHash = txBlock.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
@@ -179,23 +175,16 @@ class BlockChain {
     })
   }
 
-  sendNewTxBlock (txBlock, txChainID) {
-    debug(chalk.blue(`Send Transaction Blocks -> sendNewTxBlock(), chain ID: ${txChainID}`))
-    this.rlp.getPeers().forEach(peer => {
-      peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from(txChainID, 'utf-8'), txBlock.getBlockBuffer()])
-    })
-  }
-
   generateTxBlock (TxChainID) {
     let SECTransactionBlockChain = this.SECTransactionBlockChainDict[TxChainID]
     let block = SECRandomData.generateTransactionBlock(SECTransactionBlockChain)
     block.Number = SECTransactionBlockChain.getCurrentHeight() + 1
     let TxsInPoll = this.TxPoolDict[TxChainID].getAllTxFromPool()
-    TxsInPoll.forEach((tx, index, TxsInPoll) => {
-      if (typeof TxsInPoll[index] !== 'object') {
-        TxsInPoll[index] = JSON.parse(TxsInPoll[index])
+    TxsInPoll.forEach((tx) => {
+      if (typeof tx !== 'object') {
+        tx = JSON.parse(tx)
       }
-      TxsInPoll[index].TxReceiptStatus = 'success'
+      tx.TxReceiptStatus = 'success'
     })
     block.Transactions = TxsInPoll
     block.Beneficiary = this.SECAccount.getAddress()
@@ -224,6 +213,19 @@ class BlockChain {
 
   getTxBlockchain (txChainID) {
     return this.SECTransactionBlockChainDict[txChainID]
+  }
+
+  // --------------------------------------------------------------------------------- //
+  // -------------------------------  Other Functions  ------------------------------- //
+  // --------------------------------------------------------------------------------- //
+
+  isTokenTxExist (txHash) {
+    // check if token tx already in previous blocks
+    if (txHash in this.SECTokenBlockChain.tokenTx) {
+      return true
+    }
+
+    return false
   }
 }
 
