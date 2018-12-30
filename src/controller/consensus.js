@@ -124,7 +124,7 @@ class SECConsensus {
             this.BlockChain.TokenPool.clear()
             if (txArray) {
               txArray.forEach(tx => {
-                if (!this.BlockChain.isTokenTxExist(tx.Hash)) {
+                if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
                   this.BlockChain.TokenPool.addTxIntoPool(tx)
                 }
               })
