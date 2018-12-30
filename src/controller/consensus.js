@@ -117,11 +117,18 @@ class SECConsensus {
         blockBuffer.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
         let newSECTokenBlock = new SECBlockChain.SECTokenBlock(blockBuffer)
         try {
-          this.BlockChain.SECTokenBlockChain.putBlockToDB(newSECTokenBlock.getBlock(), () => {
+          this.BlockChain.SECTokenBlockChain.putBlockToDB(newSECTokenBlock.getBlock(), (txArray) => {
             console.log(chalk.green(`Token Blockchain | New Block generated, ${blockBuffer.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
             this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-            this.BlockChain.TokenPool.clear()
             this.resetPOW()
+            this.BlockChain.TokenPool.clear()
+            if (txArray) {
+              txArray.forEach(tx => {
+                if (!this.BlockChain.isTokenTxExist(tx.Hash)) {
+                  this.BlockChain.TokenPool.addTxIntoPool(tx)
+                }
+              })
+            }
           })
         } catch (error) {
           // this.logger.error('ERROR: pow child process something wrong when writing new block to DB: ', error)
