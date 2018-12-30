@@ -25,7 +25,7 @@
     "@sec-block/secjs-datahandler": "^1.1.28",
     "@sec-block/secjs-devp2p": "^1.0.20",
     "@sec-block/secjs-pow": "^1.0.14",
-    "@sec-block/secjs-randomdatagenerator": "^1.0.43",
+    "@sec-block/secjs-randomdatagenerator": "^1.0.45",
     "@sec-block/secjs-transactionpool": "^1.0.9",
     "@sec-block/secjs-tx": "^0.1.33",
     "@sec-block/secjs-util": "^1.1.22",
