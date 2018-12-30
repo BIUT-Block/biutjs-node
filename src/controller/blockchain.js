@@ -106,13 +106,7 @@ class BlockChain {
     const tx = SECRandomData.generateTokenTransaction(this.SECTokenBlockChain)
     const tokenTx = new SECTransaction.SECTokenTx(tx)
     this.TokenPool.addTxIntoPool(tokenTx.getTx())
-    this.rlp.getPeers().forEach(peer => {
-      try {
-        this.sendNewTokenTx(tokenTx)
-      } catch (err) {
-        console.error(err)
-      }
-    })
+    this.sendNewTokenTx(tokenTx)
   }
 
   initiateTokenTx (tx) {
@@ -127,13 +121,7 @@ class BlockChain {
     }
 
     debug(`this.TokenPool: ${JSON.stringify(this.TokenPool.getAllTxFromPool())}`)
-    this.rlp.getPeers().forEach(peer => {
-      try {
-        this.sendNewTokenTx(tokenTx)
-      } catch (err) {
-        console.error(err)
-      }
-    })
+    this.sendNewTokenTx(tokenTx)
 
     return true
   }
