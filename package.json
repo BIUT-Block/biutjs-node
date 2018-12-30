@@ -23,7 +23,7 @@
   "dependencies": {
     "@sec-block/secjs-blockchain": "^1.0.109",
     "@sec-block/secjs-datahandler": "^1.1.28",
-    "@sec-block/secjs-devp2p": "^1.0.16",
+    "@sec-block/secjs-devp2p": "^1.0.17",
     "@sec-block/secjs-pow": "^1.0.14",
     "@sec-block/secjs-randomdatagenerator": "^1.0.43",
     "@sec-block/secjs-transactionpool": "^1.0.9",
