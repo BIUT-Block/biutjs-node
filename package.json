@@ -1,6 +1,6 @@
 {
   "name": "@sec-block/secjs-node",
-  "version": "1.0.47",
+  "version": "1.0.48",
   "description": "sec blockchain node",
   "main": "index.js",
   "directories": {
