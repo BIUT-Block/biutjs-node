@@ -221,9 +221,10 @@ class BlockChain {
 
   isTokenTxExist (txHash) {
     // check if token tx already in previous blocks
-    if (this.SECTokenBlockChain.tokenTx.indexOf(txHash) >= 0) {
+    if (txHash in this.SECTokenBlockChain.tokenTx) {
       return true
     }
+
     return false
   }
 }
