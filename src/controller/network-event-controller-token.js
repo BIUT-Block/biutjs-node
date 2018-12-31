@@ -536,7 +536,7 @@ class NetworkEvent {
         let peers = this.NDP.getPeers()
         peers.forEach(peer => {
           _peers.push({
-            id: peers.id.toString('hex'),
+            id: peer.id.toString('hex'),
             address: peer.address,
             udpPort: peer.udpPort,
             tcpPort: peer.tcpPort
