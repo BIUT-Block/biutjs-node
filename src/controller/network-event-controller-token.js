@@ -542,7 +542,7 @@ class NetworkEvent {
         _peers = this.NodesIPSync.getNodesTable()
       }
       this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(_peers))])
-    }, 3000)
+    }, 120000)
   }
 }
 
