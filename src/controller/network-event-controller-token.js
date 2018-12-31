@@ -470,7 +470,7 @@ class NetworkEvent {
       console.log(nodes)
       console.log(this.NodesIPSync.getNodesTable())
     } catch (err) {
-      console.err(err)
+      console.error(err)
     }
   }
 

@@ -6,7 +6,9 @@ class NodesIPSync {
   updateNodesTable (_nodes) {
     let nodes = JSON.parse(JSON.stringify(_nodes))
     for (let i = 0; i < _nodes.length; i++) {
-      nodes[i]._id = _nodes[i].id.toString('hex')
+      if (!_nodes[i]._id) {
+        nodes[i]._id = _nodes[i].id.toString('hex')
+      }
     }
     console.log('In Nodes:')
     console.log(nodes)
