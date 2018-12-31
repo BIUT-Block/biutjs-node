@@ -197,7 +197,16 @@ class CenterController {
         debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
         debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
       }
-      this.nodesIPSync.updateNodesTable(peers)
+      let _peers = []
+      peers.forEach(peer => {
+        _peers.push({
+          id: peers.id.toString('hex'),
+          address: peer.address,
+          udpPort: peer.udpPort,
+          tcpPort: peer.tcpPort
+        })
+      })
+      this.nodesIPSync.updateNodesTable(_peers)
     }, ms('30s'))
     this._runConsensus()
   }

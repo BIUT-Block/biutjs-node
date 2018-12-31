@@ -468,6 +468,7 @@ class NetworkEvent {
       this.NodesIPSync.updateNodesTable(nodes)
       console.log('Receiving nodes ip')
       console.log(nodes)
+      console.log('----------------')
       console.log(this.NodesIPSync.getNodesTable())
     } catch (err) {
       console.error(err)
@@ -530,10 +531,23 @@ class NetworkEvent {
 
   _startSyncNodesIP () {
     setInterval(() => {
+      let _peers = []
+      if (this.NodesIPSync.getNodesTable().length === 0) {
+        let peers = this.NDP.getPeers()
+        peers.forEach(peer => {
+          _peers.push({
+            id: peers.id.toString('hex'),
+            address: peer.address,
+            udpPort: peer.udpPort,
+            tcpPort: peer.tcpPort
+          })
+        })
+      } else {
+        _peers = this.NodesIPSync.getNodesTable()
+      }
       console.log('Sending nodes ip')
-      console.log(this.NDP.getPeers())
-      console.log(this.NodesIPSync.getNodesTable())
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(this.NodesIPSync.getNodesTable().length !== 0 ? this.NodesIPSync.getNodesTable() : this.NDP.getPeers()))])
+      console.log(_peers)
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(_peers))])
     }, 3000)
   }
 }

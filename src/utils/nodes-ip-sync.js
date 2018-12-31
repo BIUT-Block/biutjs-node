@@ -3,22 +3,15 @@ class NodesIPSync {
     this.NodesTable = []
   }
 
-  updateNodesTable (_nodes) {
-    let nodes = JSON.parse(JSON.stringify(_nodes))
-    for (let i = 0; i < _nodes.length; i++) {
-      if (!_nodes[i]._id) {
-        console.log(_nodes[i].id)
-        nodes[i]._id = _nodes[i].id.toString('hex')
-      }
-    }
+  updateNodesTable (nodes) {
     console.log('In Nodes:')
     console.log(nodes)
     nodes.forEach(node => {
-      if (this.NodesTable.map(_node => { return _node._id }).indexOf(node._id) < 0 && node._id.length === 128) {
+      if (this.NodesTable.map(_node => { return _node.id }).indexOf(node.id) < 0 && node.id.length === 128) {
         node.TimeStamp = new Date()
         this.NodesTable.push(node)
-      } else if (node._id.length === 128) {
-        this.NodesTable.filter(__node => { return __node._id === node._id })[0].TimeStamp = new Date()
+      } else if (node.id.length === 128) {
+        this.NodesTable.filter(__node => { return __node.id === node.id })[0].TimeStamp = new Date()
       }
     })
     this._removeUeslessNodes()
