@@ -325,11 +325,19 @@ class NetworkEvent {
       isValidPayload = true
 
       try {
-        this.BlockChain.SECTokenBlockChain.putBlockToDB(secblock, () => {
+        this.BlockChain.SECTokenBlockChain.putBlockToDB(secblock, (txArray) => {
           debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain`))
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
           this.Consensus.resetPOW()
           this._onNewBlock(newSECTokenBlock)
+
+          if (txArray) {
+            txArray.forEach(tx => {
+              if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
+                this.BlockChain.TokenPool.addTxIntoPool(tx)
+              }
+            })
+          }
         })
       } catch (error) {
         debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
@@ -349,10 +357,18 @@ class NetworkEvent {
       if (!blocksCache.has(newTokenBlock.getHeaderHash())) {
         let block = Object.assign({}, newTokenBlock.getBlock())
         try {
-          this.BlockChain.SECTokenBlockChain.putBlockToDB(block, () => {
+          this.BlockChain.SECTokenBlockChain.putBlockToDB(block, (txArray) => {
             console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             blocksCache.set(newTokenBlock.getHeaderHash(), true)
             this.Consensus.resetPOW()
+
+            if (txArray) {
+              txArray.forEach(tx => {
+                if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
+                  this.BlockChain.TokenPool.addTxIntoPool(tx)
+                }
+              })
+            }
           })
         } catch (error) {
           debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
