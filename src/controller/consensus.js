@@ -98,21 +98,21 @@ class SECConsensus {
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
         TxsInPoll.unshift(rewardTx)
-        let txHeight = 0
-        TxsInPoll.forEach((tx, index, TxsInPoll) => {
+
+        _.remove(TxsInPoll, (tx) => {
           if (typeof tx !== 'object') {
             tx = JSON.parse(tx)
           }
 
-          // if transaction already exists in previous blocks or in the tx pool, remove it
-          if (this.BlockChain.isTokenTxExist(tx.TxHash)) {
-            TxsInPoll.splice(index, 1)
-          } else {
-            tx.TxReceiptStatus = 'success'
-            tx.TxHeight = txHeight
-            txHeight = txHeight + 1
-          }
+          return !this.BlockChain.isTokenTxExist(tx.TxHash)
         })
+        let txHeight = 0
+        TxsInPoll.forEach((tx) => {
+          tx.TxReceiptStatus = 'success'
+          tx.TxHeight = txHeight
+          txHeight = txHeight + 1
+        })
+
         blockBuffer.Transactions = TxsInPoll
         blockBuffer.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
         let newSECTokenBlock = new SECBlockChain.SECTokenBlock(blockBuffer)
