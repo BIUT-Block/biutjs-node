@@ -104,7 +104,7 @@ class SECConsensus {
             tx = JSON.parse(tx)
           }
 
-          return !this.BlockChain.isTokenTxExist(tx.TxHash)
+          return this.BlockChain.isTokenTxExist(tx.TxHash)
         })
         let txHeight = 0
         TxsInPoll.forEach((tx) => {
