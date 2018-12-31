@@ -184,7 +184,6 @@ class NetworkEvent {
       } else {
         debug(`BLOCK_HEADERS: block header with hash ${blockHeaderHash} is not found`)
       }
-      this._startSyncNodesIP()
     } else {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
       if (SECDEVP2P._util.buffer2int(payload[0]) === this.CHECK_BLOCK_NR) {
@@ -222,6 +221,7 @@ class NetworkEvent {
         debug(`forkVerified: ${this.forkVerified}`)
         this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
         this._addPeerToNDP()
+        this._startSyncNodesIP()
       }
     } else {
       if (payload.length > 1) {

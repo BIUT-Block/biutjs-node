@@ -16,13 +16,14 @@ class NodesIPSync {
   }
 
   _removeUeslessNodes () {
-    this.NodesTable.forEach((node, index) => {
+    for (let i = 0; i < this.NodesTable.length; i++) {
+      let node = this.NodesTable[i]
       let age = (new Date().getTime() - node.TimeStamp) / 1000
       // remove the nodes, which 1 hours not response
       if (age > 3600) {
-        this.NodesTable.splice(index, 1)
+        this.NodesTable.splice(i--, 1)
       }
-    })
+    }
   }
 
   getNodesTable () {
