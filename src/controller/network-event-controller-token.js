@@ -529,10 +529,10 @@ class NetworkEvent {
   }
 
   _startSyncNodesIP () {
-    console.log('Sending nodes ip')
-    console.log(this.NDP.getPeers())
-    console.log(this.NodesIPSync.getNodesTable())
     setInterval(() => {
+      console.log('Sending nodes ip')
+      console.log(this.NDP.getPeers())
+      console.log(this.NodesIPSync.getNodesTable())
       this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(this.NodesIPSync.getNodesTable() || this.NDP.getPeers()))])
     }, 3000)
   }
