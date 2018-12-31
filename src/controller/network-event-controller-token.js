@@ -533,7 +533,7 @@ class NetworkEvent {
       console.log('Sending nodes ip')
       console.log(this.NDP.getPeers())
       console.log(this.NodesIPSync.getNodesTable())
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(this.NodesIPSync.getNodesTable() || this.NDP.getPeers()))])
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(this.NodesIPSync.getNodesTable().length !== 0 ? this.NodesIPSync.getNodesTable() : this.NDP.getPeers()))])
     }, 3000)
   }
 }

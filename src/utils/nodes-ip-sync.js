@@ -11,7 +11,7 @@ class NodesIPSync {
     console.log('In Nodes:')
     console.log(nodes)
     nodes.forEach(node => {
-      if (this.NodesTable.map(_node => { return _node._id }).indexOf(node._id) < 0) {
+      if (this.NodesTable.map(_node => { return _node._id }).indexOf(node._id) < 0 && node._id.length === 128) {
         node.TimeStamp = new Date()
         this.NodesTable.push(node)
       } else {
