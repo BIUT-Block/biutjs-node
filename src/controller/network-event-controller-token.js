@@ -466,10 +466,6 @@ class NetworkEvent {
     try {
       let nodes = JSON.parse(payload.toString())
       this.NodesIPSync.updateNodesTable(nodes)
-      console.log('Receiving nodes ip')
-      console.log(nodes)
-      console.log('----------------')
-      console.log(this.NodesIPSync.getNodesTable())
     } catch (err) {
       console.error(err)
     }
@@ -545,8 +541,6 @@ class NetworkEvent {
       } else {
         _peers = this.NodesIPSync.getNodesTable()
       }
-      console.log('Sending nodes ip')
-      console.log(_peers)
       this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(_peers))])
     }, 3000)
   }
