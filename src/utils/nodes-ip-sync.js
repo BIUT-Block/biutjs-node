@@ -3,7 +3,10 @@ class NodesIPSync {
     this.NodesTable = []
   }
 
-  updateNodesTable (nodes) {
+  updateNodesTable (_nodes) {
+    let nodes = JSON.parse(JSON.stringify(_nodes))
+    console.log('In Nodes:')
+    console.log(nodes)
     nodes.forEach(node => {
       if (this.NodesTable.map(_node => { return _node.id }).indexOf(node.id) < 0) {
         node.TimeStamp = new Date()
