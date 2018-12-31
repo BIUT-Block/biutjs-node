@@ -12,6 +12,7 @@ const NetworkEventToken = require('./network-event-controller-token')
 const NetworkEventTx = require('./network-event-controller-tx')
 const Consensus = require('./consensus')
 const BlockChain = require('./blockchain')
+const NodesIPSync = require('../utils/nodes-ip-sync')
 const Utils = require('../utils/utils')
 
 class CenterController {
@@ -46,6 +47,9 @@ class CenterController {
 
     // ----------------------------  DB CONFIG  ---------------------------
     this.dbconfig = config.dbconfig
+
+    // -------------------------  NODES SYNC UTIL  ------------------------
+    this.nodesIPSync = new NodesIPSync()
   }
 
   _initNDP () {
@@ -95,7 +99,7 @@ class CenterController {
 
       // -------------------------------  TOKEN BLOCK CHAIN  -------------------------------
       // let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, SECLogger: this.logger })
-      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp })
+      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync })
       networkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer.push(networkEvent)
 
@@ -193,6 +197,7 @@ class CenterController {
         debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
         debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
       }
+      this.nodesIPSync.updateNodesTable(peers)
     }, ms('30s'))
     this._runConsensus()
   }

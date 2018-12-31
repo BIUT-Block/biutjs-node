@@ -22,6 +22,7 @@ class NetworkEvent {
     this.BlockChain = config.BlockChain
     this.Consensus = config.Consensus
     this.NDP = config.NDP
+    this.NodesIPSync = config.NodesIPSync
     // this.logger = config.SECLogger
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
@@ -135,6 +136,10 @@ class NetworkEvent {
         case SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS:
           this.RECEIPTS(payload, requests)
           break
+
+        case SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC:
+          this.NODES_IP_SYNC(payload, requests)
+          break
       }
       debug(chalk.bold.greenBright(`==================== End On Message from ${this.addr} ====================\n\n`))
     })
@@ -179,6 +184,7 @@ class NetworkEvent {
       } else {
         debug(`BLOCK_HEADERS: block header with hash ${blockHeaderHash} is not found`)
       }
+      this._startSyncNodesIP()
     } else {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
       if (SECDEVP2P._util.buffer2int(payload[0]) === this.CHECK_BLOCK_NR) {
@@ -440,6 +446,15 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End RECEIPTS =====`))
   }
 
+  NODES_IP_SYNC (payload, requests) {
+    try {
+      let nodes = JSON.parse(payload.toString())
+      this.NodesIPSync.updateNodesTable(nodes)
+    } catch (err) {
+      console.err(err)
+    }
+  }
+
   _onNewTx (tx) {
     const txHashHex = tx.getTxHash()
     if (txCache.has(txHashHex)) return
@@ -492,6 +507,12 @@ class NetworkEvent {
     //   })
     // })
     return true
+  }
+
+  _startSyncNodesIP () {
+    setInterval(() => {
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(this.NodesIPSync.getNodesTable() || this.NDP.getPeers()))])
+    }, 3000)
   }
 }
 
