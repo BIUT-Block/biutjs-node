@@ -7,6 +7,7 @@ class NodesIPSync {
     let nodes = JSON.parse(JSON.stringify(_nodes))
     for (let i = 0; i < _nodes.length; i++) {
       if (!_nodes[i]._id) {
+        console.log(_nodes[i].id)
         nodes[i]._id = _nodes[i].id.toString('hex')
       }
     }
@@ -16,7 +17,7 @@ class NodesIPSync {
       if (this.NodesTable.map(_node => { return _node._id }).indexOf(node._id) < 0 && node._id.length === 128) {
         node.TimeStamp = new Date()
         this.NodesTable.push(node)
-      } else {
+      } else if (node._id.length === 128) {
         this.NodesTable.filter(__node => { return __node._id === node._id })[0].TimeStamp = new Date()
       }
     })
