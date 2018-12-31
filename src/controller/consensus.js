@@ -105,7 +105,7 @@ class SECConsensus {
           }
 
           // if transaction already exists in previous blocks or in the tx pool, remove it
-          if (this.BlockChain.isTokenTxExist(tx.Hash)) {
+          if (this.BlockChain.isTokenTxExist(tx.TxHash)) {
             TxsInPoll.splice(index, 1)
           } else {
             tx.TxReceiptStatus = 'success'
