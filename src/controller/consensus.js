@@ -117,7 +117,7 @@ class SECConsensus {
       GasLimit: '0',
       GasUsedByTxn: '0',
       GasPrice: '0',
-      Nonce: _.random(1, 1000).toString(),
+      Nonce: this.BlockChain.SECTokenBlockChain.getCurrentHeight(),
       InputData: `Mining reward`
     }
     rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
