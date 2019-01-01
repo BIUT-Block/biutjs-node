@@ -9,6 +9,7 @@ process.on('message', blockForPOW => {
     cacheDBPath: blockForPOW.cacheDBPath || process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
     expectedDifficulty: SECConfig.SECBlock.powConfig.expectedDifficulty
   })
+  blockForPOW.Header = Buffer.from(blockForPOW.Header)
   blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
   console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
   secPow.mineLight(blockForPOW, blockForPOW.Difficulty, (nonce, result) => {
