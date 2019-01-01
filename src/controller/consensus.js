@@ -49,7 +49,7 @@ class SECConsensus {
       Number: newBlock.Number,
       lastBlockDifficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
       lastPowCalcTime: this.secCircle.getLastPowDuration(this.BlockChain.SECTokenBlockChain),
-      Header: new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer().toString('hex'),
+      Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
       cacheDBPath: this.cacheDBPath
     }
     console.log(chalk.magenta(`Starting POW, last block Difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
