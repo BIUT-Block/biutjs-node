@@ -98,14 +98,12 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  TOKEN BLOCK CHAIN  -------------------------------
-      // let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, SECLogger: this.logger })
       let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync })
       networkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer.push(networkEvent)
 
       // -------------------------------  TX BLOCK CHAINS  -------------------------------
       for (let txChainID in this.TransactionDbDict) {
-        // networkEvent = new NetworkEventTx({ ID: txChainID, BlockChain: this.BlockChain, Consensus: this.txConsensusDict[txChainID], NDP: this.ndp, SECLogger: this.logger })
         networkEvent = new NetworkEventTx({ ID: txChainID, BlockChain: this.BlockChain, Consensus: this.txConsensusDict[txChainID], NDP: this.ndp })
         networkEvent.PeerCommunication(peer, addr, sec)
         this.NetworkEventContainer.push(networkEvent)
@@ -160,7 +158,6 @@ class CenterController {
     this.BlockChain.run()
     this.config.BlockChain = this.BlockChain
     this.TransactionDbDict = this.config.SECTxDbDict
-    // this.logger = this.config.SECLogger
     this.NetworkEventContainer = []
 
     this.config.isTokenChain = true
