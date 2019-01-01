@@ -52,7 +52,7 @@ class SECConsensus {
       Header: new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer().toString('hex'),
       cacheDBPath: this.cacheDBPath
     }
-    console.log(chalk.magenta(`Starting POW, last block Difficulty is ${blockForPOW.Difficulty} ...`))
+    console.log(chalk.magenta(`Starting POW, last block Difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
     this.powWorker.send(blockForPOW)
     this.isPowRunning = true
     this.powWorker.on('message', (result) => {
