@@ -9,11 +9,11 @@ process.on('message', blockForPOW => {
     cacheDBPath: blockForPOW.cacheDBPath || process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
     expectedDifficulty: SECConfig.SECBlock.powConfig.expectedDifficulty
   })
-  blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.Difficulty, blockForPOW.Number, blockForPOW.parentPOWCalcTime)
+  let difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
   blockForPOW.Header = Buffer.from(blockForPOW.Header, 'hex')
-  console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
-  secPow.mineLight(blockForPOW, blockForPOW.Difficulty, (nonce, result) => {
-    console.timeEnd(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
+  console.time(`POW Calculation Duration with Diffculty ${difficulty}`)
+  secPow.mineLight(blockForPOW, difficulty, (nonce, result) => {
+    console.timeEnd(`POW Calculation Duration with Diffculty ${difficulty}`)
     blockForPOW.MixHash = result.mix
     blockForPOW.Nonce = nonce
     console.log(chalk.magenta('POW RESULT: '))
@@ -23,7 +23,7 @@ process.on('message', blockForPOW => {
       console.log(chalk.magenta('Verified POW: ' + result))
       process.send({
         result: result,
-        Difficulty: blockForPOW.Difficulty,
+        Difficulty: difficulty,
         MixHash: blockForPOW.MixHash.toString('hex'),
         Nonce: blockForPOW.Nonce
       })
