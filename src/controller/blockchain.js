@@ -22,7 +22,6 @@ class BlockChain {
   constructor (config, callback) {
     this.SECAccount = config.SECAccount
     this.rlp = config.rlp
-    // this.logger = config.SECLogger
     let initFlag = 0
 
     // token block chain object creates and init

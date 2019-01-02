@@ -16,7 +16,6 @@ class SECConsensus {
     this.rlp = config.rlp
     this.BlockChain = config.BlockChain
     this.cacheDBPath = config.dbconfig.cacheDBPath
-    // this.logger = config.SECLogger
     this.isTokenChain = config.isTokenChain
     this.powEnableFlag = false
 
@@ -44,61 +43,31 @@ class SECConsensus {
   }
 
   runPOW () {
-    let blockBuffer = {}
-    // Calculate pow difficulty
-    let parentPOWCalcTime = 0
-    let lastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getLastBlock().TimeStamp
-    let secondLastBlockTimestamp = 0
-    if (this.BlockChain.SECTokenBlockChain.getCurrentHeight() > 2) {
-      secondLastBlockTimestamp = this.BlockChain.SECTokenBlockChain.getSecondLastBlock().TimeStamp
-      parentPOWCalcTime = lastBlockTimestamp - this.secCircle.getGroupStartTime(lastBlockTimestamp)
-      parentPOWCalcTime += this.secCircle.getGroupStartTime(lastBlockTimestamp) - this.secCircle.getGroupStartTime(secondLastBlockTimestamp) - SECConfig.SECBlock.circleConfig.intervalTime
-    } else {
-      parentPOWCalcTime = lastBlockTimestamp - secondLastBlockTimestamp
-    }
-
-    blockBuffer = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenBlockChain)
-    blockBuffer.Number = this.BlockChain.SECTokenBlockChain.getCurrentHeight() + 1
-    blockBuffer.Beneficiary = this.BlockChain.SECAccount.getAddress()
-    blockBuffer.Transactions = []
-    let blockHeader = new SECBlockChain.SECTokenBlock(blockBuffer)
+    let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenBlockChain)
 
     let blockForPOW = {
-      Number: blockBuffer.Number,
-      Difficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
-      parentPOWCalcTime: parentPOWCalcTime,
-      Header: blockHeader.getPowHeaderBuffer().toString('hex'),
+      Number: newBlock.Number,
+      lastBlockDifficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
+      lastPowCalcTime: this.secCircle.getLastPowDuration(this.BlockChain.SECTokenBlockChain),
+      Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
       cacheDBPath: this.cacheDBPath
     }
-    console.log(chalk.magenta(`Starting POW with Difficulty ${blockForPOW.Difficulty} ...`))
+    console.log(chalk.magenta(`Starting POW, last block Difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
     this.powWorker.send(blockForPOW)
     this.isPowRunning = true
     this.powWorker.on('message', (result) => {
       if (result.result) {
-        blockBuffer.Difficulty = result.Difficulty.toString()
-        blockBuffer.MixHash = result.MixHash
-        blockBuffer.Nonce = result.Nonce
-
-        // reward transaction
-        let rewardTx = {
-          Version: '0.1',
-          TxReceiptStatus: 'success',
-          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-          TxFrom: '0000000000000000000000000000000000000000',
-          TxTo: this.BlockChain.SECAccount.getAddress(),
-          Value: '2',
-          ContractAddress: '',
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          Nonce: _.random(1, 1000).toString(),
-          InputData: `Mining reward`
-        }
-        rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
+        newBlock.Difficulty = result.Difficulty.toString()
+        newBlock.MixHash = result.MixHash
+        newBlock.Nonce = result.Nonce
+        newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
+        newBlock.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
-        TxsInPoll.unshift(rewardTx)
+        // append the pow reward tx
+        TxsInPoll.unshift(this.genPowRewardTx())
 
+        // remove txs which already exist in previous blocks
         _.remove(TxsInPoll, (tx) => {
           if (typeof tx !== 'object') {
             tx = JSON.parse(tx)
@@ -106,6 +75,8 @@ class SECConsensus {
 
           return this.BlockChain.isTokenTxExist(tx.TxHash)
         })
+
+        // assign txHeight
         let txHeight = 0
         TxsInPoll.forEach((tx) => {
           tx.TxReceiptStatus = 'success'
@@ -113,39 +84,49 @@ class SECConsensus {
           txHeight = txHeight + 1
         })
 
-        blockBuffer.Transactions = TxsInPoll
-        blockBuffer.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
-        let newSECTokenBlock = new SECBlockChain.SECTokenBlock(blockBuffer)
+        newBlock.Transactions = TxsInPoll
+        // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
         try {
+          let newSECTokenBlock = new SECBlockChain.SECTokenBlock(newBlock)
           this.BlockChain.SECTokenBlockChain.putBlockToDB(newSECTokenBlock.getBlock(), (txArray) => {
-            console.log(chalk.green(`Token Blockchain | New Block generated, ${blockBuffer.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
+            console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
             this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-            this.resetPOW()
             this.BlockChain.TokenPool.clear()
-            if (txArray) {
-              txArray.forEach(tx => {
-                if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
-                  this.BlockChain.TokenPool.addTxIntoPool(tx)
-                }
-              })
-            }
+            this.resetPOW()
           })
         } catch (error) {
-          // this.logger.error('ERROR: pow child process something wrong when writing new block to DB: ', error)
           console.error(error)
           this.resetPOW()
         }
       } else {
-        // this.logger.error('ERROR: pow child process POW result verification failed')
         this.resetPOW()
       }
     })
   }
 
+  genPowRewardTx () {
+    // reward transaction
+    let rewardTx = {
+      Version: '0.1',
+      TxReceiptStatus: 'success',
+      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: this.BlockChain.SECAccount.getAddress(),
+      Value: '2',
+      ContractAddress: '',
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      Nonce: this.BlockChain.SECTokenBlockChain.getCurrentHeight().toString(),
+      InputData: `Mining reward`
+    }
+    rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
+    return rewardTx
+  }
+
   resetPOW () {
     if (process.env.pow || this.powEnableFlag) {
       console.log(chalk.magenta('Reset POW'))
-      // this.logger.debug('reset POW')
       this.powWorker.kill()
       this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
     }
@@ -164,7 +145,7 @@ class SECConsensus {
           lockFlag = true
           this.secCircle.resetCircle((err) => {
             if (err) {
-              // this.logger.error('ERROR: error when running this.secCircle.resetCircle function, err: ', err)
+              // do nothing
             }
             lockFlag = false
           })

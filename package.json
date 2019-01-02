@@ -1,6 +1,6 @@
 {
   "name": "@sec-block/secjs-node",
-  "version": "1.0.64",
+  "version": "1.0.69",
   "description": "sec blockchain node",
   "main": "index.js",
   "directories": {
@@ -21,11 +21,11 @@
   },
   "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
   "dependencies": {
-    "@sec-block/secjs-blockchain": "^1.0.111",
+    "@sec-block/secjs-blockchain": "^1.0.112",
     "@sec-block/secjs-datahandler": "^1.1.28",
     "@sec-block/secjs-devp2p": "^1.0.21",
     "@sec-block/secjs-pow": "^1.0.14",
-    "@sec-block/secjs-randomdatagenerator": "^1.0.45",
+    "@sec-block/secjs-randomdatagenerator": "^1.0.46",
     "@sec-block/secjs-transactionpool": "^1.0.9",
     "@sec-block/secjs-tx": "^0.1.33",
     "@sec-block/secjs-util": "^1.1.22",

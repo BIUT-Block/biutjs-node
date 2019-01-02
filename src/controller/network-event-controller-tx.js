@@ -22,7 +22,6 @@ class NetworkEventTx {
     this.BlockChain = config.BlockChain
     this.Consensus = config.Consensus
     this.NDP = config.NDP
-    // this.logger = config.SECLogger
 
     // ---------------------------  CHECK PARAMETERS  ---------------------------
     this.CHAIN_ID = SECConfig.SECBlock.checkConfig.CHAIN_ID
@@ -281,10 +280,8 @@ class NetworkEventTx {
             debug(chalk.green(`Get New Transaction Block from: ${this.addr} and saved in local Blockchain`))
             let newSECTxBlock = new SECBlockChain.SECTransactionBlock(secblock)
             this._onNewBlock(newSECTxBlock)
-            // this.logger.debug(`DEBUG: Get New Transaction Block from: ${this.addr} and saved in local Blockchain ${this.ID}, block height is ${newSECTxBlock.getBlock().Number}`)
           })
         } catch (error) {
-          // this.logger.error('ERROR: tx chain, BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
           // TODO: to be tested
           let NodeData = [
             1,
@@ -336,11 +333,9 @@ class NetworkEventTx {
     if (blockArray.length !== 0) {
       this.BlockChain.SECTransactionBlockChainDict[this.ID].updateBlockchain(blockArray[0].Number, blockArray, (err) => {
         if (err) {
-          // this.logger.error('ERROR: tx chain, NEW_BLOCK state, updateBlockchain function callback error: ', err)
         }
         debug(blockArray.length + ' Blocks updated')
         debug('Update Transaction Blockchain Finished!')
-        // this.logger.debug(`DEBUG: Update Transaction Blockchain ${this.ID} Finished! starting block number is ${blockArray[0].Number}, update length is ${blockArray.length}`)
         this.BlockChain.TxPoolDict[this.ID].updateByBlockChain(this.BlockChain.SECTransactionBlockChainDict[this.ID])
         debug(chalk.bold.yellow(`===== NEW_BLOCK End =====`))
       })
@@ -465,7 +460,6 @@ class NetworkEventTx {
       debug(peer)
     }).catch((err) => {
       debug(`error on connection to node: ${err.stack || err}`)
-      // this.logger.error(`ERROR: tx chain, error on connection to node: ${err.stack || err}`)
     })
   }
 

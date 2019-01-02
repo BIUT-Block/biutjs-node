@@ -23,7 +23,6 @@ class NetworkEvent {
     this.Consensus = config.Consensus
     this.NDP = config.NDP
     this.NodesIPSync = config.NodesIPSync
-    // this.logger = config.SECLogger
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     this.CHAIN_ID = SECConfig.SECBlock.checkConfig.CHAIN_ID

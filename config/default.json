@@ -3,11 +3,6 @@
     "dbConfig": {
       "Path": "/data/"
     },
-    "logConfig": {
-      "Path": "/logs/",
-      "Name": "sec-core.log",
-      "Level": "debug"
-    },
     "devp2pConfig": {
       "Port": 13331,
       "bootstrapNodes": [

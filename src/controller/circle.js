@@ -175,6 +175,25 @@ class SECJSTimeCircle {
     return groupStartTime
   }
 
+  getLastPowDuration (tokenChain) {
+    let lastPowDuration = 0
+    if (tokenChain.getCurrentHeight() !== 0) {
+      // |----------|----------|----------|----------|----------|----------|----------| //
+      // |----------|----------|------t2--|----------|----------|-------t1-|----------| //
+      // |----------|----------|------t2--|----------|----------|    t3   -|----------| //
+      // |----------|----------|------t2--|         t4          |    t3   -|----------| //
+      // |----------|----------|------t2--|        lastPowDuration        -|----------| //
+      // '|' means changing groups, 't1/t2' is the timestamp for first/second last block
+      let t1 = tokenChain.getLastBlock().TimeStamp
+      let t2 = tokenChain.getSecondLastBlock().TimeStamp
+      let t3 = t1 - this.getGroupStartTime(t1)
+      let t4 = this.getGroupStartTime(t1) - this.getGroupStartTime(t2) - this.intervalTime
+      lastPowDuration = t3 + t4
+    }
+
+    return lastPowDuration
+  }
+
   /**
    * reset circle object
    */
