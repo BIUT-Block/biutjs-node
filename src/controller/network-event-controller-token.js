@@ -332,9 +332,7 @@ class NetworkEvent {
 
           if (txArray) {
             txArray.forEach(tx => {
-              if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
-                this.BlockChain.TokenPool.addTxIntoPool(tx)
-              }
+              this.BlockChain.TokenPool.addTxIntoPool(tx)
             })
           }
         })
@@ -363,9 +361,7 @@ class NetworkEvent {
 
             if (txArray) {
               txArray.forEach(tx => {
-                if (!this.BlockChain.isTokenTxExist(tx.TxHash)) {
-                  this.BlockChain.TokenPool.addTxIntoPool(tx)
-                }
+                this.BlockChain.TokenPool.addTxIntoPool(tx)
               })
             }
           })

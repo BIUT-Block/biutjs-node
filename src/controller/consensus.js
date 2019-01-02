@@ -65,7 +65,7 @@ class SECConsensus {
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
         // append the pow reward tx
-        TxsInPoll.unshift(this.genPowRewardTx())
+        TxsInPoll.unshift(this._genPowRewardTx())
 
         // remove txs which already exist in previous blocks
         _.remove(TxsInPoll, (tx) => {
@@ -104,7 +104,7 @@ class SECConsensus {
     })
   }
 
-  genPowRewardTx () {
+  _genPowRewardTx () {
     // reward transaction
     let rewardTx = {
       Version: '0.1',
