@@ -117,7 +117,7 @@ class CenterController {
       _.remove(this.NetworkEventContainer, networkEvent => {
         return networkEvent.getInstanceID() === Utils.getPeerAddr(peer)
       })
-      debug(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
+      console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
     })
 
     this.rlp.on('peer:error', (peer, err) => {
