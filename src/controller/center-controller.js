@@ -24,12 +24,14 @@ class CenterController {
     // -------------------------  NODE DISCOVERY PROTOCOL  -------------------------
     this.ndp = new SECDEVP2P.NDP(config.PRIVATE_KEY, {
       refreshInterval: SECConfig.SECBlock.devp2pConfig.ndp.refreshInterval,
+      timeout: SECConfig.SECBlock.devp2pConfig.ndp.timeout,
       endpoint: SECConfig.SECBlock.devp2pConfig.ndp.endpoint
     })
 
     // ------------------------  RLP TRANSPORT PROTOCOL  -----------------------
     this.rlp = new SECDEVP2P.RLPx(config.PRIVATE_KEY, {
       ndp: this.ndp,
+      timeout: SECConfig.SECBlock.devp2pConfig.rlp.timeout,
       maxPeers: SECConfig.SECBlock.devp2pConfig.rlp.maxPeers,
       capabilities: [
         SECDEVP2P.SEC.sec
@@ -226,7 +228,7 @@ class CenterController {
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
-    }, ms('30m'))
+    }, ms('30s'))
   }
 }
 
