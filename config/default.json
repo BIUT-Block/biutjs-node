@@ -30,7 +30,8 @@
       "txCache": 1000,
       "blocksCache": 100,
       "ndp": {
-        "refreshInterval": 30000,
+        "timeout": 60000,
+        "refreshInterval": 60000,
         "endpoint": {
           "address": "0.0.0.0",
           "udpPort": 13331,
@@ -39,6 +40,7 @@
       },
       "rlp": {
         "maxPeers": 25,
+        "timeout": 60000,
         "clientId": "sec",
         "remoteClientIdFilter": [],
         "listenPort": "",

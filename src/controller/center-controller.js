@@ -24,6 +24,7 @@ class CenterController {
     // -------------------------  NODE DISCOVERY PROTOCOL  -------------------------
     this.ndp = new SECDEVP2P.NDP(config.PRIVATE_KEY, {
       refreshInterval: SECConfig.SECBlock.devp2pConfig.ndp.refreshInterval,
+      timeout: SECConfig.SECBlock.devp2pConfig.ndp.timeout,
       endpoint: SECConfig.SECBlock.devp2pConfig.ndp.endpoint
     })
 
@@ -31,6 +32,7 @@ class CenterController {
     this.rlp = new SECDEVP2P.RLPx(config.PRIVATE_KEY, {
       ndp: this.ndp,
       maxPeers: SECConfig.SECBlock.devp2pConfig.rlp.maxPeers,
+      timeout: SECConfig.SECBlock.devp2pConfig.rlp.timeout,
       capabilities: [
         SECDEVP2P.SEC.sec
       ],
@@ -153,6 +155,7 @@ class CenterController {
       debug('BlockChain init finish')
       this._initNDP()
       this._initRLP()
+      this.__refreshDHTConnections()
       this.run()
     })
     this.BlockChain.run()
@@ -194,6 +197,7 @@ class CenterController {
         debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
         debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
       }
+      // for refresh NodesTable
       let _peers = []
       peers.forEach(peer => {
         _peers.push({
@@ -206,6 +210,19 @@ class CenterController {
       this.nodesIPSync.updateNodesTable(_peers)
     }, ms('30s'))
     this._runConsensus()
+  }
+
+  _refreshDHTConnections () {
+    setInterval(() => {
+      const peers = this.ndp.getPeers()
+      peers.forEach(peer => {
+        this.NDP.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
+          console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
+        }).catch((err) => {
+          console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+        })
+      })
+    }, ms('30s'))
   }
 }
 
