@@ -216,7 +216,7 @@ class CenterController {
     setInterval(() => {
       const peers = this.ndp.getPeers()
       peers.forEach(peer => {
-        this.NDP.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
+        this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
           console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
         }).catch((err) => {
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
