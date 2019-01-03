@@ -426,7 +426,7 @@ class NetworkEvent {
       } else {
         debug('Fork founded!')
         let forkPosition = 0
-        for (let i = remoteHeight - 1; i >= 0; i--) {
+        for (let i = remoteHeight - 1; i >= 1; i--) {
           if (localHashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
             forkPosition = i + 1
             debug('Fork Position: ' + forkPosition)
