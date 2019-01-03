@@ -155,7 +155,7 @@ class CenterController {
       debug('BlockChain init finish')
       this._initNDP()
       this._initRLP()
-      this.__refreshDHTConnections()
+      this._refreshDHTConnections()
       this.run()
     })
     this.BlockChain.run()
