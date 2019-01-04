@@ -19,6 +19,10 @@ class Core {
     dbconfig.cacheDBPath = config.cacheDBPath
 
     // -------------------------------  SEC DATAHANDLER  ------------------------------- //
+    if (process.env.test) {
+      dbconfig.DBPath = config.DBPath + 'test/'
+    }
+
     let TokenBlockchainDataHandler = new SECDatahandler.TokenBlockChainDB(dbconfig)
     let txDbDict = {}
     dbconfig.ID.forEach((TxChainID) => {

@@ -27,6 +27,12 @@
           "port": "13331"
         }
       ],
+      "testBootstrapNodes": [
+        {
+          "ip": "18.197.120.79",
+          "port": "13331"
+        }
+      ],
       "txCache": 1000,
       "blocksCache": 100,
       "ndp": {
