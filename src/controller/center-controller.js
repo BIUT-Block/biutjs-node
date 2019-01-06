@@ -186,7 +186,7 @@ class CenterController {
       const openSlots = this.rlp._getOpenSlots()
       const queueLength = this.rlp._peersQueue.length
       const queueLength2 = this.rlp._peersQueue.filter((o) => o.ts <= Date.now()).length
-      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
+      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}, Current Token Block Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
       rlpPeers.forEach((peer, index) => {
         debug(chalk.yellow(`    Peer ${index + 1} : ${Utils.getPeerAddr(peer)}) in RLP`))
       })
