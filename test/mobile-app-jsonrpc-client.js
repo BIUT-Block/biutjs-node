@@ -22,13 +22,14 @@ class MobileAppRpcClient {
     // this.sec_getBalance()
     // this.sec_sendRawTransaction()
     // this.sec_getTransactions()
-    this.sec_freeCharge()
+    // this.sec_freeCharge()
     // this.sec_getTokenChainSize()
     // this.sec_setPOW()
     // this.sec_startNetworkEvent()
     // this.sec_getBlockByHash()
     // this.sec_getWholeTokenBlockchain()
     // this.sec_setAddress()
+    this.sec_removeDataFolder()
   }
 
   sec_getBalance () {
@@ -156,6 +157,15 @@ class MobileAppRpcClient {
     client.request('sec_setAddress', request, (err, response) => {
       if (err) console.log(err)
       console.log('sec_setAddress')
+      console.log(response)
+    })
+  }
+
+  sec_removeDataFolder () {
+    let request = []
+    client.request('sec_removeDataFolder', request, (err, response) => {
+      if (err) console.log(err)
+      console.log('sec_removeDataFolder')
       console.log(response)
     })
   }
