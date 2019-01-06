@@ -82,7 +82,7 @@
     },
     "powConfig": {
       "path": "powCache",
-      "expectedDifficulty": 20000
+      "expectedDifficulty": 300000
     }
   }
 }

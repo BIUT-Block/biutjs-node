@@ -66,7 +66,7 @@ class BlockChain {
       }, ms('200s'))
       this.TokenTimer = setInterval(() => {
         this.generateTokenTransaction()
-      }, ms('100s'))
+      }, ms('200s'))
     }
   }
 
