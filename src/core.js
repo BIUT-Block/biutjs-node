@@ -46,7 +46,8 @@ class Core {
     this.APIs = new APIs({
       SECTokenDataHandler: TokenBlockchainDataHandler,
       SECTxDbDict: txDbDict,
-      CenterController: this.CenterController
+      CenterController: this.CenterController,
+      DBPath: dbconfig.DBPath
     })
   }
 
