@@ -19,7 +19,7 @@ class Core {
     dbconfig.cacheDBPath = config.cacheDBPath
 
     // -------------------------------  SEC DATAHANDLER  ------------------------------- //
-    if (process.env.test) {
+    if (process.env.secTest) {
       dbconfig.DBPath = config.DBPath + 'test/'
     }
 

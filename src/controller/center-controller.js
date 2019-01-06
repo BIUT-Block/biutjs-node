@@ -20,7 +20,7 @@ class CenterController {
     // -----------------------------  NODE CONFIG  -----------------------------
     this.NodePort = SECConfig.SECBlock.devp2pConfig.Port
     this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.bootstrapNodes
-    if (process.env.test) {
+    if (process.env.secTest) {
       this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.testBootstrapNodes
     }
 
