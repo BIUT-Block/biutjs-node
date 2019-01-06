@@ -36,7 +36,6 @@
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.11",
     "public-ip": "^2.5.0",
-    "rimraf": "^2.6.3",
     "secp256k1": "3.6.1",
     "systeminformation": "^3.54.0"
   }

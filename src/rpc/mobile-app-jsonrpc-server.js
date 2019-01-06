@@ -1,5 +1,4 @@
 const jayson = require('jayson')
-const rimraf = require('rimraf')
 
 let core = {}
 
@@ -260,21 +259,6 @@ let server = jayson.server({
         response.status = '1'
         response.message = 'OK'
         response.info = value
-      }
-      callback(null, response)
-    })
-  },
-
-  sec_clearDataFolder: function (args, callback) {
-    let response = {}
-    let dataPath = core.APIs.getDataFolderPath()
-    rimraf(dataPath, (err) => {
-      if (err) {
-        response.status = '0'
-        response.info = `Failed to get Whole TokenBlockchain, error info: ${err}`
-      } else {
-        response.status = '1'
-        response.message = 'OK'
       }
       callback(null, response)
     })

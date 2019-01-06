@@ -11,7 +11,6 @@ class APIs {
     this.SECTokenDataHandler = config.SECTokenDataHandler
     this.SECTxDbDict = config.SECTxDbDict
     this.CenterController = config.CenterController
-    this.DBPath = config.DBPath
   }
 
   // ----------------------------  TOKEN CHAIN  ---------------------------
@@ -208,10 +207,6 @@ class APIs {
   setAddress (address) {
     this.CenterController.config.SECAccount.setAddress(address)
     return true
-  }
-
-  getDataFolderPath () {
-    return this.DBPath
   }
 }
 
