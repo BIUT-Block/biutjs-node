@@ -209,9 +209,8 @@ class APIs {
     return true
   }
 
-  clearCache () {
-    this.CenterController.getBlockchain().SECTokenBlockChain.tokenBlockChain = []
-    this.CenterController.getBlockchain().SECTokenBlockChain.tokenTx = {}
+  clearDB (callback) {
+    this.SECTokenDataHandler.clearDB(callback)
   }
 }
 
