@@ -7,7 +7,6 @@ const SECConfig = require('../../config/default.json')
 const SECUtils = require('@sec-block/secjs-util')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
-const SECTransaction = require('@sec-block/secjs-tx')
 const SECCircle = require('./circle')
 
 class SECConsensus {
@@ -65,7 +64,7 @@ class SECConsensus {
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
         // append the pow reward tx
-        TxsInPoll.unshift(this._genPowRewardTx())
+        TxsInPoll.unshift(this.BlockChain._genPowRewardTx())
 
         // remove txs which already exist in previous blocks
         _.remove(TxsInPoll, (tx) => {
@@ -73,7 +72,7 @@ class SECConsensus {
             tx = JSON.parse(tx)
           }
 
-          return this.BlockChain.isTokenTxExist(tx.TxHash)
+          return (this.BlockChain.isTokenTxExist(tx.TxHash) || !(this.BlockChain._checkBalance(tx.TxFrom, tx.Value)))
         })
 
         // assign txHeight
@@ -102,26 +101,6 @@ class SECConsensus {
         this.resetPOW()
       }
     })
-  }
-
-  _genPowRewardTx () {
-    // reward transaction
-    let rewardTx = {
-      Version: '0.1',
-      TxReceiptStatus: 'success',
-      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-      TxFrom: '0000000000000000000000000000000000000000',
-      TxTo: this.BlockChain.SECAccount.getAddress(),
-      Value: '2',
-      ContractAddress: '',
-      GasLimit: '0',
-      GasUsedByTxn: '0',
-      GasPrice: '0',
-      Nonce: this.BlockChain.SECTokenBlockChain.getCurrentHeight().toString(),
-      InputData: `Mining reward`
-    }
-    rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
-    return rewardTx
   }
 
   resetPOW () {

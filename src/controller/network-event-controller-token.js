@@ -364,6 +364,7 @@ class NetworkEvent {
                 this.BlockChain.TokenPool.addTxIntoPool(tx)
               })
             }
+            this.BlockChain.TokenPool.updateByBlock(block)
           })
         } catch (error) {
           debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)

@@ -20,6 +20,9 @@ class CenterController {
     // -----------------------------  NODE CONFIG  -----------------------------
     this.NodePort = SECConfig.SECBlock.devp2pConfig.Port
     this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.bootstrapNodes
+    if (process.env.secTest) {
+      this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.testBootstrapNodes
+    }
 
     // -------------------------  NODE DISCOVERY PROTOCOL  -------------------------
     this.ndp = new SECDEVP2P.NDP(config.PRIVATE_KEY, {

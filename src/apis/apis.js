@@ -208,6 +208,10 @@ class APIs {
     this.CenterController.config.SECAccount.setAddress(address)
     return true
   }
+
+  clearDB (callback) {
+    this.SECTokenDataHandler.clearDB(callback)
+  }
 }
 
 module.exports = APIs

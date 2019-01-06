@@ -1,16 +1,18 @@
 const ms = require('ms')
 const chalk = require('chalk')
-// const util = require('util')
+const Big = require('big.js')
 
 const SECDEVP2P = require('@sec-block/secjs-devp2p')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECTransaction = require('@sec-block/secjs-tx')
 const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
+const SECUtils = require('@sec-block/secjs-util')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:blockchain')
 
 const MainUtils = require('../utils/utils')
+const DEC_NUM = 8
 const txPoolConfig = {
   poolname: 'transactionpool'
 }
@@ -64,7 +66,7 @@ class BlockChain {
       }, ms('200s'))
       this.TokenTimer = setInterval(() => {
         this.generateTokenTransaction()
-      }, ms('100s'))
+      }, ms('200s'))
     }
   }
 
@@ -212,6 +214,59 @@ class BlockChain {
       return true
     }
 
+    return false
+  }
+
+  _genPowRewardTx () {
+    // reward transaction
+    let rewardTx = {
+      Version: '0.1',
+      TxReceiptStatus: 'success',
+      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: this.SECAccount.getAddress(),
+      Value: '2',
+      ContractAddress: '',
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      Nonce: this.SECTokenBlockChain.getCurrentHeight().toString(),
+      InputData: `Mining reward`
+    }
+    rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
+    return rewardTx
+  }
+
+  _checkBalance (userAddress, value) {
+    if (userAddress === '0000000000000000000000000000000000000000') {
+      return true
+    }
+
+    let txBuffer = this.SECTokenBlockChain.getTxBuffer()
+    let balance = new Big(10)
+    Object.keys(txBuffer).forEach((key) => {
+      if (txBuffer[key][0] === userAddress) {
+        balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
+      }
+      if (txBuffer[key][1] === userAddress) {
+        balance = balance.plus(txBuffer[key][2])
+      }
+    })
+
+    let tokenPool = this.TokenPool
+    let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+    txArray.forEach((tx) => {
+      if (tx.TxFrom === userAddress) {
+        balance = balance.minus(tx.Value).minus(tx.TxFee)
+      }
+    })
+
+    balance = balance.toFixed(DEC_NUM)
+    balance = parseFloat(balance)
+
+    if (balance >= value) {
+      return true
+    }
     return false
   }
 }
