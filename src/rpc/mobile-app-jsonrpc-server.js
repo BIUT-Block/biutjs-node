@@ -265,7 +265,7 @@ let server = jayson.server({
     })
   },
 
-  sec_removeDataFolder: function (args, callback) {
+  sec_clearDataFolder: function (args, callback) {
     let response = {}
     let dataPath = core.APIs.getDataFolderPath()
     rimraf(dataPath, (err) => {
