@@ -270,6 +270,14 @@ let server = jayson.server({
     response.status = '1'
     response.message = 'OK'
     callback(null, response)
+  },
+
+  sec_clearCache: function (args, callback) {
+    let response = {}
+    core.APIs.clearCache()
+    response.status = '1'
+    response.message = 'OK'
+    callback(null, response)
   }
 })
 

@@ -208,6 +208,11 @@ class APIs {
     this.CenterController.config.SECAccount.setAddress(address)
     return true
   }
+
+  clearCache () {
+    this.CenterController.getBlockchain().SECTokenBlockChain.tokenBlockChain = []
+    this.CenterController.getBlockchain().SECTokenBlockChain.tokenTx = {}
+  }
 }
 
 module.exports = APIs
