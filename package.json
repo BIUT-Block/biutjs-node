@@ -21,7 +21,7 @@
   },
   "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
   "dependencies": {
-    "@sec-block/secjs-blockchain": "^1.0.126",
+    "@sec-block/secjs-blockchain": "^1.0.127",
     "@sec-block/secjs-datahandler": "^1.1.29",
     "@sec-block/secjs-devp2p": "^1.0.21",
     "@sec-block/secjs-pow": "^1.0.14",
