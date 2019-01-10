@@ -22,7 +22,8 @@ class MobileAppRpcClient {
     // this.sec_getBalance()
     // this.sec_sendRawTransaction()
     // this.sec_getTransactions()
-    this.sec_freeCharge()
+    // this.sec_freeCharge()
+    this.sec_getNodeInfo()
     // this.sec_getTokenChainSize()
     // this.sec_setPOW()
     // this.sec_startNetworkEvent()
@@ -102,6 +103,17 @@ class MobileAppRpcClient {
     client.request('sec_freeCharge', request, (err, response) => {
       if (err) console.log(err)
       console.log('sec_freeCharge')
+      console.log(response)
+    })
+  }
+
+  sec_getNodeInfo () {
+    const request = [{
+      timeServer: 'de.pool.ntp.org'
+    }]
+    client.request('sec_getNodeInfo', request, (err, response) => {
+      if (err) console.log(err)
+      console.log('sec_getNodeInfo')
       console.log(response)
     })
   }
