@@ -64,7 +64,7 @@ class SECConsensus {
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
         // append the pow reward tx
-        TxsInPoll.unshift(this.BlockChain._genPowRewardTx())
+        TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
 
         // remove txs which already exist in previous blocks
         _.remove(TxsInPoll, (tx) => {
@@ -72,7 +72,7 @@ class SECConsensus {
             tx = JSON.parse(tx)
           }
 
-          return (this.BlockChain.isTokenTxExist(tx.TxHash) || !(this.BlockChain._checkBalance(tx.TxFrom, tx.Value)))
+          return (this.BlockChain.isTokenTxExist(tx.TxHash) || !(this.BlockChain.checkBalance(tx.TxFrom)))
         })
 
         // assign txHeight

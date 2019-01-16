@@ -217,7 +217,7 @@ class BlockChain {
     return false
   }
 
-  _genPowRewardTx () {
+  genPowRewardTx () {
     // reward transaction
     let rewardTx = {
       Version: '0.1',
@@ -237,7 +237,7 @@ class BlockChain {
     return rewardTx
   }
 
-  _checkBalance (userAddress, value) {
+  checkBalance (userAddress) {
     if (userAddress === '0000000000000000000000000000000000000000') {
       return true
     }
@@ -264,7 +264,7 @@ class BlockChain {
     balance = balance.toFixed(DEC_NUM)
     balance = parseFloat(balance)
 
-    if (balance >= value) {
+    if (balance >= 0) {
       return true
     }
     return false
