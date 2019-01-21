@@ -32,7 +32,7 @@ class SECJSTimeCircle {
   }
 
   /**
-   * get local host unix time
+   * get local host unix time (ms)
    * @returns {number} local unix time
    */
   getLocalHostTime () {
@@ -46,7 +46,7 @@ class SECJSTimeCircle {
   }
 
   /**
-   * get remote host unix time
+   * get remote host unix time (s)
    */
   getRemoteHostTime (callback, tryOut = 0) {
     SECUtil.asyncGetUTCTimeFromServer(this.timeServer).then((remoteHostTime) => {
@@ -66,6 +66,7 @@ class SECJSTimeCircle {
   calcTimeDifference (callback) {
     this.getRemoteHostTime((err, remoteTime) => {
       if (err) {
+        this.timeDiff = 0
         callback(err)
       } else {
         let localTime = this.getLocalHostTime()

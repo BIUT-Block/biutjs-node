@@ -118,7 +118,9 @@ class SECConsensus {
     let lockFlag = false
     this.circleInterval = setInterval(() => {
       let groupId = this.secCircle.getWorkingGroupId()
+      console.log(`this.currentGroup: ${this.currentGroup}, groupId: ${groupId}, lockFlag: ${lockFlag}`)
       if (this.currentGroup !== groupId && !lockFlag) {
+        console.log(`current timestamp: ${new Date().getTime()}, this.currentGroup: ${this.currentGroup}, groupId: ${groupId}`)
         let isNextPeriod = this.secCircle.isNextPeriod()
         if (isNextPeriod) {
           lockFlag = true
@@ -131,6 +133,8 @@ class SECConsensus {
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
 
+        console.log(`process.env.pow || this.powEnableFlag: ${process.env.pow || this.powEnableFlag}`)
+        console.log(`this.myGroupId: ${this.myGroupId}`)
         if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId) {
           this.resetPOW()
           this.runPOW()
