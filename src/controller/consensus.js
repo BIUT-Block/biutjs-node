@@ -120,10 +120,13 @@ class SECConsensus {
     let lockFlag = false
     this.circleInterval = setInterval(() => {
       let groupId = this.secCircle.getWorkingGroupId()
+
+      this.debugIndex++
       if (this.debugIndex >= 100) {
         console.log(`current timestamp: ${new Date().getTime()}, lockFlag: ${lockFlag}`)
         this.debugIndex = 0
       }
+
       if (this.currentGroup !== groupId && !lockFlag) {
         console.log(`this.currentGroup: ${this.currentGroup}, groupId: ${groupId}`)
         let isNextPeriod = this.secCircle.isNextPeriod()
