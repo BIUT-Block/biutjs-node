@@ -133,7 +133,7 @@ class APIs {
   calAccBalance (userAddress, callback) {
     let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
     try {
-      let balance = new Big(10)
+      let balance = new Big(1000)
       Object.keys(txBuffer).forEach((key) => {
         if (txBuffer[key][0] === userAddress) {
           balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
