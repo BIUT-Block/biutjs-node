@@ -33,8 +33,6 @@ class SECConsensus {
       // init variables
       this.myGroupId = 0
       this.groupIdBuffer = 0
-
-      this.debugIndex = 0
     } else {
       // init variables
       this.ID = config.ID
@@ -117,26 +115,17 @@ class SECConsensus {
     let accAddress = this.BlockChain.SECAccount.getAddress()
     this.myGroupId = this.secCircle.getHostGroupId(accAddress)
 
-    let lockFlag = false
     this.circleInterval = setInterval(() => {
       let groupId = this.secCircle.getWorkingGroupId()
 
-      this.debugIndex++
-      if (this.debugIndex >= 100) {
-        console.log(`current timestamp: ${new Date().getTime()}, lockFlag: ${lockFlag}`)
-        this.debugIndex = 0
-      }
-
-      if (this.currentGroup !== groupId && !lockFlag) {
+      if (this.currentGroup !== groupId) {
         console.log(`this.currentGroup: ${this.currentGroup}, groupId: ${groupId}`)
         let isNextPeriod = this.secCircle.isNextPeriod()
         if (isNextPeriod) {
-          lockFlag = true
           this.secCircle.resetCircle((err) => {
             if (err) {
-              // do nothing
+              console.log(err)
             }
-            lockFlag = false
           })
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
