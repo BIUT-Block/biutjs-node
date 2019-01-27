@@ -44,16 +44,29 @@ class SECConsensus {
   runPOW () {
     let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenChain)
 
-    let blockForPOW = {
-      Number: newBlock.Number,
-      lastBlockDifficulty: parseFloat(this.BlockChain.SECTokenChain.getLastBlock().Difficulty),
-      lastPowCalcTime: this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain),
-      Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
-      cacheDBPath: this.cacheDBPath
-    }
-    console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
-    this.powWorker.send(blockForPOW)
-    this.isPowRunning = true
+    this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
+      if (err) throw err
+      else {
+        newBlock.Number = lastBlock.Number + 1
+        newBlock.ParentHash = lastBlock.Hash
+        this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain, (err, lastPowCalcTime) => {
+          if (err) throw err
+          else {
+            let blockForPOW = {
+              Number: newBlock.Number,
+              lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
+              lastPowCalcTime: lastPowCalcTime,
+              Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
+              cacheDBPath: this.cacheDBPath
+            }
+            console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+            this.powWorker.send(blockForPOW)
+            this.isPowRunning = true
+          }
+        })
+      }
+    })
+
     this.powWorker.on('message', (result) => {
       if (result.result) {
         newBlock.Difficulty = result.Difficulty.toString()
@@ -93,7 +106,8 @@ class SECConsensus {
         // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
         try {
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(newBlock)
-          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (txArray) => {
+          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err, txArray) => {
+            if (err) throw err
             console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
             this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
             this.BlockChain.TokenPool.clear()

@@ -3,9 +3,7 @@ const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
 class SECVerify {
   constructor (Blockchain) {
     this.TokenBlockchain = Blockchain.SECTokenChain
-    this.LastTokenBlock = this.TokenBlockchain.getLastBlock()
     this.TxChainDict = Blockchain.SECTxChainDict
-    this.LastTxBlock = this.TxBlockchain.getLastBlock()
   }
 
   TxVerify (TxHash) {

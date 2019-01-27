@@ -114,7 +114,7 @@ class BlockChain {
   }
 
   generateTokenTx () {
-    const tx = SECRandomData.generateTokenTransaction(this.SECTokenChain)
+    const tx = SECRandomData.generateTokenTransaction()
     const tokenTx = new SECTransaction.SECTokenTx(tx)
     this.tokenPool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
@@ -171,7 +171,7 @@ class BlockChain {
   }
 
   generateTxTx (txChainID) {
-    const tx = SECRandomData.generateTxTx(this.SECTxChainDict[txChainID])
+    const tx = SECRandomData.generateTxTransaction()
     const txTx = new SECTransaction.SECTransactionTx(tx)
     this.TxPoolDict[txChainID].addTxIntoPool(tx)
     this.sendNewTokenTx(txTx)
@@ -204,8 +204,6 @@ class BlockChain {
 
   /**
    * Get user account balance
-   * @param  {String} userAddress - user account address
-   * @return {None}
    */
   getBalance (userAddress, callback) {
     let txBuffer = this.SECTokenChain.tokenTx
@@ -237,6 +235,9 @@ class BlockChain {
     }
   }
 
+  /**
+   * Get user account address
+   */
   getNonce (userAddress, callback) {
     let txBuffer = this.SECTokenChain.tokenTx
     let nonce = 0
