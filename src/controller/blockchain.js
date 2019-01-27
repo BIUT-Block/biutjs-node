@@ -1,18 +1,19 @@
 const ms = require('ms')
 const chalk = require('chalk')
 const Big = require('big.js')
+const createDebugLogger = require('debug')
+const debug = createDebugLogger('core:blockchain')
 
+const MainUtils = require('../utils/utils')
 const SECDEVP2P = require('@sec-block/secjs-devp2p')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECTransaction = require('@sec-block/secjs-tx')
 const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
-const createDebugLogger = require('debug')
-const debug = createDebugLogger('core:blockchain')
 
-const MainUtils = require('../utils/utils')
 const DEC_NUM = 8
+const INIT_BALANCE = 1000
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
@@ -25,19 +26,15 @@ class BlockChain {
     this.config = config
     this.SECAccount = this.config.SECAccount
 
-    // transaction pool
-    this.TokenPool = new SECTransactionPool(tokenPoolConfig)
-    this.TxPoolDict = {}
-    for (let txChainID in this.config.dbconfig.ID) {
-      this.TxPoolDict[txChainID] = new SECTransactionPool(txPoolConfig)
-    }
-
     // token block chain
+    this.tokenPool = new SECTransactionPool(tokenPoolConfig)
     this.SECTokenChain = new SECBlockChain.SECTokenBlockChain(this.config.dbconfig)
 
     // transaction block chain
+    this.TxPoolDict = {}
     this.SECTxChainDict = {}
     for (let txChainID in this.config.dbconfig.ID) {
+      this.TxPoolDict[txChainID] = new SECTransactionPool(txPoolConfig)
       let SECTxChain = new SECBlockChain.SECTransactionBlockChain({
         DBPath: this.config.dbconfig.DBPath,
         ID: txChainID
@@ -117,9 +114,9 @@ class BlockChain {
   }
 
   generateTokenTx () {
-    const tx = SECRandomData.generateTokenTx(this.SECTokenChain)
+    const tx = SECRandomData.generateTokenTransaction(this.SECTokenChain)
     const tokenTx = new SECTransaction.SECTokenTx(tx)
-    this.TokenPool.addTxIntoPool(tokenTx.getTx())
+    this.tokenPool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
   }
 
@@ -131,10 +128,10 @@ class BlockChain {
     }
 
     if (!this.isTokenTxExist(tokenTx.getTxHash())) {
-      this.TokenPool.addTxIntoPool(tokenTx.getTx())
+      this.tokenPool.addTxIntoPool(tokenTx.getTx())
     }
 
-    debug(`this.TokenPool: ${JSON.stringify(this.TokenPool.getAllTxFromPool())}`)
+    debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
     this.sendNewTokenTx(tokenTx)
 
     return true
@@ -205,13 +202,69 @@ class BlockChain {
   // -------------------------------  Other Functions  ------------------------------- //
   // --------------------------------------------------------------------------------- //
 
-  isTokenTxExist (txHash) {
-    // check if token tx already in previous blocks
-    if (txHash in this.SECTokenChain.tokenTx) {
-      return true
+  /**
+   * Get user account balance
+   * @param  {String} userAddress - user account address
+   * @return {None}
+   */
+  getBalance (userAddress, callback) {
+    let txBuffer = this.SECTokenChain.tokenTx
+    try {
+      let balance = new Big(INIT_BALANCE)
+      Object.keys(txBuffer).forEach((key) => {
+        if (txBuffer[key][0] === userAddress) {
+          balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
+        }
+        if (txBuffer[key][1] === userAddress) {
+          balance = balance.plus(txBuffer[key][2])
+        }
+      })
+
+      let tokenPool = this.CenterController.getBlockchain().TokenPool
+      let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+      txArray.forEach((tx) => {
+        if (tx.TxFrom === userAddress) {
+          balance = balance.minus(tx.Value).minus(tx.TxFee)
+        }
+      })
+
+      balance = balance.toFixed(DEC_NUM)
+      balance = parseFloat(balance).toString()
+      callback(null, balance)
+    } catch (e) {
+      let err = new Error(`Unexpected error occurs in getBalance(), error info: ${e}`)
+      callback(err, null)
+    }
+  }
+
+  getNonce (userAddress, callback) {
+    let txBuffer = this.SECTokenChain.tokenTx
+    let nonce = 0
+    Object.keys(txBuffer).forEach((key) => {
+      if (txBuffer[key][0] === userAddress || txBuffer[key][1] === userAddress) {
+        nonce++
+      }
+    })
+    nonce = nonce.toString()
+    callback(null, nonce)
+  }
+
+  checkBalance (userAddress, callback) {
+    if (userAddress === '0000000000000000000000000000000000000000') {
+      return callback(null, true)
     }
 
-    return false
+    this.getBalance(userAddress, (err, balance) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let result = false
+        if (balance >= 0) {
+          result = true
+        }
+        callback(null, result)
+      }
+    })
   }
 
   genPowRewardTx () {
@@ -234,36 +287,12 @@ class BlockChain {
     return rewardTx
   }
 
-  checkBalance (userAddress) {
-    if (userAddress === '0000000000000000000000000000000000000000') {
+  isTokenTxExist (txHash) {
+    // check if token tx already in previous blocks
+    if (txHash in this.SECTokenChain.tokenTx) {
       return true
     }
 
-    let txBuffer = this.SECTokenChain.getTxBuffer()
-    let balance = new Big(1000)
-    Object.keys(txBuffer).forEach((key) => {
-      if (txBuffer[key][0] === userAddress) {
-        balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
-      }
-      if (txBuffer[key][1] === userAddress) {
-        balance = balance.plus(txBuffer[key][2])
-      }
-    })
-
-    let tokenPool = this.TokenPool
-    let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-    txArray.forEach((tx) => {
-      if (tx.TxFrom === userAddress) {
-        balance = balance.minus(tx.Value).minus(tx.TxFee)
-      }
-    })
-
-    balance = balance.toFixed(DEC_NUM)
-    balance = parseFloat(balance)
-
-    if (balance >= 0) {
-      return true
-    }
     return false
   }
 }

@@ -277,7 +277,7 @@ let server = jayson.server({
    */
   getBalance: function (args, callback) {
     let response = {}
-    core.APIs.calAccBalance(args.address, (err, userBalance) => {
+    core.APIs.getBalance(args.address, (err, userBalance) => {
       if (err) {
         response.status = 'true'
         response.info = 'no previous transactions found'

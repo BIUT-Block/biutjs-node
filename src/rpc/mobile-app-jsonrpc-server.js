@@ -14,7 +14,7 @@ let server = jayson.server({
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
-      core.APIs.calAccBalance(accAddr, (err, balance) => {
+      core.APIs.getBalance(accAddr, (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
@@ -68,7 +68,7 @@ let server = jayson.server({
   */
   sec_sendRawTransaction: function (args, callback) {
     let response = {}
-    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+    core.APIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
@@ -91,7 +91,7 @@ let server = jayson.server({
         }
         let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
         tokenTx.TxHash = tokenTxObject.getTxHash()
-        core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
+        core.APIs.getBalance(tokenTx.TxFrom, (err, balance) => {
           if (err) {
             response.status = '0'
             response.info = `Account not found, which means account balance is 0, cant initiate a transaction`
@@ -127,7 +127,7 @@ let server = jayson.server({
     }
 
     let response = {}
-    core.APIs.getUserTxNonce(userInfo.secAddress, (err, nonce) => {
+    core.APIs.getNonce(userInfo.secAddress, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`

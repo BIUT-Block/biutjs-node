@@ -1,10 +1,7 @@
-const Big = require('big.js')
 const secTransaction = require('@sec-block/secjs-tx')
 const secUtils = require('@sec-block/secjs-util')
 const nodeData = require('../node/node-data')
 const getSize = require('get-folder-size')
-
-const DEC_NUM = 8
 
 class APIs {
   constructor (config) {
@@ -135,46 +132,12 @@ class APIs {
    * @param  {String} userAddress - user account address
    * @return {None}
    */
-  calAccBalance (userAddress, callback) {
-    let txBuffer = this.CenterController.getBlockchain().SECTokenChain.getTxBuffer()
-    try {
-      let balance = new Big(1000)
-      Object.keys(txBuffer).forEach((key) => {
-        if (txBuffer[key][0] === userAddress) {
-          balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
-        }
-        if (txBuffer[key][1] === userAddress) {
-          balance = balance.plus(txBuffer[key][2])
-        }
-      })
-
-      let tokenPool = this.CenterController.getBlockchain().TokenPool
-      let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-      txArray.forEach((tx) => {
-        if (tx.TxFrom === userAddress) {
-          balance = balance.minus(tx.Value).minus(tx.TxFee)
-        }
-      })
-
-      balance = balance.toFixed(DEC_NUM)
-      balance = parseFloat(balance).toString()
-      callback(null, balance)
-    } catch (e) {
-      let err = new Error(`Unexpected error occurs in calAccBalance(), error info: ${e}`)
-      callback(err, null)
-    }
+  getBalance (userAddress, callback) {
+    this.blockChain.getBalance(userAddress, callback)
   }
 
-  getUserTxNonce (userAddress, callback) {
-    let txBuffer = this.CenterController.getBlockchain().SECTokenChain.getTxBuffer()
-    let nonce = 0
-    Object.keys(txBuffer).forEach((key) => {
-      if (txBuffer[key][0] === userAddress || txBuffer[key][1] === userAddress) {
-        nonce++
-      }
-    })
-    nonce = nonce.toString()
-    callback(null, nonce)
+  getNonce (userAddress, callback) {
+    this.blockChain.getNonce(userAddress, callback)
   }
 
   getTokenChainSize (callback) {

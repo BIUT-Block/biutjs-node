@@ -72,7 +72,13 @@ class SECConsensus {
             tx = JSON.parse(tx)
           }
 
-          return (this.BlockChain.isTokenTxExist(tx.TxHash) || !(this.BlockChain.checkBalance(tx.TxFrom)))
+          this.BlockChain.checkBalance(tx.TxFrom, (err, result) => {
+            if (err) {
+              return true
+            } else {
+              return (this.BlockChain.isTokenTxExist(tx.TxHash) || !result)
+            }
+          })
         })
 
         // assign txHeight
@@ -119,7 +125,6 @@ class SECConsensus {
       let groupId = this.secCircle.getWorkingGroupId()
 
       if (this.currentGroup !== groupId) {
-        console.log(`this.currentGroup: ${this.currentGroup}, groupId: ${groupId}`)
         let isNextPeriod = this.secCircle.isNextPeriod()
         if (isNextPeriod) {
           this.secCircle.resetCircle((err) => {
@@ -130,8 +135,6 @@ class SECConsensus {
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
 
-        console.log(`process.env.pow || this.powEnableFlag: ${process.env.pow || this.powEnableFlag}`)
-        console.log(`this.myGroupId: ${this.myGroupId}`)
         if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId) {
           this.resetPOW()
           this.runPOW()
