@@ -13,44 +13,57 @@ const debug = createDebugLogger('core:blockchain')
 
 const MainUtils = require('../utils/utils')
 const DEC_NUM = 8
-const txPoolConfig = {
-  poolname: 'transactionpool'
-}
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
+const txPoolConfig = {
+  poolname: 'transactionpool'
+}
 
 class BlockChain {
-  constructor (config, callback) {
-    this.SECAccount = config.SECAccount
-    this.rlp = config.rlp
-    let initFlag = 0
+  constructor (config) {
+    this.config = config
+    this.SECAccount = this.config.SECAccount
 
-    // token block chain object creates and init
-    this.SECTokenBlockChain = new SECBlockChain.SECTokenBlockChain(config.SECTokenDataHandler)
-    this.SECTokenBlockChain.init(() => {
-      initFlag++
-      debug(chalk.blue('Token Blockchain init success'))
-      if (initFlag >= Object.keys(config.SECTxDbDict).length + 1) {
-        callback()
-      }
-    })
     // transaction pool
     this.TokenPool = new SECTransactionPool(tokenPoolConfig)
     this.TxPoolDict = {}
-    for (let txChainID in config.SECTxDbDict) {
+    for (let txChainID in this.config.dbconfig.ID) {
       this.TxPoolDict[txChainID] = new SECTransactionPool(txPoolConfig)
     }
 
-    // transaction block chain object creates and init
-    this.SECTransactionBlockChainDict = {}
-    for (let txChainID in config.SECTxDbDict) {
-      let SECTransactionBlockChain = new SECBlockChain.SECTransactionBlockChain(config.SECTxDbDict[txChainID])
-      this.SECTransactionBlockChainDict[txChainID] = SECTransactionBlockChain
-      SECTransactionBlockChain.init(() => {
+    // token block chain
+    this.SECTokenChain = new SECBlockChain.SECTokenBlockChain(this.config.dbconfig)
+
+    // transaction block chain
+    this.SECTxChainDict = {}
+    for (let txChainID in this.config.dbconfig.ID) {
+      let SECTxChain = new SECBlockChain.SECTransactionBlockChain({
+        DBPath: this.config.dbconfig.DBPath,
+        ID: txChainID
+      })
+      this.SECTxChainDict[txChainID] = SECTxChain
+    }
+  }
+
+  init (rlp, callback) {
+    this.rlp = rlp
+    let initFlag = 0
+    let chainsNum = Object.keys(this.config.dbconfig.ID).length + 1
+
+    this.SECTokenChain.init(() => {
+      initFlag++
+      debug(chalk.blue('Token Blockchain init success'))
+      if (initFlag >= chainsNum) {
+        callback()
+      }
+    })
+
+    for (let txChain in this.SECTxChainDict) {
+      txChain.init(() => {
         initFlag++
         debug(chalk.blue('Tx Blockchain init success'))
-        if (initFlag >= Object.keys(config.SECTxDbDict).length + 1) {
+        if (initFlag >= chainsNum) {
           callback()
         }
       })
@@ -61,11 +74,11 @@ class BlockChain {
     if (process.env.tx) {
       this.TxTimer = setInterval(() => {
         for (let txChainID in this.TxPoolDict) {
-          this.generateTxTransaction(txChainID)
+          this.generateTxTx(txChainID)
         }
       }, ms('200s'))
       this.TokenTimer = setInterval(() => {
-        this.generateTokenTransaction()
+        this.generateTokenTx()
       }, ms('200s'))
     }
   }
@@ -103,8 +116,8 @@ class BlockChain {
     })
   }
 
-  generateTokenTransaction () {
-    const tx = SECRandomData.generateTokenTransaction(this.SECTokenBlockChain)
+  generateTokenTx () {
+    const tx = SECRandomData.generateTokenTx(this.SECTokenChain)
     const tokenTx = new SECTransaction.SECTokenTx(tx)
     this.TokenPool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
@@ -125,10 +138,6 @@ class BlockChain {
     this.sendNewTokenTx(tokenTx)
 
     return true
-  }
-
-  getTokenBlockchain () {
-    return this.SECTokenBlockChain
   }
 
   // -------------------------------------------------------------------------------------------------- //
@@ -164,10 +173,17 @@ class BlockChain {
     })
   }
 
+  generateTxTx (txChainID) {
+    const tx = SECRandomData.generateTxTx(this.SECTxChainDict[txChainID])
+    const txTx = new SECTransaction.SECTransactionTx(tx)
+    this.TxPoolDict[txChainID].addTxIntoPool(tx)
+    this.sendNewTokenTx(txTx)
+  }
+
   generateTxBlock (TxChainID) {
-    let SECTransactionBlockChain = this.SECTransactionBlockChainDict[TxChainID]
-    let block = SECRandomData.generateTransactionBlock(SECTransactionBlockChain)
-    block.Number = SECTransactionBlockChain.getCurrentHeight() + 1
+    let SECTxChain = this.SECTxChainDict[TxChainID]
+    let block = SECRandomData.generateTransactionBlock(SECTxChain)
+    block.Number = SECTxChain.getCurrentHeight() + 1
     let TxsInPoll = this.TxPoolDict[TxChainID].getAllTxFromPool()
     TxsInPoll.forEach((tx) => {
       if (typeof tx !== 'object') {
@@ -177,31 +193,12 @@ class BlockChain {
     })
     block.Transactions = TxsInPoll
     block.Beneficiary = this.SECAccount.getAddress()
-    let SECTransactionBlock = new SECBlockChain.SECTransactionBlock(block)
-    this.SECTransactionBlockChainDict[TxChainID] = SECTransactionBlockChain
-    SECTransactionBlockChain.putBlockToDB(SECTransactionBlock.getBlock(), () => {
-      debug(chalk.green(`Tx Blockchain | New Block generated, ${this.TxPoolDict[TxChainID].getAllTxFromPool().length} Transactions saved in the new Block, Current Tx Blockchain Height: ${SECTransactionBlockChain.getCurrentHeight()}`))
-      this.sendNewTxBlockHash(SECTransactionBlock, TxChainID)
+    let SECTxBlock = new SECBlockChain.SECTransactionBlock(block)
+    SECTxChain.putBlockToDB(SECTxBlock.getBlock(), () => {
+      debug(chalk.green(`Tx Blockchain | New Block generated, ${this.TxPoolDict[TxChainID].getAllTxFromPool().length} Transactions saved in the new Block, Current Tx Blockchain Height: ${SECTxChain.getCurrentHeight()}`))
+      this.sendNewTxBlockHash(SECTxBlock, TxChainID)
       this.TxPoolDict[TxChainID].clear()
     })
-  }
-
-  generateTxTransaction (txChainID) {
-    const tx = SECRandomData.generateTxTransaction(this.SECTransactionBlockChainDict[txChainID])
-    const TransactionTx = new SECTransaction.SECTransactionTx(tx)
-    this.TxPoolDict[txChainID].addTxIntoPool(tx)
-    this.rlp.getPeers().forEach(peer => {
-      try {
-        this.sendNewTxTx(TransactionTx, txChainID)
-        debug('Send new Transaction Tx to Peer: ' + MainUtils.getPeerAddr(peer))
-      } catch (err) {
-        console.error(err)
-      }
-    })
-  }
-
-  getTxBlockchain (txChainID) {
-    return this.SECTransactionBlockChainDict[txChainID]
   }
 
   // --------------------------------------------------------------------------------- //
@@ -210,7 +207,7 @@ class BlockChain {
 
   isTokenTxExist (txHash) {
     // check if token tx already in previous blocks
-    if (txHash in this.SECTokenBlockChain.tokenTx) {
+    if (txHash in this.SECTokenChain.tokenTx) {
       return true
     }
 
@@ -230,7 +227,7 @@ class BlockChain {
       GasLimit: '0',
       GasUsedByTxn: '0',
       GasPrice: '0',
-      Nonce: this.SECTokenBlockChain.getCurrentHeight().toString(),
+      Nonce: this.SECTokenChain.getCurrentHeight().toString(),
       InputData: `Mining reward`
     }
     rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
@@ -242,7 +239,7 @@ class BlockChain {
       return true
     }
 
-    let txBuffer = this.SECTokenBlockChain.getTxBuffer()
+    let txBuffer = this.SECTokenChain.getTxBuffer()
     let balance = new Big(1000)
     Object.keys(txBuffer).forEach((key) => {
       if (txBuffer[key][0] === userAddress) {

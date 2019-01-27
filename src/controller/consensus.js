@@ -42,12 +42,12 @@ class SECConsensus {
   }
 
   runPOW () {
-    let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenBlockChain)
+    let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenChain)
 
     let blockForPOW = {
       Number: newBlock.Number,
-      lastBlockDifficulty: parseFloat(this.BlockChain.SECTokenBlockChain.getLastBlock().Difficulty),
-      lastPowCalcTime: this.secCircle.getLastPowDuration(this.BlockChain.SECTokenBlockChain),
+      lastBlockDifficulty: parseFloat(this.BlockChain.SECTokenChain.getLastBlock().Difficulty),
+      lastPowCalcTime: this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain),
       Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
       cacheDBPath: this.cacheDBPath
     }
@@ -87,8 +87,8 @@ class SECConsensus {
         // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
         try {
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(newBlock)
-          this.BlockChain.SECTokenBlockChain.putBlockToDB(newSECTokenBlock.getBlock(), (txArray) => {
-            console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
+          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (txArray) => {
+            console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
             this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
             this.BlockChain.TokenPool.clear()
             this.resetPOW()

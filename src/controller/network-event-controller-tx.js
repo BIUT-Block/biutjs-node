@@ -53,8 +53,8 @@ class NetworkEventTx {
     let status = {
       networkId: this.CHAIN_ID,
       td: 0, // transaction block chain does not have difficulty
-      bestHash: Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getLastBlockHash(), 'hex'),
-      genesisHash: Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getGenesisBlockHash(), 'hex')
+      bestHash: Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getLastBlockHash(), 'hex'),
+      genesisHash: Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getGenesisBlockHash(), 'hex')
     }
     this.sec.sendStatus(status)
     debug(chalk.bold.yellowBright('Sending Local Status to Peer...'))
@@ -168,7 +168,7 @@ class NetworkEventTx {
     let headers = []
     if (this.forkVerified) {
       let blockHeaderHash = payload[0].toString('hex')
-      let localTxBlockchain = this.BlockChain.SECTransactionBlockChainDict[this.ID].getBlockChain()
+      let localTxBlockchain = this.BlockChain.SECTxChainDict[this.ID].getBlockChain()
       let _block = localTxBlockchain.filter(_block => _block.Hash === blockHeaderHash)[0]
       if (_block) {
         let localTxBlock = new SECBlockChain.SECTransactionBlock(_block)
@@ -177,7 +177,7 @@ class NetworkEventTx {
     } else {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
       if (SECDEVP2P._util.buffer2int(payload[0]) === this.CHECK_BLOCK_NR) {
-        let block = this.BlockChain.SECTransactionBlockChainDict[this.ID].getBlockChain()[this.CHECK_BLOCK_NR - 1]
+        let block = this.BlockChain.SECTxChainDict[this.ID].getBlockChain()[this.CHECK_BLOCK_NR - 1]
         let checkBlock = new SECBlockChain.SECTransactionBlock(block)
         headers.push([checkBlock.getBlockHeaderBuffer(), Buffer.from(checkBlock.getBlock().Beneficiary)])
         debug('REMOTE CHECK_BLOCK_HEADER: ')
@@ -197,7 +197,7 @@ class NetworkEventTx {
         this.peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
         return
       }
-      let expectedHash = this.BlockChain.SECTransactionBlockChainDict[this.ID].getGenesisBlockHash()
+      let expectedHash = this.BlockChain.SECTxChainDict[this.ID].getGenesisBlockHash()
       debug(`Expected Hash: ${expectedHash}`)
       let block = new SECBlockChain.SECTransactionBlock()
       block.setBlockHeaderFromBuffer(payload[0][0])
@@ -243,7 +243,7 @@ class NetworkEventTx {
 
     let bodies = []
     let blockHeaderHash = payload[0].toString('hex')
-    let localTxBlockchain = this.BlockChain.SECTransactionBlockChainDict[this.ID].getBlockChain()
+    let localTxBlockchain = this.BlockChain.SECTxChainDict[this.ID].getBlockChain()
     let _block = localTxBlockchain.filter(_block => _block.Hash === blockHeaderHash)[0]
     if (_block) {
       let localTxBlock = new SECBlockChain.SECTransactionBlock(_block)
@@ -274,9 +274,9 @@ class NetworkEventTx {
       let secblock = NewSECBlock.getBlock()
       secblock.Transactions = JSON.parse(JSON.stringify(secblock.Transactions))
       isValidPayload = true
-      if (secblock.Number === this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight() + 1) {
+      if (secblock.Number === this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight() + 1) {
         try {
-          this.BlockChain.SECTransactionBlockChainDict[this.ID].putBlockToDB(secblock, () => {
+          this.BlockChain.SECTxChainDict[this.ID].putBlockToDB(secblock, () => {
             debug(chalk.green(`Get New Transaction Block from: ${this.addr} and saved in local Blockchain`))
             let newSECTxBlock = new SECBlockChain.SECTransactionBlock(secblock)
             this._onNewBlock(newSECTxBlock)
@@ -285,20 +285,20 @@ class NetworkEventTx {
           // TODO: to be tested
           let NodeData = [
             1,
-            SECDEVP2P._util.int2buffer(this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight()),
-            Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getLastBlockHash(), 'hex'),
-            Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getGenesisBlockHash(), 'hex'),
-            Buffer.from(JSON.stringify(this.BlockChain.SECTransactionBlockChainDict[this.ID].getHashList()))
+            SECDEVP2P._util.int2buffer(this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight()),
+            Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getLastBlockHash(), 'hex'),
+            Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getGenesisBlockHash(), 'hex'),
+            Buffer.from(JSON.stringify(this.BlockChain.SECTxChainDict[this.ID].getHashList()))
           ]
           this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from(this.ID, 'utf-8'), NodeData])
         }
-      } else if (secblock.Number > this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight() + 1) {
+      } else if (secblock.Number > this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight() + 1) {
         let NodeData = [
           1,
-          SECDEVP2P._util.int2buffer(this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight()),
-          Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getLastBlockHash(), 'hex'),
-          Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getGenesisBlockHash(), 'hex'),
-          Buffer.from(JSON.stringify(this.BlockChain.SECTransactionBlockChainDict[this.ID].getHashList()))
+          SECDEVP2P._util.int2buffer(this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight()),
+          Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getLastBlockHash(), 'hex'),
+          Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getGenesisBlockHash(), 'hex'),
+          Buffer.from(JSON.stringify(this.BlockChain.SECTxChainDict[this.ID].getHashList()))
         ]
         this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from(this.ID, 'utf-8'), NodeData])
       } else {
@@ -331,12 +331,12 @@ class NetworkEventTx {
       }
     })
     if (blockArray.length !== 0) {
-      this.BlockChain.SECTransactionBlockChainDict[this.ID].updateBlockchain(blockArray[0].Number, blockArray, (err) => {
+      this.BlockChain.SECTxChainDict[this.ID].updateBlockchain(blockArray[0].Number, blockArray, (err) => {
         if (err) {
         }
         debug(blockArray.length + ' Blocks updated')
         debug('Update Transaction Blockchain Finished!')
-        this.BlockChain.TxPoolDict[this.ID].updateByBlockChain(this.BlockChain.SECTransactionBlockChainDict[this.ID])
+        this.BlockChain.TxPoolDict[this.ID].updateByBlockChain(this.BlockChain.SECTxChainDict[this.ID])
         debug(chalk.bold.yellow(`===== NEW_BLOCK End =====`))
       })
     }
@@ -358,10 +358,10 @@ class NetworkEventTx {
     debug(chalk.bold.yellow(`===== GET_NODE_DATA =====`))
     let NodeData = [
       1,
-      SECDEVP2P._util.int2buffer(this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight()),
-      Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getLastBlockHash(), 'hex'),
-      Buffer.from(this.BlockChain.SECTransactionBlockChainDict[this.ID].getGenesisBlockHash(), 'hex'),
-      Buffer.from(JSON.stringify(this.BlockChain.SECTransactionBlockChainDict[this.ID].getHashList()))
+      SECDEVP2P._util.int2buffer(this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight()),
+      Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getLastBlockHash(), 'hex'),
+      Buffer.from(this.BlockChain.SECTxChainDict[this.ID].getGenesisBlockHash(), 'hex'),
+      Buffer.from(JSON.stringify(this.BlockChain.SECTxChainDict[this.ID].getHashList()))
     ]
     this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from(this.ID, 'utf-8'), NodeData])
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
@@ -369,9 +369,9 @@ class NetworkEventTx {
 
   NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
-    let localHeight = this.BlockChain.SECTransactionBlockChainDict[this.ID].getCurrentHeight()
-    let localLastHash = this.BlockChain.SECTransactionBlockChainDict[this.ID].getLastBlockHash()
-    let localHashList = this.BlockChain.SECTransactionBlockChainDict[this.ID].getHashList()
+    let localHeight = this.BlockChain.SECTxChainDict[this.ID].getCurrentHeight()
+    let localLastHash = this.BlockChain.SECTxChainDict[this.ID].getLastBlockHash()
+    let localHashList = this.BlockChain.SECTxChainDict[this.ID].getHashList()
     let remoteHeight = SECDEVP2P._util.buffer2int(payload[1])
     let remoteLastHash = payload[2].toString('hex')
     let remoteHashList = JSON.parse(payload[4].toString())
@@ -385,7 +385,7 @@ class NetworkEventTx {
       let blockPosition = localHashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
       if (blockPosition.length > 0) {
         debug('No Fork founded!')
-        let newBlocks = this.BlockChain.SECTransactionBlockChainDict[this.ID].getBlockChain().slice(remoteHeight + 1)
+        let newBlocks = this.BlockChain.SECTxChainDict[this.ID].getBlockChain().slice(remoteHeight + 1)
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
@@ -403,7 +403,7 @@ class NetworkEventTx {
             break
           }
         }
-        let newBlocks = this.BlockChain.SECTransactionBlockChainDict[this.ID].getBlockChain().slice(forkPosition)
+        let newBlocks = this.BlockChain.SECTxChainDict[this.ID].getBlockChain().slice(forkPosition)
         let newBlockBuffers = newBlocks.map(_block => {
           return new SECBlockChain.SECTransactionBlock(_block).getBlockBuffer()
         })
@@ -443,7 +443,7 @@ class NetworkEventTx {
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Tx Block ${newSECTxBlock.getBlock().Number}: ${newSECTxBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.TxPoolDict[this.ID].updateByBlockChain(this.BlockChain.SECTransactionBlockChainDict[this.ID])
+    this.BlockChain.TxPoolDict[this.ID].updateByBlockChain(this.BlockChain.SECTxChainDict[this.ID])
   }
 
   // TODO: must be reimplemented

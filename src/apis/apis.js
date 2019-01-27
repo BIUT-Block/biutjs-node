@@ -8,14 +8,19 @@ const DEC_NUM = 8
 
 class APIs {
   constructor (config) {
-    this.SECTokenDataHandler = config.SECTokenDataHandler
-    this.SECTxDbDict = config.SECTxDbDict
     this.CenterController = config.CenterController
+    this.blockChain = this.CenterController.getBlockchain()
+    this.SECTokenDB = this.blockChain.SECTokenChain.DB
+
+    this.SECTxDBDict = {}
+    for (let txChainID in this.blockChain.SECTxChainDict) {
+      this.SECTxDBDict[txChainID] = this.blockChain.SECTxChainDict[txChainID].DB
+    }
   }
 
   // ----------------------------  TOKEN CHAIN  ---------------------------
   getTokenBlock (hash, callback) {
-    this.SECTokenDataHandler.getTokenBlockFromDB(hash, (err, data) => {
+    this.SECTokenDB.getTokenBlockFromDB(hash, (err, data) => {
       if (err) {
         callback(err, null)
       } else {
@@ -25,15 +30,15 @@ class APIs {
   }
 
   getTokenBlockchain (minHeight, maxHeight, callback) {
-    this.SECTokenDataHandler.getTokenChain(minHeight, maxHeight, callback)
+    this.SECTokenDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
   getWholeTokenBlockchain (callback) {
-    this.SECTokenDataHandler.getTokenBlockChainDB(callback)
+    this.SECTokenDB.getTokenBlockChainDB(callback)
   }
 
   getTokenTx (TxHash, callback) {
-    this.SECTokenDataHandler.getTokenBlockChainDB((err, wholechain) => {
+    this.SECTokenDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
         throw new Error(`Can not Token Transaction from database`)
       }
@@ -50,7 +55,7 @@ class APIs {
   }
 
   getTokenTxForUser (userAddress, callback) {
-    this.SECTokenDataHandler.findTxForUser(userAddress, callback)
+    this.SECTokenDB.findTxForUser(userAddress, callback)
   }
 
   getTokenTxInPool (txHash, callback) {
@@ -131,7 +136,7 @@ class APIs {
    * @return {None}
    */
   calAccBalance (userAddress, callback) {
-    let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
+    let txBuffer = this.CenterController.getBlockchain().SECTokenChain.getTxBuffer()
     try {
       let balance = new Big(1000)
       Object.keys(txBuffer).forEach((key) => {
@@ -161,7 +166,7 @@ class APIs {
   }
 
   getUserTxNonce (userAddress, callback) {
-    let txBuffer = this.CenterController.getBlockchain().SECTokenBlockChain.getTxBuffer()
+    let txBuffer = this.CenterController.getBlockchain().SECTokenChain.getTxBuffer()
     let nonce = 0
     Object.keys(txBuffer).forEach((key) => {
       if (txBuffer[key][0] === userAddress || txBuffer[key][1] === userAddress) {
@@ -210,7 +215,7 @@ class APIs {
   }
 
   clearDB (callback) {
-    this.SECTokenDataHandler.clearDB(callback)
+    this.SECTokenDB.clearDB(callback)
   }
 }
 
