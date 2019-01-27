@@ -201,6 +201,8 @@ class SECJSTimeCircle {
           })
         }
       })
+    } else {
+      callback(null, lastPowDuration)
     }
   }
 

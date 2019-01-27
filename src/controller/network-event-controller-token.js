@@ -363,7 +363,7 @@ class NetworkEvent {
 
             if (txArray) {
               txArray.forEach(tx => {
-                this.BlockChain.TokenPool.addTxIntoPool(tx)
+                this.BlockChain.tokenPool.addTxIntoPool(tx)
               })
             }
           }
@@ -392,10 +392,10 @@ class NetworkEvent {
 
               if (txArray) {
                 txArray.forEach(tx => {
-                  this.BlockChain.TokenPool.addTxIntoPool(tx)
+                  this.BlockChain.tokenPool.addTxIntoPool(tx)
                 })
               }
-              this.BlockChain.TokenPool.updateByBlock(block)
+              this.BlockChain.tokenPool.updateByBlock(block)
             }
           })
         } catch (error) {
@@ -522,7 +522,7 @@ class NetworkEvent {
     txCache.set(txHashHex, true)
 
     if (!this.BlockChain.isTokenTxExist(tx.getTxHash())) {
-      this.BlockChain.TokenPool.addTxIntoPool(tx.getTx())
+      this.BlockChain.tokenPool.addTxIntoPool(tx.getTx())
     }
     this.BlockChain.sendNewTokenTx(tx, this.peer)
     console.log(`New Token Tx: ${tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
@@ -534,7 +534,7 @@ class NetworkEvent {
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.TokenPool.updateByBlock(newSECTokenBlock.getBlock())
+    this.BlockChain.tokenPool.updateByBlock(newSECTokenBlock.getBlock())
   }
 
   // TODO: must be reimplement

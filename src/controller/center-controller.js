@@ -193,7 +193,7 @@ class CenterController {
       })
       debug(`Peer nodes' IP addresses: ${rlpPeers}`)
       debug(chalk.blue('Current Token Transaction Poll Hash Array:'))
-      debug(this.BlockChain.TokenPool.getTxHashArrayFromPool())
+      debug(this.BlockChain.tokenPool.getTxHashArrayFromPool())
       for (let txChainID in this.txConsensusDict) {
         debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
         debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())

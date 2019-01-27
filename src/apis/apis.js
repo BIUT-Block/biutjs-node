@@ -56,7 +56,7 @@ class APIs {
   }
 
   getTokenTxInPool (txHash, callback) {
-    let tokenPool = this.CenterController.getBlockchain().TokenPool
+    let tokenPool = this.CenterController.getBlockchain().tokenPool
     let transaction = tokenPool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
     })
@@ -64,7 +64,7 @@ class APIs {
   }
 
   getTokenTxInPoolByAddress (userAddress) {
-    let tokenPool = this.CenterController.getBlockchain().TokenPool
+    let tokenPool = this.CenterController.getBlockchain().tokenPool
     return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 

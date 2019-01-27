@@ -75,7 +75,7 @@ class SECConsensus {
         newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
         newBlock.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
 
-        let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.TokenPool.getAllTxFromPool()))
+        let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
         // append the pow reward tx
         TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
 
@@ -110,7 +110,7 @@ class SECConsensus {
             if (err) throw err
             console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
             this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-            this.BlockChain.TokenPool.clear()
+            this.BlockChain.tokenPool.clear()
             this.resetPOW()
           })
         } catch (error) {

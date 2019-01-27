@@ -218,7 +218,7 @@ class BlockChain {
         }
       })
 
-      let tokenPool = this.CenterController.getBlockchain().TokenPool
+      let tokenPool = this.tokenPool
       let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
       txArray.forEach((tx) => {
         if (tx.TxFrom === userAddress) {
