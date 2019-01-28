@@ -10,7 +10,7 @@ process.on('message', blockForPOW => {
     expectedDifficulty: SECConfig.SECBlock.powConfig.expectedDifficulty
   })
   blockForPOW.Header = Buffer.from(blockForPOW.Header)
-  blockForPOW.Difficulty = 8
+  blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
   console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
   secPow.mineLight(blockForPOW, blockForPOW.Difficulty, (nonce, result) => {
     console.timeEnd(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
