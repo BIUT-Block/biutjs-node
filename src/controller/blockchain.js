@@ -234,7 +234,7 @@ class BlockChain {
    * Get user account address
    */
   getNonce (userAddress, callback) {
-    let txBuffer = this.SECTokenChain.accTree.getNonce((userAddress, (err, nonce) => {
+    this.SECTokenChain.accTree.getNonce(userAddress, (err, nonce) => {
       if (err) callback(err, null)
       else {
         nonce = parseInt(nonce)
