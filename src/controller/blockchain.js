@@ -13,7 +13,6 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
-const INIT_BALANCE = 1000
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
@@ -122,14 +121,18 @@ class BlockChain {
 
   initiateTokenTx (tx, callback) {
     let tokenTx = new SECTransaction.SECTokenTx(tx)
-    if (!tokenTx.verifySignature()) {
-      // failed to verify signature
-      let err = new Error('Failed to verify transaction signature')
-      return callback(err)
+
+    // free charge tx
+    if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
+      // verify tx signature
+      if (!tokenTx.verifySignature()) {
+        let err = new Error('Failed to verify transaction signature')
+        return callback(err)
+      }
     }
 
     this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
-      if (err) callback (err)
+      if (err) callback(err)
       else {
         if (!result) {
           this.tokenPool.addTxIntoPool(tokenTx.getTx())
@@ -247,7 +250,12 @@ class BlockChain {
   }
 
   checkBalance (userAddress, callback) {
+    // pow reward tx
     if (userAddress === '0000000000000000000000000000000000000000') {
+      return callback(null, true)
+    }
+    // free charge tx
+    if (userAddress === '0000000000000000000000000000000000000001') {
       return callback(null, true)
     }
 

@@ -123,9 +123,7 @@ let server = jayson.server({
   */
   sec_freeCharge: function (args, callback) {
     const userInfo = {
-      privKey: '56707bf1eaedf11f40f2d30d117e0e493ea03cbe29ba2afee838407db18c212c',
-      publicKey: '3d8e183470248effe2f5ab99f1a0c53c7c7415c7b4a1f35805a5b0ce7e7583a42c9f99644999dcd2c34534dac734829bb8bafc330995a989805d2afb68bbfcb7',
-      secAddress: '53a801c4da2cc72cf6be348369678b6f86c5edc1'
+      secAddress: '0000000000000000000000000000000000000001'
     }
 
     let response = {}
@@ -147,11 +145,10 @@ let server = jayson.server({
           GasUsedByTxn: '0',
           GasPrice: '0',
           InputData: 'Mobile APP JSONRPC API Function Test',
-          Signature: ''
+          Signature: {}
         }
 
         let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.Signature = tokenTxObject.signTx(userInfo.privKey)
         tokenTx.TxHash = tokenTxObject.getTxHash()
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
