@@ -111,8 +111,8 @@ let server = jayson.server({
                 }
               })
             }
-            callback(null, response)
           }
+          callback(null, response)
         })
       }
     })
