@@ -120,21 +120,26 @@ class BlockChain {
     this.sendNewTokenTx(tokenTx)
   }
 
-  initiateTokenTx (tx) {
+  initiateTokenTx (tx, callback) {
     let tokenTx = new SECTransaction.SECTokenTx(tx)
     if (!tokenTx.verifySignature()) {
       // failed to verify signature
-      return false
+      let err = new Error('Failed to verify transaction signature')
+      return callback(err)
     }
 
-    if (!this.isTokenTxExist(tokenTx.getTxHash())) {
-      this.tokenPool.addTxIntoPool(tokenTx.getTx())
-    }
+    this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
+      if (err) callback (err)
+      else {
+        if (!result) {
+          this.tokenPool.addTxIntoPool(tokenTx.getTx())
+        }
 
-    debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
-    this.sendNewTokenTx(tokenTx)
-
-    return true
+        debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
+        this.sendNewTokenTx(tokenTx)
+        callback(null)
+      }
+    })
   }
 
   // -------------------------------------------------------------------------------------------------- //
@@ -206,48 +211,39 @@ class BlockChain {
    * Get user account balance
    */
   getBalance (userAddress, callback) {
-    let txBuffer = this.SECTokenChain.tokenTx
-    try {
-      let balance = new Big(INIT_BALANCE)
-      Object.keys(txBuffer).forEach((key) => {
-        if (txBuffer[key][0] === userAddress) {
-          balance = balance.minus(txBuffer[key][2]).minus(txBuffer[key][3])
-        }
-        if (txBuffer[key][1] === userAddress) {
-          balance = balance.plus(txBuffer[key][2])
-        }
-      })
+    this.SECTokenChain.accTree.getBalance(userAddress, (err, balance) => {
+      if (err) callback(err)
+      else {
+        balance = new Big(balance)
 
-      let tokenPool = this.tokenPool
-      let txArray = tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-      txArray.forEach((tx) => {
-        if (tx.TxFrom === userAddress) {
-          balance = balance.minus(tx.Value).minus(tx.TxFee)
-        }
-      })
+        let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        txArray.forEach((tx) => {
+          if (tx.TxFrom === userAddress) {
+            balance = balance.minus(tx.Value).minus(tx.TxFee)
+          }
+        })
 
-      balance = balance.toFixed(DEC_NUM)
-      balance = parseFloat(balance).toString()
-      callback(null, balance)
-    } catch (e) {
-      let err = new Error(`Unexpected error occurs in getBalance(), error info: ${e}`)
-      callback(err, null)
-    }
+        balance = balance.toFixed(DEC_NUM)
+        balance = parseFloat(balance).toString()
+        callback(null, balance)
+      }
+    })
   }
 
   /**
    * Get user account address
    */
   getNonce (userAddress, callback) {
-    let txBuffer = this.SECTokenChain.tokenTx
-    let nonce = 0
-    Object.keys(txBuffer).forEach((key) => {
-      if (txBuffer[key][0] === userAddress || txBuffer[key][1] === userAddress) {
-        nonce++
+    let txBuffer = this.SECTokenChain.accTree.getNonce((userAddress, (err, nonce) => {
+      if (err) callback(err, null)
+      else {
+        nonce = parseInt(nonce)
+        let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        nonce = nonce + txArray.length
+        nonce = nonce.toString()
+        callback(null, nonce)
       }
     })
-    nonce = nonce.toString()
-    callback(null, nonce)
   }
 
   checkBalance (userAddress, callback) {
@@ -288,13 +284,14 @@ class BlockChain {
     return rewardTx
   }
 
-  isTokenTxExist (txHash) {
+  isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
-    if (txHash in this.SECTokenChain.tokenTx) {
-      return true
-    }
-
-    return false
+    this.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
+      if (err) callback(null, false)
+      else {
+        callback(null, true)
+      }
+    })
   }
 }
 

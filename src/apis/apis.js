@@ -7,11 +7,11 @@ class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
     this.blockChain = this.CenterController.getBlockchain()
-    this.SECTokenDB = this.blockChain.SECTokenChain.DB
+    this.SECTokenDB = this.blockChain.SECTokenChain.chainDB
 
     this.SECTxDBDict = {}
     for (let txChainID in this.blockChain.SECTxChainDict) {
-      this.SECTxDBDict[txChainID] = this.blockChain.SECTxChainDict[txChainID].DB
+      this.SECTxDBDict[txChainID] = this.blockChain.SECTxChainDict[txChainID].chainDB
     }
   }
 

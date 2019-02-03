@@ -85,11 +85,16 @@ class SECConsensus {
             tx = JSON.parse(tx)
           }
 
-          this.BlockChain.checkBalance(tx.TxFrom, (err, result) => {
+          this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
             if (err) {
               return true
             } else {
-              return (this.BlockChain.isTokenTxExist(tx.TxHash) || !result)
+              this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
+                if (err) return true
+                else {
+                  return (exiResult || !balResult)
+                }
+              })
             }
           })
         })
@@ -108,10 +113,12 @@ class SECConsensus {
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(newBlock)
           this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err, txArray) => {
             if (err) throw err
-            console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
-            this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-            this.BlockChain.tokenPool.clear()
-            this.resetPOW()
+            else {
+              console.log(chalk.green(`Token Blockchain | New Block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
+              this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
+              this.BlockChain.tokenPool.clear()
+              this.resetPOW()
+            }
           })
         } catch (error) {
           console.error(error)

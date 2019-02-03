@@ -100,17 +100,19 @@ let server = jayson.server({
               response.status = '0'
               response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
             } else {
-              if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-                response.status = '0'
-                response.info = 'Failed to verify transaction signature'
-              } else {
-                response.status = '1'
-                response.info = 'OK'
-                response.txHash = tokenTx.TxHash
-              }
+              core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+                if (err) {
+                  response.status = '0'
+                  response.info = `Error occurs: ${err}`
+                } else {
+                  response.status = '1'
+                  response.info = 'OK'
+                  response.txHash = tokenTx.TxHash
+                }
+              })
             }
+            callback(null, response)
           }
-          callback(null, response)
         })
       }
     })
@@ -131,7 +133,6 @@ let server = jayson.server({
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
-        callback(null, response)
       } else {
         let tokenTx = {
           Nonce: nonce,
@@ -152,17 +153,18 @@ let server = jayson.server({
         let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
         tokenTx.Signature = tokenTxObject.signTx(userInfo.privKey)
         tokenTx.TxHash = tokenTxObject.getTxHash()
-        if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-          response.status = '0'
-          response.info = 'Failed to verify transaction signature'
-        } else {
-          response.status = '1'
-          response.info = 'OK'
-          response.TxHash = tokenTx.TxHash
-        }
-
-        callback(null, response)
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+          if (err) {
+            response.status = '0'
+            response.info = 'Failed to verify transaction signature'
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.TxHash = tokenTx.TxHash
+          }
+        })
       }
+      callback(null, response)
     })
   },
 
