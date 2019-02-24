@@ -74,6 +74,7 @@ class SECConsensus {
         newBlock.Nonce = result.Nonce
         newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
         newBlock.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
+        newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
 
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
         // append the pow reward tx
