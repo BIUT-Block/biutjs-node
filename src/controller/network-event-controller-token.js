@@ -17,6 +17,9 @@ const MainUtils = require('../utils/utils')
 const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
+const SYNC_CHUNK = 20 // each sync package contains 20 blocks
+const SYNC_SPEED = 50 // sync speed: 50ms/block
+
 class NetworkEvent {
   constructor (config) {
     this.ID = config.ID
@@ -477,9 +480,12 @@ class NetworkEvent {
                 let newBlockBuffers = newBlocks.map(_block => {
                   return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
                 })
-                let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
-                syncBlockBuffers.forEach(_blockBuffer => {
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
+                let syncBlockBuffers = _.chunk(newBlockBuffers, SYNC_CHUNK)
+                async.eachSeries(syncBlockBuffers, (_blockBuffer, callback) => {
+                  setTimeout(() => {
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
+                    callback()
+                  }, SYNC_SPEED * SYNC_CHUNK)
                 })
               }
             })
@@ -499,9 +505,12 @@ class NetworkEvent {
                 let newBlockBuffers = newBlocks.map(_block => {
                   return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
                 })
-                let syncBlockBuffers = _.chunk(newBlockBuffers, 20)
-                syncBlockBuffers.forEach(_blockBuffer => {
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
+                let syncBlockBuffers = _.chunk(newBlockBuffers, SYNC_CHUNK)
+                async.eachSeries(syncBlockBuffers, (_blockBuffer, callback) => {
+                  setTimeout(() => {
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), _blockBuffer])
+                    callback()
+                  }, SYNC_SPEED * SYNC_CHUNK)
                 })
               }
             })
