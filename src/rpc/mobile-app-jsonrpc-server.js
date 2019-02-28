@@ -17,8 +17,8 @@ let server = jayson.server({
       core.APIs.getBalance(accAddr, (err, balance) => {
         if (err) {
           response.status = '0'
-          response.info = `Failed to get user balance, error info: ${err}`
-          response.value = '10'
+          response.info = `Failed to get user balance, account does not exist`
+          response.value = '1000'
         } else {
           response.status = '1'
           response.info = 'OK'
