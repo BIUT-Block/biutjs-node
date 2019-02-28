@@ -389,31 +389,25 @@ class NetworkEvent {
       let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
       if (!blocksCache.has(newTokenBlock.getHeaderHash())) {
         let block = Object.assign({}, newTokenBlock.getBlock())
-        try {
-          this.BlockChain.SECTokenChain.putBlockToDB(block, (err, txArray) => {
-            if (err) callback(err)
-            else {
-              console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-              blocksCache.set(newTokenBlock.getHeaderHash(), true)
-              this.Consensus.resetPOW()
+        this.BlockChain.SECTokenChain.putBlockToDB(block, (err, txArray) => {
+          if (err) callback(err)
+          else {
+            console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+            blocksCache.set(newTokenBlock.getHeaderHash(), true)
+            this.Consensus.resetPOW()
 
-              if (txArray) {
-                txArray.forEach(tx => {
-                  this.BlockChain.tokenPool.addTxIntoPool(tx)
-                })
-              }
-              this.BlockChain.tokenPool.updateByBlock(block)
-              callback()
+            if (txArray) {
+              txArray.forEach(tx => {
+                this.BlockChain.tokenPool.addTxIntoPool(tx)
+              })
             }
-          })
-        } catch (err) {
-          // debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', err)
-          callback(err)
-          // TODO: to be tested, not sure
-        }
+            this.BlockChain.tokenPool.updateByBlock(block)
+            callback()
+          }
+        })
       }
     }, (err) => {
-      throw err
+      if (err) throw err
     })
   }
 
