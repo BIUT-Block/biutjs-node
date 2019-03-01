@@ -121,6 +121,8 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
+    let tokenTx = new SECTransaction.SECTokenTx(tx)
+
     // check balance
     this.getBalance(tx.TxFrom, (err, value) => {
       if (err) callback(err)
@@ -134,21 +136,21 @@ class BlockChain {
         // free charge tx
         if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
           // verify tx signature
-          if (!tx.verifySignature()) {
+          if (!tokenTx.verifySignature()) {
             let err = new Error('Failed to verify transaction signature')
             return callback(err)
           }
         }
 
-        this.isTokenTxExist(tx.getTxHash(), (err, result) => {
+        this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
           if (err) callback(err)
           else {
             if (!result) {
-              this.tokenPool.addTxIntoPool(tx.getTx())
+              this.tokenPool.addTxIntoPool(tokenTx.getTx())
             }
 
             debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
-            this.sendNewTokenTx(tx)
+            this.sendNewTokenTx(tokenTx)
             callback(null)
           }
         })
