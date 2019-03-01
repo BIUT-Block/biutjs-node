@@ -17,8 +17,7 @@ let server = jayson.server({
       core.APIs.getBalance(accAddr, (err, balance) => {
         if (err) {
           response.status = '0'
-          response.info = `Failed to get user balance, account does not exist`
-          response.value = '1000'
+          response.info = `Failed to get user balance, error info: ${err}`
         } else {
           response.status = '1'
           response.info = 'OK'
@@ -91,26 +90,15 @@ let server = jayson.server({
         }
         let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
         tokenTx.TxHash = tokenTxObject.getTxHash()
-        core.APIs.getBalance(tokenTx.TxFrom, (err, balance) => {
+
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Account not found, which means account balance is 0, cant initiate a transaction`
+            response.info = `Error occurs: ${err}`
           } else {
-            if (balance < parseFloat(tokenTx.Value)) {
-              response.status = '0'
-              response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
-            } else {
-              core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
-                if (err) {
-                  response.status = '0'
-                  response.info = `Error occurs: ${err}`
-                } else {
-                  response.status = '1'
-                  response.info = 'OK'
-                  response.txHash = tokenTx.TxHash
-                }
-              })
-            }
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
           }
           callback(null, response)
         })
@@ -153,7 +141,7 @@ let server = jayson.server({
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = 'Failed to verify transaction signature'
+            response.info = `Error occurs, error info ${err}`
           } else {
             response.status = '1'
             response.info = 'OK'

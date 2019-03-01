@@ -122,6 +122,15 @@ class BlockChain {
   initiateTokenTx (tx, callback) {
     let tokenTx = new SECTransaction.SECTokenTx(tx)
 
+    // check balance
+    this.getBalance(tx.TxFrom, (err, value) => {
+      if (err) callback(err)
+      else if (value < parseFloat(tokenTx.Value)) {
+        let err = new Error(`Balance not enough`)
+        return callback(err)
+      }
+    })
+
     // free charge tx
     if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
       // verify tx signature
