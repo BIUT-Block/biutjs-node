@@ -88,9 +88,7 @@ let server = jayson.server({
           InputData: args[0].inputData,
           Signature: args[0].data
         }
-        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.TxHash = tokenTxObject.getTxHash()
-
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
@@ -136,8 +134,7 @@ let server = jayson.server({
           Signature: {}
         }
 
-        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.TxHash = tokenTxObject.getTxHash()
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'

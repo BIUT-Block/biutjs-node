@@ -13,6 +13,7 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
+const MAX_TRANSFER_VALUE = 10**8
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
@@ -120,36 +121,37 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
-    let tokenTx = new SECTransaction.SECTokenTx(tx)
-
     // check balance
     this.getBalance(tx.TxFrom, (err, value) => {
       if (err) callback(err)
-      else if (value < parseFloat(tokenTx.Value)) {
+      else if (value < parseFloat(tx.Value)) {
         let err = new Error(`Balance not enough`)
         return callback(err)
-      }
-    })
-
-    // free charge tx
-    if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
-      // verify tx signature
-      if (!tokenTx.verifySignature()) {
-        let err = new Error('Failed to verify transaction signature')
+      } else if (value >= MAX_TRANSFER_VALUE) {
+        let err = new Error(`Exceed max allowed transfer value`)
         return callback(err)
-      }
-    }
-
-    this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
-      if (err) callback(err)
-      else {
-        if (!result) {
-          this.tokenPool.addTxIntoPool(tokenTx.getTx())
+      } else {
+        // free charge tx
+        if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
+          // verify tx signature
+          if (!tx.verifySignature()) {
+            let err = new Error('Failed to verify transaction signature')
+            return callback(err)
+          }
         }
 
-        debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
-        this.sendNewTokenTx(tokenTx)
-        callback(null)
+        this.isTokenTxExist(tx.getTxHash(), (err, result) => {
+          if (err) callback(err)
+          else {
+            if (!result) {
+              this.tokenPool.addTxIntoPool(tx.getTx())
+            }
+
+            debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
+            this.sendNewTokenTx(tx)
+            callback(null)
+          }
+        })
       }
     })
   }
