@@ -29,7 +29,8 @@ class Core {
     })
 
     this.APIs = new APIs({
-      CenterController: this.CenterController
+      CenterController: this.CenterController,
+      dbconfig: dbconfig
     })
   }
 

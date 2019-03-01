@@ -8,6 +8,7 @@ class APIs {
     this.CenterController = config.CenterController
     this.blockChain = this.CenterController.getBlockchain()
     this.SECTokenDB = this.blockChain.SECTokenChain.chainDB
+    this.dbconfig = config.dbconfig
 
     this.SECTxDBDict = {}
     for (let txChainID in this.blockChain.SECTxChainDict) {
@@ -141,7 +142,7 @@ class APIs {
   }
 
   getTokenChainSize (callback) {
-    getSize(this.CenterController.dbconfig.DBPath + 'tokenBlockChain', (err, size) => {
+    getSize(this.dbconfig.DBPath + 'tokenBlockChain', (err, size) => {
       if (err) {
         callback(err, null)
       } else {
