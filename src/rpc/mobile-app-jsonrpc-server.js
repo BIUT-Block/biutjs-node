@@ -11,6 +11,11 @@ let server = jayson.server({
   */
   sec_getBalance: function (args, callback) {
     let response = {}
+    // if (args[0].coinType = null) {
+      // return all coins
+    // } else {
+      // args[0].coinType
+    // }
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
@@ -22,6 +27,7 @@ let server = jayson.server({
           response.status = '1'
           response.info = 'OK'
           response.value = balance
+          // response.value = {}
         }
         callback(null, response)
       })

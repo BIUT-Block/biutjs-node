@@ -13,7 +13,7 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
-const MAX_TRANSFER_VALUE = 10**8
+const MAX_TRANSFER_VALUE = 10 ** 8
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
