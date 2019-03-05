@@ -274,7 +274,7 @@ class NetworkEvent {
 
           // verify parent block hash
           let parentHash = block.getHeader().ParentHash
-          this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
+          this.BlockChain.SECTokenChain.getBlock(block.getHeader().Number - 1, (err, lastBlock) => {
             if (err) throw err
             else {
               if (lastBlock.Hash === parentHash) {
@@ -483,12 +483,12 @@ class NetworkEvent {
             let forkPosition = 0
             for (let i = remoteHeight - 1; i >= 1; i--) {
               if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
-                forkPosition = i + 1
+                forkPosition = remoteHashList[i].Number
                 debug('Fork Position: ' + forkPosition)
                 break
               }
             }
-            this.BlockChain.SECTokenChain.getBlocksFromDB(forkPosition, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
+            this.BlockChain.SECTokenChain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
               if (err) throw err
               else {
                 let blockBuffer = newBlocks.map(_block => {
@@ -499,6 +499,7 @@ class NetworkEvent {
                   SECDEVP2P._util.int2buffer(localHeight), // local chain height
                   blockBuffer
                 ]
+                debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks}`)
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), sentMsg])
               }
             })
