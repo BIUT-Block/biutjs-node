@@ -192,7 +192,7 @@ class NetworkEvent {
         else {
           if (blockArray.length > 0) {
             let localTokenBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
-            headers.push([localTokenBlock.getHeaderBuffer(), Buffer.from(blockArray[0].Beneficiary)])
+            headers.push(localTokenBlock.getHeaderBuffer())
 
             debug('SEC Send Message: BLOCK_HEADERS')
             this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), headers])
@@ -208,7 +208,7 @@ class NetworkEvent {
           if (err) throw err
           else {
             let checkBlock = new SECBlockChain.SECTokenBlock(block)
-            headers.push([checkBlock.getHeaderBuffer(), Buffer.from(checkBlock.getBlock().Beneficiary)])
+            headers.push(checkBlock.getHeaderBuffer())
             debug('REMOTE CHECK_BLOCK_HEADER: ')
             debug(util.inspect(checkBlock.getHeaderBuffer(), false, null))
 
@@ -235,7 +235,7 @@ class NetworkEvent {
         else {
           debug(`Expected Hash: ${geneBlock.Hash}`)
           let block = new SECBlockChain.SECTokenBlock()
-          block.setHeader(payload[0][0])
+          block.setHeader(payload[0])
           debug(`Remote Header Hash: ${block.getHeaderHash()}`)
           if (block.getHeaderHash() === geneBlock.Hash) {
             debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
@@ -254,13 +254,13 @@ class NetworkEvent {
         return
       }
       let block = new SECBlockChain.SECTokenBlock()
-      block.setHeader(payload[0][0])
+      block.setHeader(payload[0])
       while (requests.headers.length > 0) {
         const blockHash = requests.headers.shift()
         debug('Remote Block Header: ' + blockHash.toString('hex'))
         if (block.getHeaderHash() === blockHash.toString('hex')) {
           // verify that the beneficiary is in this group
-          let beneAddress = payload[0][1].toString('utf-8')
+          let beneAddress = block.getHeader().Beneficiary
           let timestamp = block.getHeader().TimeStamp
           let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
           let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
@@ -320,7 +320,8 @@ class NetworkEvent {
         if (blockArray.length > 0) {
           let localTokenBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
           debug('Beneficiary: ' + blockArray[0].Beneficiary)
-          bodies.push([localTokenBlock.getBodyBuffer(), Buffer.from(blockArray[0].Beneficiary)])
+          bodies.push(SECDEVP2P._util.int2buffer(blockArray[0].Number))
+          bodies.push(localTokenBlock.getBodyBuffer())
         }
         this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [Buffer.from('token', 'utf-8'), bodies])
       }
@@ -331,16 +332,16 @@ class NetworkEvent {
   BLOCK_BODIES (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
-    if (payload.length !== 1) {
-      debug(`${this.addr} not more than one block body expected (received: ${payload.length})`)
-      return
-    }
+
     while (requests.bodies.length > 0) {
       const block = requests.bodies.shift()
-      block.setBody(payload[0][0])
+      if (block.getHeader().Number !== payload[0]) {
+        break
+      }
+
+      block.setBody(payload[1])
       let _block = block.getBlock()
-      debug('Remote Beneficiary: ' + payload[0][1].toString())
-      _block.Beneficiary = payload[0][1].toString()
+      debug('Remote Beneficiary: ' + _block.Beneficiary)
       let NewSECBlock = new SECBlockChain.SECTokenBlock(_block)
       let secblock = NewSECBlock.getBlock()
       secblock.Transactions = JSON.parse(JSON.stringify(secblock.Transactions))
@@ -349,7 +350,7 @@ class NetworkEvent {
         this.BlockChain.SECTokenChain.putBlockToDB(secblock, (err, txArray) => {
           if (err) throw err
           else {
-            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain`))
+            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}`))
             let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
             this.Consensus.resetPOW()
             this._onNewBlock(newSECTokenBlock)
