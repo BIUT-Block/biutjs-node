@@ -288,16 +288,11 @@ class NetworkEvent {
                 if (newBlockNumber === localHeight + 1) {
                   // do nothing if two blockchains with the same length are forked
                 } else if (newBlockNumber > localHeight + 1) {
-                  this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+                  // if remote node has more blocks than local
+                  this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
                     if (err) throw err
                     else {
-                      // if remote node has more blocks than local
-                      this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-                        if (err) throw err
-                        else {
-                          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-                        }
-                      })
+                      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
                     }
                   })
                 } else {
@@ -425,20 +420,10 @@ class NetworkEvent {
 
   GET_NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_NODE_DATA =====`))
-    this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+    this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
       if (err) throw err
       else {
-        this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
-          if (err) throw err
-          else {
-            this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-              if (err) throw err
-              else {
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-              }
-            })
-          }
-        })
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
