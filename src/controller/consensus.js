@@ -113,7 +113,7 @@ class SECConsensus {
         // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
         try {
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err, txArray) => {
+          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
             if (err) throw err
             else {
               console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
