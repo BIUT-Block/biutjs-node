@@ -4,7 +4,6 @@ const cp = require('child_process')
 const path = require('path')
 const SECConfig = require('../../config/default.json')
 
-const SECUtils = require('@sec-block/secjs-util')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECCircle = require('./circle')
@@ -61,21 +60,25 @@ class SECConsensus {
             }
             console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
             this.powWorker.send(blockForPOW)
-            this.isPowRunning = true
           }
         })
       }
     })
 
+    this.isPowRunning = true
     this.powWorker.on('message', (result) => {
-      if (result.result) {
-        newBlock.Difficulty = result.Difficulty.toString()
-        newBlock.MixHash = result.MixHash
-        newBlock.Nonce = result.Nonce
-        newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
-        newBlock.TimeStamp = SECUtils.currentUnixTimeInMillisecond()
-        newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
+      // verify circle group id
+      newBlock.Difficulty = result.Difficulty.toString()
+      newBlock.MixHash = result.MixHash
+      newBlock.Nonce = result.Nonce
+      newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
+      newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
+      newBlock.TimeStamp = this.secCircle.getLocalHostTime()
 
+      let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
+      let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
+
+      if (result.result && groupId === BeneGroupId) {
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
         // append the pow reward tx
         TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
@@ -117,7 +120,7 @@ class SECConsensus {
             if (err) throw err
             else {
               console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
-              console.log(chalk.green(`New generated block hash is: ${_newBlock.Hash}`))
+              console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
               this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
               this.BlockChain.tokenPool.clear()
               this.resetPOW()

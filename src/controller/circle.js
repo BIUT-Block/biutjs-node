@@ -25,7 +25,7 @@ class SECJSTimeCircle {
     this.minGroup = config.minGroup
     this.maxGroup = config.maxGroup
     this.numGroups = config.maxGroup - config.minGroup + 1
-    this.timeDiff = null // the time difference between server unix time and local unix time
+    this.timeDiff = 0 // the time difference between server unix time and local unix time
     this.calcTimeDifference(() => {
       this.currentPeriod = this.getCurrentPeriodNumber()
     })
@@ -69,8 +69,8 @@ class SECJSTimeCircle {
         this.timeDiff = 0
         callback(err)
       } else {
-        let localTime = this.getLocalHostTime()
-        this.timeDiff = 1000 * remoteTime - localTime
+        // let localTime = this.getLocalHostTime()
+        this.timeDiff = 0 // 1000 * remoteTime - localTime
         callback()
       }
     })

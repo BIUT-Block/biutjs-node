@@ -36,7 +36,8 @@ class NetworkEvent {
     this.forkVerified = false
     this.syncInfo = {
       flag: false,
-      address: null
+      address: null,
+      timer: null
     }
     this.peer = {}
     this.addr = {}
@@ -285,30 +286,28 @@ class NetworkEvent {
           // verify parent block hash
           let parentHash = block.getHeader().ParentHash
           this.BlockChain.SECTokenChain.getBlock(block.getHeader().Number - 1, (err, lastBlock) => {
-            if (err) throw err
-            else {
-              if (lastBlock.Hash === parentHash) {
-                setTimeout(() => {
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-                  requests.bodies.push(block)
-                }, ms('0.1s'))
+            if (err) return
+            if (lastBlock.Hash === parentHash) {
+              setTimeout(() => {
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
+                requests.bodies.push(block)
+              }, ms('0.1s'))
+            } else {
+              let newBlockNumber = block.getHeader().Number
+              let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
+              if (newBlockNumber === localHeight + 1) {
+                // do nothing if two blockchains with the same length are forked
+              } else if (newBlockNumber > localHeight + 1) {
+                // if remote node has more blocks than local
+                this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+                  if (err) throw err
+                  else {
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
+                  }
+                })
               } else {
-                let newBlockNumber = block.getHeader().Number
-                let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
-                if (newBlockNumber === localHeight + 1) {
-                  // do nothing if two blockchains with the same length are forked
-                } else if (newBlockNumber > localHeight + 1) {
-                  // if remote node has more blocks than local
-                  this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-                    if (err) throw err
-                    else {
-                      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-                    }
-                  })
-                } else {
-                  // if local db has more blocks than remote node
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
-                }
+                // if local db has more blocks than remote node
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
               }
             }
           })
@@ -345,7 +344,7 @@ class NetworkEvent {
 
     while (requests.bodies.length > 0) {
       const block = requests.bodies.shift()
-      if (block.getHeader().Number !== payload[0]) {
+      if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
         break
       }
 
@@ -380,13 +379,18 @@ class NetworkEvent {
     let remoteAddress = payload[2].toString('hex')
 
     if (this.syncInfo) {
-      if (this.syncInfo.address !== payload[2]) return
+      if (this.syncInfo.address !== remoteAddress) return
     } else {
       this.syncInfo.flag = true
       this.syncInfo.address = remoteAddress
     }
+    this.syncInfo.timer = setTimeout(() => {
+      this.syncInfo.flag = false
+      this.syncInfo.address = null
+    }, ms('15s'))
 
-    this.BlockChain.SECTokenChain.delBlockFromHeight(payload[1][0].Number, (err, txArray) => {
+    let firstTokenBlock = new SECBlockChain.SECTokenBlock(payload[1][0])
+    this.BlockChain.SECTokenChain.delBlockFromHeight(firstTokenBlock.getHeader().Number, (err, txArray) => {
       if (err) throw err
       async.eachSeries(payload[1], (_payload, callback) => {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
@@ -414,6 +418,7 @@ class NetworkEvent {
             } else {
               this.syncInfo.flag = false
               this.syncInfo.address = null
+              clearTimeout(this.syncInfo)
             }
           })
         }
