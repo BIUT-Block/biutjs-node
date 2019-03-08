@@ -378,7 +378,7 @@ class NetworkEvent {
     let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
     let remoteAddress = payload[2].toString('hex')
 
-    if (this.syncInfo) {
+    if (this.syncInfo.flag) {
       if (this.syncInfo.address !== remoteAddress) return
     } else {
       this.syncInfo.flag = true

@@ -75,8 +75,8 @@ class SECConsensus {
       newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
       newBlock.TimeStamp = this.secCircle.getLocalHostTime()
 
-      let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
-      let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
+      let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
+      let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
       if (result.result && groupId === BeneGroupId) {
         let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
