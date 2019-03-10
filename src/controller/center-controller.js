@@ -50,6 +50,13 @@ class CenterController {
     // -------------------------  NODES SYNC UTIL  ------------------------
     this.nodesIPSync = new NodesIPSync()
 
+    // -------------------  NETWORK STATE MACHINE FLAG  -------------------
+    this.syncInfo = {
+      flag: false,
+      address: null,
+      timer: null
+    }
+
     this.runningFlag = false
     if (process.env.network && this.runningFlag === false) {
       this.initNetwork()
@@ -102,7 +109,7 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  TOKEN BLOCK CHAIN  -------------------------------
-      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync })
+      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       networkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer.push(networkEvent)
 
@@ -160,6 +167,7 @@ class CenterController {
       this._refreshDHTConnections()
       this.run()
     })
+    this.config.syncInfo = this.syncInfo
     this.BlockChain.run()
     this.config.BlockChain = this.BlockChain
     this.NetworkEventContainer = []

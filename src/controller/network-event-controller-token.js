@@ -34,11 +34,7 @@ class NetworkEvent {
     // --------------------------------  Parameters  -------------------------------
     this.forkDrop = null
     this.forkVerified = false
-    this.syncInfo = {
-      flag: false,
-      address: null,
-      timer: null
-    }
+    this.syncInfo = config.syncInfo
     this.peer = {}
     this.addr = {}
     this.sec = {}
@@ -345,6 +341,10 @@ class NetworkEvent {
     while (requests.bodies.length > 0) {
       const block = requests.bodies.shift()
       if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
+        break
+      }
+
+      if (this.syncInfo.flag) {
         break
       }
 

@@ -15,6 +15,7 @@ class SECConsensus {
     this.BlockChain = config.BlockChain
     this.cacheDBPath = config.dbconfig.cacheDBPath
     this.isTokenChain = config.isTokenChain
+    this.syncInfo = config.syncInfo
     this.powEnableFlag = false
 
     // -------------------------------  Check block chain type  -------------------------------
@@ -78,56 +79,61 @@ class SECConsensus {
       let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
       let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
-      if (result.result && groupId === BeneGroupId) {
-        let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
-        // append the pow reward tx
-        TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
+      // verify the node is not synchronizing
+      if (!this.syncInfo.flag) {
+        if (result.result && groupId === BeneGroupId) {
+          let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
+          // append the pow reward tx
+          TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
 
-        // remove txs which already exist in previous blocks
-        _.remove(TxsInPoll, (tx) => {
-          if (typeof tx !== 'object') {
-            tx = JSON.parse(tx)
+          // remove txs which already exist in previous blocks
+          _.remove(TxsInPoll, (tx) => {
+            if (typeof tx !== 'object') {
+              tx = JSON.parse(tx)
+            }
+
+            this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
+              if (err) {
+                return true
+              } else {
+                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
+                  if (err) return true
+                  else {
+                    return (exiResult || !balResult)
+                  }
+                })
+              }
+            })
+          })
+
+          // assign txHeight
+          let txHeight = 0
+          TxsInPoll.forEach((tx) => {
+            tx.TxReceiptStatus = 'success'
+            tx.TxHeight = txHeight
+            txHeight = txHeight + 1
+          })
+
+          newBlock.Transactions = TxsInPoll
+          let _newBlock = JSON.parse(JSON.stringify(newBlock))
+          // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+          try {
+            let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
+            this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
+              if (err) throw err
+              else {
+                console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
+                console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
+                this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
+                this.BlockChain.tokenPool.clear()
+                this.resetPOW()
+              }
+            })
+          } catch (error) {
+            console.error(error)
+            this.resetPOW()
           }
-
-          this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
-            if (err) {
-              return true
-            } else {
-              this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                if (err) return true
-                else {
-                  return (exiResult || !balResult)
-                }
-              })
-            }
-          })
-        })
-
-        // assign txHeight
-        let txHeight = 0
-        TxsInPoll.forEach((tx) => {
-          tx.TxReceiptStatus = 'success'
-          tx.TxHeight = txHeight
-          txHeight = txHeight + 1
-        })
-
-        newBlock.Transactions = TxsInPoll
-        let _newBlock = JSON.parse(JSON.stringify(newBlock))
-        // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-        try {
-          let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-          this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
-            if (err) throw err
-            else {
-              console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
-              console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
-              this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-              this.BlockChain.tokenPool.clear()
-              this.resetPOW()
-            }
-          })
-        } catch (error) {
-          console.error(error)
+        } else {
           this.resetPOW()
         }
       } else {
