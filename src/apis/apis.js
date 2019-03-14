@@ -38,7 +38,7 @@ class APIs {
   getTokenTx (TxHash, callback) {
     this.SECTokenDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
-        throw new Error(`Can not Token Transaction from database`)
+        console.error(`Error: Can not Token Transaction from database`)
       }
       wholechain.forEach(block => {
         let transaction = block.Transactions.filter(tx => {
@@ -95,7 +95,7 @@ class APIs {
   getTransactionTx (ID, txHash, callback) {
     this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
       if (err) {
-        throw new Error(`Can not Token Transaction from database`)
+        console.error(`Error: Can not Token Transaction from database`)
       }
       wholechain.forEach(block => {
         let transaction = block.Transactions.filter(tx => {

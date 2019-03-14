@@ -45,12 +45,12 @@ class SECConsensus {
     let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenChain)
 
     this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
-      if (err) throw err
+      if (err) console.error(`Error: ${err}`)
       else {
         newBlock.Number = lastBlock.Number + 1
         newBlock.ParentHash = lastBlock.Hash
         this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain, (err, lastPowCalcTime) => {
-          if (err) throw err
+          if (err) console.error(`Error: ${err}`)
           else {
             let blockForPOW = {
               Number: newBlock.Number,
@@ -120,7 +120,7 @@ class SECConsensus {
           try {
             let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
             this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
-              if (err) throw err
+              if (err) console.error(`Error: ${err}`)
               else {
                 console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
                 console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
@@ -130,7 +130,7 @@ class SECConsensus {
               }
             })
           } catch (error) {
-            console.error(error)
+            console.error(`Error: ${err}`)
             this.resetPOW()
           }
         } else {

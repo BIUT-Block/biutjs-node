@@ -90,7 +90,7 @@ class SECJSTimeCircle {
    */
   getHostGroupId (address) {
     if (typeof address !== 'string') {
-      throw new Error('invalid input type, should be string')
+      console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = this.getCurrentPeriodNumber()
     periodNumber = periodNumber.toString()
@@ -107,7 +107,7 @@ class SECJSTimeCircle {
    */
   getTimestampGroupId (address, timestamp) {
     if (typeof address !== 'string') {
-      throw new Error('invalid input type, should be string')
+      console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = Math.floor((timestamp - this.circleStartTime) / this.periodTime)
     periodNumber = periodNumber.toString()

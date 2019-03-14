@@ -93,7 +93,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from('token', 'utf-8'), [TokenTx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(err)
+        console.error(`Error: ${err}`)
       }
     })
   }
@@ -108,7 +108,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from('token', 'utf-8'), [Buffer.from(blockHeaderHash, 'hex')]])
         }
       } catch (err) {
-        console.error(err)
+        console.error(`Error: ${err}`)
       }
     })
   }
@@ -171,7 +171,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(txChainID, 'utf-8'), [TxTx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(err)
+        console.error(`Error: ${err}`)
       }
     })
   }
@@ -186,7 +186,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(txChainID, 'utf-8'), [Buffer.from(blockHeaderHash, 'hex')]])
         }
       } catch (err) {
-        console.error(err)
+        console.error(`Error: ${err}`)
       }
     })
   }
