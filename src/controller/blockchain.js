@@ -294,7 +294,6 @@ class BlockChain {
       TxFrom: '0000000000000000000000000000000000000000',
       TxTo: this.SECAccount.getAddress(),
       Value: '2',
-      ContractAddress: '',
       GasLimit: '0',
       GasUsedByTxn: '0',
       GasPrice: '0',
