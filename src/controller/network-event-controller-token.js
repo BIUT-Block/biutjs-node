@@ -256,7 +256,7 @@ class NetworkEvent {
       }
       let block = new SECBlockChain.SECTokenBlock()
       block.setHeader(payload[0])
-      debug(`BLOCK_HEADERS1: ${block.getHeader()}`)
+      debug(`BLOCK_HEADERS1: ${JSON.stringify(block.getHeader())}`)
       while (requests.headers.length > 0) {
         const blockHash = requests.headers.shift()
         debug('Remote Block Header: ' + blockHash.toString('hex'))
@@ -287,7 +287,7 @@ class NetworkEvent {
             if (lastBlock.Hash === parentHash) {
               setTimeout(() => {
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-                debug(`BLOCK_HEADERS2: ${block.getHeader()}`)
+                debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
                 requests.bodies.push(block)
               }, ms('0.1s'))
             } else {
