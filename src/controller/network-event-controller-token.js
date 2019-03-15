@@ -288,7 +288,8 @@ class NetworkEvent {
               setTimeout(() => {
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
                 debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
-                requests.bodies.push(block)
+                let _block = new SECBlockChain.SECTokenBlock().setHeader(block.getHeader())
+                requests.bodies.push(_block)
               }, ms('0.1s'))
             } else {
               let newBlockNumber = block.getHeader().Number
@@ -341,8 +342,9 @@ class NetworkEvent {
     if (!this.forkVerified) return
 
     while (requests.bodies.length > 0) {
+      debug(`requests.bodies: ${JSON.stringify(requests.bodies)}`)
       const block = requests.bodies.shift()
-      debug(`BLOCK_BODIES: get block from requests.bodies: ${block.getHeader()}`)
+      debug(`BLOCK_BODIES: get block from requests.bodies: ${JSON.stringify(block.getHeader())}`)
       if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
         break
       }
