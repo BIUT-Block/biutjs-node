@@ -130,7 +130,7 @@ class SECConsensus {
               }
             })
           } catch (error) {
-            console.error(`Error: ${err}`)
+            console.error(`Error: ${error}`)
             this.resetPOW()
           }
         } else {

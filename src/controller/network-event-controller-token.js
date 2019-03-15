@@ -256,6 +256,7 @@ class NetworkEvent {
       }
       let block = new SECBlockChain.SECTokenBlock()
       block.setHeader(payload[0])
+      debug(`BLOCK_HEADERS1: ${block.getHeader()}`)
       while (requests.headers.length > 0) {
         const blockHash = requests.headers.shift()
         debug('Remote Block Header: ' + blockHash.toString('hex'))
@@ -286,6 +287,7 @@ class NetworkEvent {
             if (lastBlock.Hash === parentHash) {
               setTimeout(() => {
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
+                debug(`BLOCK_HEADERS2: ${block.getHeader()}`)
                 requests.bodies.push(block)
               }, ms('0.1s'))
             } else {
@@ -340,6 +342,7 @@ class NetworkEvent {
 
     while (requests.bodies.length > 0) {
       const block = requests.bodies.shift()
+      debug(`BLOCK_BODIES: get block from requests.bodies: ${block.getHeader()}`)
       if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
         break
       }
@@ -359,7 +362,7 @@ class NetworkEvent {
         this.BlockChain.SECTokenChain.putBlockToDB(secblock, (err) => {
           if (err) console.error(`Error: ${err}`)
           else {
-            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}`))
+            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`))
             let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
             this.Consensus.resetPOW()
             this._onNewBlock(newSECTokenBlock)
