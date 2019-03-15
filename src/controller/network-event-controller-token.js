@@ -285,12 +285,9 @@ class NetworkEvent {
           this.BlockChain.SECTokenChain.getBlock(block.getHeader().Number - 1, (err, lastBlock) => {
             if (err) return
             if (lastBlock.Hash === parentHash) {
-              setTimeout(() => {
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-                debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
-                let _block = new SECBlockChain.SECTokenBlock().setHeader(block.getHeader())
-                requests.bodies.push(_block)
-              }, ms('0.1s'))
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
+              requests.bodies.push(block)
+              debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
             } else {
               let newBlockNumber = block.getHeader().Number
               let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
