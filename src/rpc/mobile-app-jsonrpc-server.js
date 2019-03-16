@@ -116,7 +116,7 @@ let server = jayson.server({
     })
   },
 
-  sec_getPeerList: function (args, callback) {
+  sec_getNodesTable: function (args, callback) {
     let response = {}
     response.NodesTable = core.APIs.getNodesTable()
     callback(null, response)
