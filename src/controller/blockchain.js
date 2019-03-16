@@ -105,7 +105,7 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from('token', 'utf-8'), [Buffer.from(blockHeaderHash, 'hex')]])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from('token', 'utf-8'), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
         console.error(`Error: ${err}`)

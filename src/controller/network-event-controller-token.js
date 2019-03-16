@@ -3,7 +3,6 @@ const ms = require('ms')
 const async = require('async')
 const LRUCache = require('lru-cache')
 const SECConfig = require('../../config/default.json')
-const util = require('util')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:network:token')
 
@@ -17,6 +16,7 @@ const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
 const SYNC_CHUNK = 20 // each sync package contains 20 blocks
+const TOKEN_CHAIN = Buffer.from('token', 'utf-8')
 
 class NetworkEvent {
   constructor (config) {
@@ -77,7 +77,7 @@ class NetworkEvent {
     // ------------------------------  CHECK FORK  -----------------------------
     this.sec.once('status', () => {
       debug('Running first time Status Check...')
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), [this.CHECK_BLOCK_NR, 1, 0, 0]])
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, this.CHECK_BLOCK_NR])
       this.forkDrop = setTimeout(() => {
         peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
       }, ms('15s'))
@@ -97,9 +97,9 @@ class NetworkEvent {
       }
       payload = payload[1]
       debug(chalk.bold.greenBright(`==================== On Message from ${this.addr} ====================`))
-      debug('Requests: ')
-      debug(requests)
-      debug('Code: ' + code)
+      // debug('Requests: ')
+      // debug(requests)
+      // debug('Code: ' + code)
       switch (code) {
         case SECDEVP2P.SEC.MESSAGE_CODES.STATUS:
           this.STATUS(payload, requests)
@@ -167,57 +167,64 @@ class NetworkEvent {
   NEW_BLOCK_HASHES (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK_HASHES =====`))
     if (!this.forkVerified) return
-    for (let blockHash of payload) {
-      debug(`New Block Hash from Remote: ${blockHash.toString('hex')}`)
-      if (blocksCache.has(blockHash.toString('hex'))) {
+
+    // new block hash received from a remote node
+    let blockHash = payload.toString('hex')
+    debug(`New Block Hash from Remote: ${blockHash}`)
+
+    this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+      if (err) console.error(`Error: ${err}`)
+      else if (blockHash in hashList) {
+        // skip if the block is already in the database
+      } else if (blocksCache.has(blockHash)) {
+        // skip if the hash is already in the block cache
         debug('Block Hash already existed in Cache')
-        continue
-      }
-      setTimeout(() => {
+      } else {
+        blocksCache.set(blockHash, true)
+        setTimeout(() => {
+          blocksCache.del(blockHash)
+        }, ms('5s'))
+
         debug('Send GET_BLOCK_HEADERS Message')
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), [blockHash, 1, 0, 0]])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, blockHash])
         requests.headers.push(blockHash)
-      }, ms('0.1s'))
-    }
+      }
+    })
     debug(chalk.bold.yellow(`===== End NEW_BLOCK_HASHES End =====`))
   }
 
   GET_BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_HEADERS =====`))
-    let headers = []
-    if (this.forkVerified) {
-      let blockHeaderHash = payload[0].toString('hex')
-      debug('Get Block Hash: ' + blockHeaderHash)
-      this.BlockChain.SECTokenChain.getBlocksWithHash(blockHeaderHash, (err, blockArray) => {
-        if (err) console.error(`Error: ${err}`)
-        else {
-          if (blockArray.length > 0) {
-            let localTokenBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
-            headers.push(localTokenBlock.getHeaderBuffer())
-
-            debug('SEC Send Message: BLOCK_HEADERS')
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), headers])
-          } else {
-            debug(`BLOCK_HEADERS: block header with hash ${blockHeaderHash} is not found`)
-          }
-        }
-      })
-    } else {
-      debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload[0]))
-      if (SECDEVP2P._util.buffer2int(payload[0]) === this.CHECK_BLOCK_NR) {
+    if (!this.forkVerified) {
+      // check genesis block
+      debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload))
+      if (SECDEVP2P._util.buffer2int(payload) === this.CHECK_BLOCK_NR) {
         this.BlockChain.SECTokenChain.getBlock(this.CHECK_BLOCK_NR - 1, (err, block) => {
           if (err) console.error(`Error: ${err}`)
           else {
             let checkBlock = new SECBlockChain.SECTokenBlock(block)
-            headers.push(checkBlock.getHeaderBuffer())
-            debug('REMOTE CHECK_BLOCK_HEADER: ')
-            debug(util.inspect(checkBlock.getHeaderBuffer(), false, null))
 
-            debug('SEC Send Message: BLOCK_HEADERS')
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [Buffer.from('token', 'utf-8'), headers])
+            debug('SEC Send Message: BLOCK_HEADERS genesis block')
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [TOKEN_CHAIN, checkBlock.getHeaderBuffer()])
           }
         })
       }
+    } else {
+      let blockHash = payload.toString('hex')
+      debug('Get Block Hash: ' + blockHash)
+      this.BlockChain.SECTokenChain.getBlocksWithHash(blockHash, (err, blockArray) => {
+        if (err) console.error(`Error: ${err}`)
+        else {
+          if (blockArray.length > 0) {
+            let localBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
+
+            debug('SEC Send Message: BLOCK_HEADERS')
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [TOKEN_CHAIN, localBlock.getHeaderBuffer()])
+          } else {
+            debug(`BLOCK_HEADERS: block header with hash ${blockHash} is not found`)
+          }
+        }
+      })
     }
 
     debug(chalk.bold.yellow(`===== End GET_BLOCK_HEADERS =====`))
@@ -225,104 +232,81 @@ class NetworkEvent {
 
   BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
+    let block = new SECBlockChain.SECTokenBlock().setHeader(payload)
+    debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
+
     if (!this.forkVerified) {
-      if (payload.length !== 1) {
-        debug(`${this.addr} expected one header for ${this.CHECK_BLOCK_TITLE} verify (received: ${payload.length})`)
-        this.peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
-        return
-      }
       this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
         if (err) console.error(`Error: ${err}`)
-        else {
-          debug(`Expected Hash: ${geneBlock.Hash}`)
-          let block = new SECBlockChain.SECTokenBlock()
-          block.setHeader(payload[0])
-          debug(`Remote Header Hash: ${block.getHeaderHash()}`)
-          if (block.getHeaderHash() === geneBlock.Hash) {
-            debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
-            clearTimeout(this.forkDrop)
-            this.forkVerified = true
-            debug(`forkVerified: ${this.forkVerified}`)
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
-            this._addPeerToNDP()
-            this._startSyncNodesIP()
-          }
+        else if (block.getHeaderHash() === geneBlock.Hash) {
+          debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
+          this.forkVerified = true
+          clearTimeout(this.forkDrop)
+          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [TOKEN_CHAIN, []])
+
+          this._addPeerToNDP()
+          this._startSyncNodesIP()
+        } else {
+          debug(`${this.addr} is NOT on the same side of the ${this.CHECK_BLOCK_TITLE}`)
+          debug(`Expected Hash: ${geneBlock.Hash}, Remote Hash: ${block.getHeaderHash()}`)
         }
       })
     } else {
-      if (payload.length > 1) {
-        debug(`${this.addr} not more than one block header expected (received: ${payload.length})`)
-        return
-      }
-      let block = new SECBlockChain.SECTokenBlock()
-      block.setHeader(payload[0])
-      debug(`BLOCK_HEADERS1: ${JSON.stringify(block.getHeader())}`)
-      while (requests.headers.length > 0) {
-        const blockHash = requests.headers.shift()
-        debug('Remote Block Header: ' + blockHash.toString('hex'))
-        if (block.getHeaderHash() === blockHash.toString('hex')) {
-          // verify that the beneficiary is in this group
-          let beneAddress = block.getHeader().Beneficiary
-          let timestamp = block.getHeader().TimeStamp
-          let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
-          let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
-          if (groupId !== BeneGroupId) {
-            debug(`not equal: groupId = ${groupId}, BeneGroupId = ${BeneGroupId}`)
-            debug(`beneAddress = ${beneAddress}, timestamp = ${timestamp}`)
-            debug(`DEBUG: BLOCK_HEADERS state: groupId = ${groupId}, BeneGroupId = ${BeneGroupId}`)
-            debug(`DEBUG: BLOCK_HEADERS state: beneAddress = ${beneAddress}, timestamp = ${timestamp}`)
-            break
-          }
-          debug(`verified group ID`)
+      if (block.getHeaderHash() in requests.headers) {
+        // remove it from requests.headers
+        requests.headers.splice(requests.headers.indexOf(block.getHeaderHash()), 1)
+        let header = block.getHeader()
 
-          // verify block number
-          if (block.getHeader().Number <= this.BlockChain.SECTokenChain.getCurrentHeight()) {
-            // immediately break if block height is incorrect
-            debug(`block height incorrect, block number: ${block.getHeader().Number}, local height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`)
-            break
-          }
+        // verify beneficiary group id and block number
+        if (!this._isValidBlock(header)) {
+          return
+        }
 
-          // verify parent block hash
-          let parentHash = block.getHeader().ParentHash
-          this.BlockChain.SECTokenChain.getBlock(block.getHeader().Number - 1, (err, lastBlock) => {
-            if (err) {
-              debug(`error occurs when verify parent hash: ${err}`)
-              this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-                if (err) console.error(`Error: ${err}`)
-                else {
-                  debug(`hash list: ${hashList}`)
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-                }
-              })
+        // verify parent block hash
+        this.BlockChain.SECTokenChain.getBlock(header.Number - 1, (err, lastBlock) => {
+          if (err) {
+            // possible reason: block does not exist because received block number is larger than local chain length at least by 2
+            debug(`error occurs when verify parent hash: ${err}`)
+            this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+              if (err) console.error(`Error: ${err}`)
+              else {
+                debug(`getBlock() function error condition: hash list is ${hashList}`)
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+              }
+            })
+          } else {
+            // case 1: parent hash successfully verified
+            if (lastBlock.Hash === header.ParentHash) {
+              debug(`parent hash successfully verified`)
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [TOKEN_CHAIN, block.getHeaderHash()])
+              requests.bodies.push(block)
+              debug(`BLOCK_HEADERS2: ${JSON.stringify(header)}`)
             } else {
-              if (lastBlock.Hash === parentHash) {
-                debug(`parent hash successfully verified`)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-                requests.bodies.push(block)
-                debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
+              debug('parent hash verification failed')
+              let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
+              if (header.Number === localHeight) {
+                // case 2: parent hash verification failed, local node has a forked chain and the chain has the same length as remote node chain
+                debug('do nothing if two blockchains with the same length are forked')
+              } else if (header.Number > localHeight) {
+                // case 3: parent hash verification failed, remote node chain is longer than local chain
+                debug(`remote node has more blocks than local`)
+                this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+                  if (err) console.error(`Error: ${err}`)
+                  else {
+                    debug(`Parent hash verification failed, remote node has longer chain than local, hash list: ${hashList}`)
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+                  }
+                })
               } else {
-                debug('parent hash verification failed')
-                let newBlockNumber = block.getHeader().Number
-                let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
-                if (newBlockNumber === localHeight + 1) {
-                  debug('do nothing if two blockchains with the same length are forked')
-                } else if (newBlockNumber > localHeight + 1) {
-                  debug(`remote node has more blocks than local`)
-                  this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-                    if (err) console.error(`Error: ${err}`)
-                    else {
-                      debug(`hash list: ${hashList}`)
-                      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-                    }
-                  })
-                } else {
-                  debug('local db has more blocks than remote node')
-                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
-                }
+                // case 3: parent hash verification failed, remote node chain is shorter than local chain
+                debug('local db has more blocks than remote node')
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [TOKEN_CHAIN, []])
               }
             }
-          })
-        }
+          }
+        })
+      } else {
+        debug(`Received block header hash is not in requests.headers: ${requests.headers}`)
       }
     }
     debug(chalk.bold.yellow(`===== End BLOCK_HEADERS =====`))
@@ -331,19 +315,20 @@ class NetworkEvent {
   GET_BLOCK_BODIES (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_BODIES =====`))
 
-    let bodies = []
-    let blockHeaderHash = payload[0].toString('hex')
-    debug('Get Block Hash: ' + blockHeaderHash)
-    this.BlockChain.SECTokenChain.getBlocksWithHash(blockHeaderHash, (err, blockArray) => {
+    let blockHash = payload.toString('hex')
+    debug('Get Block Hash: ' + blockHash)
+    this.BlockChain.SECTokenChain.getBlocksWithHash(blockHash, (err, blockArray) => {
       if (err) console.error(`Error: ${err}`)
       else {
+        let bodies = []
         if (blockArray.length > 0) {
           let localTokenBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
           debug('Beneficiary: ' + blockArray[0].Beneficiary)
           bodies.push(SECDEVP2P._util.int2buffer(blockArray[0].Number))
           bodies.push(localTokenBlock.getBodyBuffer())
         }
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [Buffer.from('token', 'utf-8'), bodies])
+        debug(`Send BLOCK_BODIES, get block with hash result: ${blockArray[0]}`)
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [TOKEN_CHAIN, bodies])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_BLOCK_BODIES =====`))
@@ -353,38 +338,35 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
 
-    while (requests.bodies.length > 0) {
-      debug(`requests.bodies: ${JSON.stringify(requests.bodies)}`)
-      const block = requests.bodies.shift()
-      debug(`BLOCK_BODIES: get block from requests.bodies: ${JSON.stringify(block.getHeader())}`)
+    for (let [index, block] of requests.bodies.entries()) {
+      debug(`BLOCK_BODIES: block in requests.bodies: ${JSON.stringify(block.getHeader())}`)
+
+      // find the corresponding block stored in requests.bodies
       if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
+        debug(`block number in requests.bodies is unequal to the block number received from remote node`)
         break
       }
+      requests.bodies.splice(index, 1)
 
+      // Check if the node is syncronizing blocks from other nodes
       if (this.syncInfo.flag) {
+        debug(`local node is in synchronizing`)
         break
       }
 
       block.setBody(payload[1])
-      let _block = block.getBlock()
-      debug('Remote Beneficiary: ' + _block.Beneficiary)
-      let NewSECBlock = new SECBlockChain.SECTokenBlock(_block)
-      let secblock = NewSECBlock.getBlock()
-      secblock.Transactions = JSON.parse(JSON.stringify(secblock.Transactions))
+      let secblock = block.getBlock()
+      debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      try {
-        this.BlockChain.SECTokenChain.putBlockToDB(secblock, (err) => {
-          if (err) console.error(`Error: ${err}`)
-          else {
-            debug(chalk.green(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`))
-            let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
-            this.Consensus.resetPOW()
-            this._onNewBlock(newSECTokenBlock)
-          }
-        })
-      } catch (error) {
-        debug('ERROR: token chain BLOCK_BODIES state, error occurs when writing new block to DB: ', error)
-      }
+      this.BlockChain.SECTokenChain.putBlockToDB(secblock, (err) => {
+        if (err) console.error(`Error: ${err}`)
+        else {
+          debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
+          let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
+          this.Consensus.resetPOW()
+          this._onNewBlock(newSECTokenBlock)
+        }
+      })
     }
     debug(chalk.bold.yellow(`===== End BLOCK_BODIES =====`))
   }
@@ -392,9 +374,11 @@ class NetworkEvent {
   NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+
     let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
     let remoteAddress = payload[2].toString('hex')
 
+    // Check if the node is syncronizing blocks from other nodes
     if (this.syncInfo.flag) {
       if (this.syncInfo.address !== remoteAddress) return
     } else {
@@ -406,47 +390,46 @@ class NetworkEvent {
       this.syncInfo.address = null
     }, ms('15s'))
 
-    let firstTokenBlock = new SECBlockChain.SECTokenBlock(payload[1][0])
-    debug(`Start syncronizing multiple blocks, first block's height is: ${firstTokenBlock.getHeader().Number}, ${payload[1].length} blocks synced`)
-    this.BlockChain.SECTokenChain.delBlockFromHeight(firstTokenBlock.getHeader().Number, (err, txArray) => {
+    let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
+    debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
+
+    // remove all the blocks which have a larger block number than the first block to be syncronized
+    this.BlockChain.SECTokenChain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
       if (err) console.error(`Error: ${err}`)
       async.eachSeries(payload[1], (_payload, callback) => {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
-        if (!blocksCache.has(newTokenBlock.getHeaderHash())) {
-          let block = Object.assign({}, newTokenBlock.getBlock())
-          this.BlockChain.SECTokenChain.putBlockToDB(block, (err) => {
-            if (err) callback(err)
-            else {
-              console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-              blocksCache.set(newTokenBlock.getHeaderHash(), true)
-              this.Consensus.resetPOW()
+        let block = Object.assign({}, newTokenBlock.getBlock())
+        debug(`Syncronizing block ${block.Number}`)
+        this.BlockChain.SECTokenChain.putBlockToDB(block, (err) => {
+          if (err) callback(err)
+          else {
+            console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+            debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+            this.Consensus.resetPOW()
 
-              this.BlockChain.tokenPool.updateByBlock(block)
-              callback()
-            }
-          })
-        }
+            this.BlockChain.tokenPool.updateByBlock(block)
+            callback()
+          }
+        })
+
+        // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error: ${err}`)
-        else {
+        else if (this.BlockChain.SECTokenChain.getCurrentHeight() >= remoteHeight) {
+          // synchronizing finished
+          this.syncInfo.flag = false
+          this.syncInfo.address = null
+          clearTimeout(this.syncInfo)
+        } else {
+          // continue synchronizing
           this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
             if (err) console.error(`Error: ${err}`)
-            else if (this.BlockChain.SECTokenChain.getCurrentHeight() < remoteHeight) {
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-            } else {
-              this.syncInfo.flag = false
-              this.syncInfo.address = null
-              clearTimeout(this.syncInfo)
+            else {
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
             }
           })
         }
       })
-
-      // if (txArray) {
-      //   txArray.forEach(tx => {
-      //     this.BlockChain.tokenPool.addTxIntoPool(tx)
-      //   })
-      // }
     })
   }
 
@@ -466,7 +449,7 @@ class NetworkEvent {
     this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
       if (err) console.error(`Error: ${err}`)
       else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
@@ -485,56 +468,63 @@ class NetworkEvent {
 
     this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
       if (err) console.error(`Error: ${err}`)
-      else {
-        if (localHeight > remoteHeight) {
-          debug('Local Token Blockchain Length longer than remote Node')
-          let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
-          if (blockPosition.length > 0) {
-            debug('No Fork founded!')
-            // send 'SYNC_CHUNK' blocks to remote node
-            this.BlockChain.SECTokenChain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
-              if (err) console.error(`Error: ${err}`)
-              else {
-                let blockBuffer = newBlocks.map(_block => {
-                  return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
-                })
+      else if (localHeight > remoteHeight) {
+        // Local chain is longer than remote chain
+        debug('Local Token Blockchain Length longer than remote Node')
+        let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
+        if (blockPosition.length > 0) {
+          // No fork found, send 'SYNC_CHUNK' blocks to remote node
+          debug('No Fork found!')
+          this.BlockChain.SECTokenChain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
+            if (err) console.error(`Error: ${err}`)
+            else {
+              let blockBuffer = newBlocks.map(_block => {
+                return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+              })
 
-                let sentMsg = [
-                  SECDEVP2P._util.int2buffer(localHeight), // local chain height
-                  blockBuffer,
-                  Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
-                ]
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), sentMsg])
-              }
-            })
-          } else {
-            debug('Fork founded!')
-            let forkPosition = 0
-            for (let i = remoteHeight - 1; i >= 1; i--) {
-              if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
-                forkPosition = remoteHashList[i].Number + 1
-                debug('Fork Position: ' + forkPosition)
-                break
-              }
+              let sentMsg = [
+                SECDEVP2P._util.int2buffer(localHeight), // local chain height
+                blockBuffer,
+                Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
+              ]
+              debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [TOKEN_CHAIN, sentMsg])
             }
-            this.BlockChain.SECTokenChain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
-              if (err) console.error(`Error: ${err}`)
-              else {
-                let blockBuffer = newBlocks.map(_block => {
-                  return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
-                })
+          })
+        } else {
+          debug('Fork found!')
 
-                let sentMsg = [
-                  SECDEVP2P._util.int2buffer(localHeight), // local chain height
-                  blockBuffer,
-                  Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
-                ]
-                debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks}`)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [Buffer.from('token', 'utf-8'), sentMsg])
-              }
-            })
+          // find fork position
+          let forkPosition = 0
+          for (let i = remoteHeight - 1; i >= 1; i--) {
+            if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
+              forkPosition = remoteHashList[i].Number + 1
+              debug('Fork Position: ' + forkPosition)
+              break
+            }
           }
+
+          // send 'SYNC_CHUNK' blocks to remote node
+          this.BlockChain.SECTokenChain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
+            if (err) console.error(`Error: ${err}`)
+            else {
+              let blockBuffer = newBlocks.map(_block => {
+                return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+              })
+
+              let sentMsg = [
+                SECDEVP2P._util.int2buffer(localHeight), // local chain height
+                blockBuffer,
+                Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
+              ]
+              debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [TOKEN_CHAIN, sentMsg])
+            }
+          })
         }
+      } else {
+        debug('remote blockchain is longer than local blockchain')
+        // do nothing if remote node blockchain is longer than local blockchain
       }
       debug(chalk.bold.yellow(`===== End NODE_DATA =====`))
     })
@@ -542,7 +532,7 @@ class NetworkEvent {
 
   GET_RECEIPTS (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_RECEIPTS =====`))
-    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS, [Buffer.from('token', 'utf-8'), []])
+    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS, [TOKEN_CHAIN, []])
     debug(chalk.bold.yellow(`===== End GET_RECEIPTS =====`))
   }
 
@@ -567,7 +557,9 @@ class NetworkEvent {
 
     this.BlockChain.isTokenTxExist(tx.getTxHash(), (err, result) => {
       if (err) console.error(`Error: ${err}`)
-      else if (!result) this.BlockChain.tokenPool.addTxIntoPool(tx.getTx())
+      else if (!result) {
+        this.BlockChain.tokenPool.addTxIntoPool(tx.getTx())
+      }
     })
 
     this.BlockChain.sendNewTokenTx(tx, this.peer)
@@ -575,12 +567,32 @@ class NetworkEvent {
   }
 
   _onNewBlock (newSECTokenBlock) {
-    blocksCache.set(newSECTokenBlock.getHeaderHash(), true)
     this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
     this.BlockChain.tokenPool.updateByBlock(newSECTokenBlock.getBlock())
+  }
+
+  _isValidBlock (blockHeader) {
+    // verify that the beneficiary is in the corresponding group
+    let beneAddress = blockHeader.Beneficiary
+    let timestamp = blockHeader.TimeStamp
+    let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
+    let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
+    if (groupId !== BeneGroupId) {
+      debug(`ERROR: BLOCK_HEADERS state: groupId = ${groupId}, BeneGroupId = ${BeneGroupId}`)
+      return false
+    }
+
+    // verify block number
+    if (blockHeader.Number <= this.BlockChain.SECTokenChain.getCurrentHeight()) {
+      // immediately break if block height is incorrect
+      debug(`Error: new block number ${blockHeader.Number} is smaller than local chain height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`)
+      return false
+    }
+
+    return true
   }
 
   // TODO: must be reimplement
@@ -600,22 +612,6 @@ class NetworkEvent {
     })
   }
 
-  // TODO: must be reimplement
-  async _isValidBlock (block) {
-    // if (!block.validateUnclesHash()) return false
-    // if (!block.transactions.every(this._isValidTx)) return false
-    // return new Promise((resolve, reject) => {
-    //   block.genTxTrie(() => {
-    //     try {
-    //       resolve(block.validateTransactionsTrie())
-    //     } catch (err) {
-    //       reject(err)
-    //     }
-    //   })
-    // })
-    return true
-  }
-
   _startSyncNodesIP () {
     setInterval(() => {
       let _peers = []
@@ -632,7 +628,7 @@ class NetworkEvent {
       } else {
         _peers = this.NodesIPSync.getNodesTable()
       }
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(_peers))])
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [TOKEN_CHAIN, Buffer.from(JSON.stringify(_peers))])
     }, 120000)
   }
 }
