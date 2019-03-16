@@ -273,37 +273,52 @@ class NetworkEvent {
             debug(`DEBUG: BLOCK_HEADERS state: beneAddress = ${beneAddress}, timestamp = ${timestamp}`)
             break
           }
+          debug(`verified group ID`)
 
           // verify block number
           if (block.getHeader().Number <= this.BlockChain.SECTokenChain.getCurrentHeight()) {
             // immediately break if block height is incorrect
+            debug(`block height incorrect, block number: ${block.getHeader().Number}, local height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`)
             break
           }
 
           // verify parent block hash
           let parentHash = block.getHeader().ParentHash
           this.BlockChain.SECTokenChain.getBlock(block.getHeader().Number - 1, (err, lastBlock) => {
-            if (err) return
-            if (lastBlock.Hash === parentHash) {
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
-              requests.bodies.push(block)
-              debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
+            if (err) {
+              debug(`error occurs when verify parent hash: ${err}`)
+              this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+                if (err) console.error(`Error: ${err}`)
+                else {
+                  debug(`hash list: ${hashList}`)
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
+                }
+              })
             } else {
-              let newBlockNumber = block.getHeader().Number
-              let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
-              if (newBlockNumber === localHeight + 1) {
-                // do nothing if two blockchains with the same length are forked
-              } else if (newBlockNumber > localHeight + 1) {
-                // if remote node has more blocks than local
-                this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-                  if (err) console.error(`Error: ${err}`)
-                  else {
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
-                  }
-                })
+              if (lastBlock.Hash === parentHash) {
+                debug(`parent hash successfully verified`)
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [Buffer.from('token', 'utf-8'), [blockHash]])
+                requests.bodies.push(block)
+                debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeader())}`)
               } else {
-                // if local db has more blocks than remote node
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
+                debug('parent hash verification failed')
+                let newBlockNumber = block.getHeader().Number
+                let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
+                if (newBlockNumber === localHeight + 1) {
+                  debug('do nothing if two blockchains with the same length are forked')
+                } else if (newBlockNumber > localHeight + 1) {
+                  debug(`remote node has more blocks than local`)
+                  this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+                    if (err) console.error(`Error: ${err}`)
+                    else {
+                      debug(`hash list: ${hashList}`)
+                      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [Buffer.from('token', 'utf-8'), Buffer.from(JSON.stringify(hashList))])
+                    }
+                  })
+                } else {
+                  debug('local db has more blocks than remote node')
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [Buffer.from('token', 'utf-8'), []])
+                }
               }
             }
           })
