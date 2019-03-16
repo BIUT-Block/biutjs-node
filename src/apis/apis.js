@@ -212,6 +212,10 @@ class APIs {
   clearDB (callback) {
     this.SECTokenDataHandler.clearDB(callback)
   }
+
+  getNodesTable () {
+    return this.CenterController.NodesIPSync.getNodesTable()
+  }
 }
 
 module.exports = APIs
