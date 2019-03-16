@@ -186,7 +186,7 @@ class NetworkEvent {
         }, ms('5s'))
 
         debug('Send GET_BLOCK_HEADERS Message')
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, blockHash])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, payload])
         requests.headers.push(blockHash)
       }
     })
@@ -232,7 +232,8 @@ class NetworkEvent {
 
   BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
-    let block = new SECBlockChain.SECTokenBlock().setHeader(payload)
+    let block = new SECBlockChain.SECTokenBlock()
+    block.setHeader(payload)
     debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
 
     if (!this.forkVerified) {
@@ -252,7 +253,7 @@ class NetworkEvent {
         }
       })
     } else {
-      if (block.getHeaderHash() in requests.headers) {
+      if (requests.headers.indexOf(block.getHeaderHash()) > -1) {
         // remove it from requests.headers
         requests.headers.splice(requests.headers.indexOf(block.getHeaderHash()), 1)
         let header = block.getHeader()
@@ -278,7 +279,7 @@ class NetworkEvent {
             // case 1: parent hash successfully verified
             if (lastBlock.Hash === header.ParentHash) {
               debug(`parent hash successfully verified`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [TOKEN_CHAIN, block.getHeaderHash()])
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [TOKEN_CHAIN, Buffer.from(block.getHeaderHash(), 'hex')])
               requests.bodies.push(block)
               debug(`BLOCK_HEADERS2: ${JSON.stringify(header)}`)
             } else {
@@ -306,7 +307,7 @@ class NetworkEvent {
           }
         })
       } else {
-        debug(`Received block header hash is not in requests.headers: ${requests.headers}`)
+        debug(`Received block header hash ${block.getHeaderHash()} is not in requests.headers: ${requests.headers}`)
       }
     }
     debug(chalk.bold.yellow(`===== End BLOCK_HEADERS =====`))
