@@ -57,7 +57,7 @@ class APIs {
   }
 
   getTokenTxInPool (txHash, callback) {
-    let tokenPool = this.CenterController.getBlockchain().tokenPool
+    let tokenPool = this.blockChain.tokenPool
     let transaction = tokenPool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
     })
@@ -65,7 +65,7 @@ class APIs {
   }
 
   getTokenTxInPoolByAddress (userAddress) {
-    let tokenPool = this.CenterController.getBlockchain().tokenPool
+    let tokenPool = this.blockChain.tokenPool
     return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
@@ -109,7 +109,7 @@ class APIs {
   }
 
   getTransactionTxInPool (ID, txHash) {
-    let txPoolDict = this.CenterController.getBlockchain().TxPoolDict
+    let txPoolDict = this.blockChain.TxPoolDict
     return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
   }
 
@@ -184,6 +184,10 @@ class APIs {
 
   getNodesTable () {
     return this.CenterController.NodesIPSync.getNodesTable()
+  }
+
+  getTokenChainHeight () {
+    return this.blockChain.SECTokenChain.getCurrentHeight()
   }
 }
 

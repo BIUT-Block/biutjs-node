@@ -1,3 +1,7 @@
+const fs = require('fs')
+const GEOIPReader = require('@maxmind/geoip2-node').Reader
+const dbBuffer = fs.readFileSync(process.cwd() + '/src/GeoIP2-City.mmdb')
+const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
 const jayson = require('jayson')
 
 let core = {}
@@ -12,9 +16,9 @@ let server = jayson.server({
   sec_getBalance: function (args, callback) {
     let response = {}
     // if (args[0].coinType = null) {
-      // return all coins
+    // return all coins
     // } else {
-      // args[0].coinType
+    // args[0].coinType
     // }
     try {
       let accAddr = args[0]
@@ -111,7 +115,21 @@ let server = jayson.server({
 
   sec_getNodesTable: function (args, callback) {
     let response = {}
-    response.NodesTable = core.APIs.getNodesTable()
+    let nodes = core.APIs.getNodesTable()
+    let locations = []
+    nodes.forEach(node => {
+      locations.push({
+        location: geoIPReader.city(node.address),
+        node: node
+      })
+    })
+    response.NodesTable = locations
+    callback(null, response)
+  },
+
+  sec_getChainHeight: function (args, callback) {
+    let response = {}
+    response.ChainHeight = core.APIs.getTokenChainHeight()
     callback(null, response)
   },
 
