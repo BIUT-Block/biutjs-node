@@ -25,7 +25,7 @@ class SECJSTimeCircle {
     this.minGroup = config.minGroup
     this.maxGroup = config.maxGroup
     this.numGroups = config.maxGroup - config.minGroup + 1
-    this.timeDiff = null // the time difference between server unix time and local unix time
+    this.timeDiff = 0 // the time difference between server unix time and local unix time
     this.calcTimeDifference(() => {
       this.currentPeriod = this.getCurrentPeriodNumber()
     })
@@ -69,8 +69,8 @@ class SECJSTimeCircle {
         this.timeDiff = 0
         callback(err)
       } else {
-        let localTime = this.getLocalHostTime()
-        this.timeDiff = 1000 * remoteTime - localTime
+        // let localTime = this.getLocalHostTime()
+        this.timeDiff = 0 // 1000 * remoteTime - localTime
         callback()
       }
     })
@@ -90,7 +90,7 @@ class SECJSTimeCircle {
    */
   getHostGroupId (address) {
     if (typeof address !== 'string') {
-      throw new Error('invalid input type, should be string')
+      console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = this.getCurrentPeriodNumber()
     periodNumber = periodNumber.toString()
@@ -107,7 +107,7 @@ class SECJSTimeCircle {
    */
   getTimestampGroupId (address, timestamp) {
     if (typeof address !== 'string') {
-      throw new Error('invalid input type, should be string')
+      console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = Math.floor((timestamp - this.circleStartTime) / this.periodTime)
     periodNumber = periodNumber.toString()
@@ -176,7 +176,7 @@ class SECJSTimeCircle {
     return groupStartTime
   }
 
-  getLastPowDuration (tokenChain) {
+  getLastPowDuration (tokenChain, callback) {
     let lastPowDuration = 0
     if (tokenChain.getCurrentHeight() !== 0) {
       // |----------|----------|----------|----------|----------|----------|----------| //
@@ -185,14 +185,25 @@ class SECJSTimeCircle {
       // |----------|----------|------t2--|         t4          |    t3   -|----------| //
       // |----------|----------|------t2--|        lastPowDuration        -|----------| //
       // '|' means changing groups, 't1/t2' is the timestamp for first/second last block
-      let t1 = tokenChain.getLastBlock().TimeStamp
-      let t2 = tokenChain.getSecondLastBlock().TimeStamp
-      let t3 = t1 - this.getGroupStartTime(t1)
-      let t4 = this.getGroupStartTime(t1) - this.getGroupStartTime(t2) - this.intervalTime
-      lastPowDuration = t3 + t4
+      tokenChain.getLastBlock((err, lastBlock) => {
+        if (err) callback(err, null)
+        else {
+          let t1 = lastBlock.TimeStamp
+          tokenChain.getSecondLastBlock((err, secondLastBlock) => {
+            if (err) callback(err, null)
+            else {
+              let t2 = secondLastBlock.TimeStamp
+              let t3 = t1 - this.getGroupStartTime(t1)
+              let t4 = this.getGroupStartTime(t1) - this.getGroupStartTime(t2) - this.intervalTime
+              lastPowDuration = t3 + t4
+              callback(null, lastPowDuration)
+            }
+          })
+        }
+      })
+    } else {
+      callback(null, lastPowDuration)
     }
-
-    return lastPowDuration
   }
 
   /**

@@ -45,16 +45,22 @@ class CenterController {
     })
     this.config = config
 
+    this.BlockChain = new BlockChain(config)
+
+    // -------------------------  NODES SYNC UTIL  ------------------------
+    this.nodesIPSync = new NodesIPSync()
+
+    // -------------------  NETWORK STATE MACHINE FLAG  -------------------
+    this.syncInfo = {
+      flag: false,
+      address: null,
+      timer: null
+    }
+
     this.runningFlag = false
     if (process.env.network && this.runningFlag === false) {
       this.initNetwork()
     }
-
-    // ----------------------------  DB CONFIG  ---------------------------
-    this.dbconfig = config.dbconfig
-
-    // -------------------------  NODES SYNC UTIL  ------------------------
-    this.nodesIPSync = new NodesIPSync()
   }
 
   _initNDP () {
@@ -103,7 +109,7 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  TOKEN BLOCK CHAIN  -------------------------------
-      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync })
+      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       networkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer.push(networkEvent)
 
@@ -154,16 +160,16 @@ class CenterController {
     this.runningFlag = true
     this.config.rlp = this.rlp
     // start BlockChain service first and then init NDP and RLP
-    this.BlockChain = new BlockChain(this.config, () => {
+    this.BlockChain.init(this.rlp, () => {
       debug('BlockChain init finish')
       this._initNDP()
       this._initRLP()
       this._refreshDHTConnections()
       this.run()
     })
+    this.config.syncInfo = this.syncInfo
     this.BlockChain.run()
     this.config.BlockChain = this.BlockChain
-    this.TransactionDbDict = this.config.SECTxDbDict
     this.NetworkEventContainer = []
 
     this.config.isTokenChain = true
@@ -189,13 +195,13 @@ class CenterController {
       const openSlots = this.rlp._getOpenSlots()
       const queueLength = this.rlp._peersQueue.length
       const queueLength2 = this.rlp._peersQueue.filter((o) => o.ts <= Date.now()).length
-      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}, Current Token Block Height: ${this.BlockChain.SECTokenBlockChain.getCurrentHeight()}`))
+      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}, Current Token Block Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
       rlpPeers.forEach((peer, index) => {
         debug(chalk.yellow(`    Peer ${index + 1} : ${Utils.getPeerAddr(peer)}) in RLP`))
       })
       debug(`Peer nodes' IP addresses: ${rlpPeers}`)
       debug(chalk.blue('Current Token Transaction Poll Hash Array:'))
-      debug(this.BlockChain.TokenPool.getTxHashArrayFromPool())
+      debug(this.BlockChain.tokenPool.getTxHashArrayFromPool())
       for (let txChainID in this.txConsensusDict) {
         debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
         debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
