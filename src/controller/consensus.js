@@ -68,19 +68,19 @@ class SECConsensus {
 
     this.isPowRunning = true
     this.powWorker.on('message', (result) => {
-      // verify circle group id
-      newBlock.Difficulty = result.Difficulty.toString()
-      newBlock.MixHash = result.MixHash
-      newBlock.Nonce = result.Nonce
-      newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
-      newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
-      newBlock.TimeStamp = this.secCircle.getLocalHostTime()
-
-      let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
-      let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
-
       // verify the node is not synchronizing
       if (!this.syncInfo.flag) {
+        // verify circle group id
+        newBlock.Difficulty = result.Difficulty.toString()
+        newBlock.MixHash = result.MixHash
+        newBlock.Nonce = result.Nonce
+        newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
+        newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
+        newBlock.TimeStamp = this.secCircle.getLocalHostTime()
+
+        let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
+        let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
+
         if (result.result && groupId === BeneGroupId) {
           let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
           // append the pow reward tx

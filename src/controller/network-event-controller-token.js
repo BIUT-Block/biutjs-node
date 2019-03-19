@@ -68,7 +68,11 @@ class NetworkEvent {
             }
             debug(chalk.bold.yellowBright('Sending Local Status to Peer...'))
             debug(status)
-            this.sec.sendStatus(status)
+            try {
+              this.sec.sendStatus(status)
+            } catch (e) {
+              // do nothing
+            }
           }
         })
       }
