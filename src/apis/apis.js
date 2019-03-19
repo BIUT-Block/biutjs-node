@@ -183,7 +183,7 @@ class APIs {
   }
 
   getNodesTable () {
-    return this.CenterController.NodesIPSync.getNodesTable()
+    return this.CenterController.nodesIPSync.getNodesTable()
   }
 
   getTokenChainHeight () {
