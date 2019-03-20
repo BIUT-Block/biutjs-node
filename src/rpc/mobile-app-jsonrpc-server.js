@@ -116,6 +116,115 @@ let server = jayson.server({
     })
   },
 
+  sec_createContractTransaction: function(args, callback) {
+    let response = {}
+    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Unexpected error occurs, error info: ${err}`
+        callback(null, response)
+      } else {
+        let inputData = new Buffer(args[0].inputData).toString('base64')
+        let tokenTx = {
+          Nonce: nonce,
+          TxReceiptStatus: 'pending',
+          TimeStamp: args[0].timestamp,
+          TxFrom: args[0].from,
+          TxTo: args[0].to,
+          Value: args[0].value,
+          ContractAddress: args[0].contractAddress,
+          GasLimit: args[0].gasLimit,
+          GasUsedByTxn: args[0].gas,
+          GasPrice: args[0].gasPrice,
+          InputData: inputData,
+          Signature: args[0].data
+        }
+        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
+        tokenTx.TxHash = tokenTxObject.getTxHash()
+        core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
+          if (err) {
+            response.status = '0'
+            response.info = `Account not found`
+          } else {
+            if (balance < parseFloat(tokenTx.Value)) {
+              response.status = '0'
+              response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
+            } else {
+              if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
+                response.status = '0'
+                response.info = 'Failed to verify transaction signature'
+              } else {
+                response.status = '1'
+                response.info = 'OK'
+                response.txHash = tokenTx.TxHash
+              }
+            }
+          }
+          callback(null, response)
+        })
+      }
+    })
+  },
+
+  sec_sendContractTransaction: function(args, callback) {
+    let response = {}
+    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Unexpected error occurs, error info: ${err}`
+        callback(null, response)
+      } else {
+        let inputData = new Buffer(args[0].inputData).toString('base64')
+        let regexPattern = /transfer\((\w+),\s*([0-9]+[.][0-9]*)\)/
+        if(this.response.callInfo.match(regexPattern)){
+          let txToAddr = RegExp.$1
+          let txAmount = RegExp.$2
+          if (txAmount > args[0].value) {
+            response.status = '0'
+            response.info = 'Smart Contract transaction requires more than sent'
+          }
+        } else {
+          let tokenTx = {
+            Nonce: nonce,
+            TxReceiptStatus: 'pending',
+            TimeStamp: args[0].timestamp,
+            TxFrom: args[0].from,
+            TxTo: args[0].to,
+            Value: args[0].value,
+            ContractAddress: args[0].contractAddress,
+            GasLimit: args[0].gasLimit,
+            GasUsedByTxn: args[0].gas,
+            GasPrice: args[0].gasPrice,
+            InputData: inputData,
+            Signature: args[0].data
+          }
+          let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
+          tokenTx.TxHash = tokenTxObject.getTxHash()
+          core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
+            if (err) {
+              response.status = '0'
+              response.info = `Account not found`
+            } else {
+              if (balance < parseFloat(tokenTx.Value)) {
+                response.status = '0'
+                response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
+              } else {
+                if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
+                  response.status = '0'
+                  response.info = 'Failed to verify transaction signature'
+                } else {
+                  response.status = '1'
+                  response.info = 'OK'
+                  response.txHash = tokenTx.TxHash
+                }
+              }
+            }
+            callback(null, response)
+          })
+        }
+      }
+    })
+  },
   /**
   * free charging function, for testing purpose
   */

@@ -77,13 +77,46 @@ class SECConsensus {
 
         // assign txHeight
         let txHeight = 0
+        let contractResult = {}
+        let secRunContract
+        let contractTransactions = []
         TxsInPoll.forEach((tx) => {
           tx.TxReceiptStatus = 'success'
           tx.TxHeight = txHeight
           txHeight = txHeight + 1
+          if (SECUtils.isContractAddr(tx.TxTo)) {
+            secRunContract = new SECRunContract(tx, this.BlockChain.SECTokenBlockChain)
+            contractResult = secRunContract.run()
+            if (Object.keys(contractResult.transferResult).length > 0){
+              let txBuffer = this.BlockChain.SECTokenBlockChain.getTxBuffer()
+              let nonce = 0
+              Object.keys(txBuffer).forEach((key) => {
+                if (txBuffer[key][0] === tx.TxTo || txBuffer[key][1] === tx,TxTo) {
+                  nonce++
+                }
+              })
+              nonce = nonce.toString()
+              let tokenTx = {
+                Version: '0.1',
+                TxReceiptStatus: 'success',
+                TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+                TxFrom: tx.TxTo,
+                TxTo: contractResult.transferResult.TxToAddr,
+                Value: contractResult.transferResult.TxAmount,
+                GasLimit: '0',
+                GasUsedByTxn: '0',
+                GasPrice: '0',
+                Nonce: nonce,
+                InputData: `Smart Contract Transaction`
+              }
+              contractTransactions.push(tokenTx)
+            } else {
+              console.log(contractResult.otherResults)
+            }
+          }
         })
 
-        newBlock.Transactions = TxsInPoll
+        newBlock.Transactions = TxsInPoll.concat(contractTransactions)
         // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
         try {
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(newBlock)
