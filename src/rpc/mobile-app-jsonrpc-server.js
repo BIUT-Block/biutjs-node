@@ -1,6 +1,7 @@
 const fs = require('fs')
+const path = require('path')
 const GEOIPReader = require('@maxmind/geoip2-node').Reader
-const dbBuffer = fs.readFileSync(process.cwd() + '/src/GeoIP2-City.mmdb')
+const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../src/GeoIP2-City.mmdb'))
 const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
 const jayson = require('jayson')
 
