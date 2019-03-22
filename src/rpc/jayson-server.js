@@ -257,7 +257,6 @@ let server = jayson.server({
       TxFrom: args.From,
       TxTo: args.To,
       Value: args.value,
-      ContractAddress: '',
       GasLimit: '6416',
       GasUsedByTxn: '729',
       GasPrice: '0.001',
@@ -277,7 +276,7 @@ let server = jayson.server({
    */
   getBalance: function (args, callback) {
     let response = {}
-    core.APIs.calAccBalance(args.address, (err, userBalance) => {
+    core.APIs.getBalance(args.address, (err, userBalance) => {
       if (err) {
         response.status = 'true'
         response.info = 'no previous transactions found'

@@ -1,3 +1,8 @@
+const fs = require('fs')
+const path = require('path')
+const GEOIPReader = require('@maxmind/geoip2-node').Reader
+const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../GeoIP2-City.mmdb'))
+const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
 const jayson = require('jayson')
 
 let core = {}
@@ -11,18 +16,23 @@ let server = jayson.server({
   */
   sec_getBalance: function (args, callback) {
     let response = {}
+    // if (args[0].coinType = null) {
+    // return all coins
+    // } else {
+    // args[0].coinType
+    // }
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
-      core.APIs.calAccBalance(accAddr, (err, balance) => {
+      core.APIs.getBalance(accAddr, (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
-          response.value = '10'
         } else {
           response.status = '1'
           response.info = 'OK'
           response.value = balance
+          // response.value = {}
         }
         callback(null, response)
       })
@@ -68,7 +78,7 @@ let server = jayson.server({
   */
   sec_sendRawTransaction: function (args, callback) {
     let response = {}
-    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+    core.APIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
@@ -82,33 +92,21 @@ let server = jayson.server({
           TxFrom: args[0].from,
           TxTo: args[0].to,
           Value: args[0].value,
-          ContractAddress: args[0].contractAddress,
           GasLimit: args[0].gasLimit,
           GasUsedByTxn: args[0].gas,
           GasPrice: args[0].gasPrice,
           InputData: args[0].inputData,
           Signature: args[0].data
         }
-        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.TxHash = tokenTxObject.getTxHash()
-        core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Account not found, which means account balance is 0, cant initiate a transaction`
+            response.info = `Error occurs: ${err}`
           } else {
-            if (balance < parseFloat(tokenTx.Value)) {
-              response.status = '0'
-              response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
-            } else {
-              if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-                response.status = '0'
-                response.info = 'Failed to verify transaction signature'
-              } else {
-                response.status = '1'
-                response.info = 'OK'
-                response.txHash = tokenTx.TxHash
-              }
-            }
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
           }
           callback(null, response)
         })
@@ -116,15 +114,34 @@ let server = jayson.server({
     })
   },
 
+  sec_getNodesTable: function (args, callback) {
+    let response = {}
+    let nodes = core.APIs.getNodesTable()
+    let locations = []
+    nodes.forEach(node => {
+      locations.push({
+        location: geoIPReader.city(node.address),
+        node: node
+      })
+    })
+    response.NodesTable = locations
+    callback(null, response)
+  },
+
+  sec_getChainHeight: function (args, callback) {
+    let response = {}
+    response.ChainHeight = core.APIs.getTokenChainHeight()
+    callback(null, response)
+  },
+
   sec_createContractTransaction: function(args, callback) {
     let response = {}
-    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+    core.APIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
         callback(null, response)
       } else {
-        let inputData = new Buffer(args[0].inputData).toString('base64')
         let tokenTx = {
           Nonce: nonce,
           TxReceiptStatus: 'pending',
@@ -132,33 +149,21 @@ let server = jayson.server({
           TxFrom: args[0].from,
           TxTo: args[0].to,
           Value: args[0].value,
-          ContractAddress: args[0].contractAddress,
           GasLimit: args[0].gasLimit,
           GasUsedByTxn: args[0].gas,
           GasPrice: args[0].gasPrice,
-          InputData: inputData,
+          InputData: args[0].inputData,
           Signature: args[0].data
         }
-        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.TxHash = tokenTxObject.getTxHash()
-        core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Account not found`
+            response.info = `Error occurs: ${err}`
           } else {
-            if (balance < parseFloat(tokenTx.Value)) {
-              response.status = '0'
-              response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
-            } else {
-              if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-                response.status = '0'
-                response.info = 'Failed to verify transaction signature'
-              } else {
-                response.status = '1'
-                response.info = 'OK'
-                response.txHash = tokenTx.TxHash
-              }
-            }
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
           }
           callback(null, response)
         })
@@ -168,60 +173,47 @@ let server = jayson.server({
 
   sec_sendContractTransaction: function(args, callback) {
     let response = {}
-    core.APIs.getUserTxNonce(args[0].from, (err, nonce) => {
+    core.APIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
         callback(null, response)
       } else {
-        let inputData = new Buffer(args[0].inputData).toString('base64')
-        let regexPattern = /transfer\((\w+),\s*([0-9]+[.][0-9]*)\)/
-        if(this.response.callInfo.match(regexPattern)){
-          let txToAddr = RegExp.$1
+        let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
+        console.log(args[0].inputData)
+        if(args[0].inputData.match(regexPattern)){
           let txAmount = RegExp.$2
           if (txAmount > args[0].value) {
             response.status = '0'
             response.info = 'Smart Contract transaction requires more than sent'
-          }
-        } else {
-          let tokenTx = {
-            Nonce: nonce,
-            TxReceiptStatus: 'pending',
-            TimeStamp: args[0].timestamp,
-            TxFrom: args[0].from,
-            TxTo: args[0].to,
-            Value: args[0].value,
-            ContractAddress: args[0].contractAddress,
-            GasLimit: args[0].gasLimit,
-            GasUsedByTxn: args[0].gas,
-            GasPrice: args[0].gasPrice,
-            InputData: inputData,
-            Signature: args[0].data
-          }
-          let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-          tokenTx.TxHash = tokenTxObject.getTxHash()
-          core.APIs.calAccBalance(tokenTx.TxFrom, (err, balance) => {
-            if (err) {
-              response.status = '0'
-              response.info = `Account not found`
-            } else {
-              if (balance < parseFloat(tokenTx.Value)) {
-                response.status = '0'
-                response.info = `Account doesn't have enough balance to finish the transaction, account balance: ${balance}, transaction value: ${tokenTx.Value}`
-              } else {
-                if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-                  response.status = '0'
-                  response.info = 'Failed to verify transaction signature'
-                } else {
-                  response.status = '1'
-                  response.info = 'OK'
-                  response.txHash = tokenTx.TxHash
-                }
-              }
-            }
             callback(null, response)
-          })
+          }
         }
+        let tokenTx = {
+          Nonce: nonce,
+          TxReceiptStatus: 'pending',
+          TimeStamp: args[0].timestamp,
+          TxFrom: args[0].from,
+          TxTo: args[0].to,
+          Value: args[0].value,
+          GasLimit: args[0].gasLimit,
+          GasUsedByTxn: args[0].gas,
+          GasPrice: args[0].gasPrice,
+          InputData: args[0].inputData,
+          Signature: args[0].data
+        }
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+          if (err) {
+            response.status = '0'
+            response.info = `Error occurs: ${err}`
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
+          }
+          callback(null, response)
+        })
       }
     })
   },
@@ -230,17 +222,14 @@ let server = jayson.server({
   */
   sec_freeCharge: function (args, callback) {
     const userInfo = {
-      privKey: '56707bf1eaedf11f40f2d30d117e0e493ea03cbe29ba2afee838407db18c212c',
-      publicKey: '3d8e183470248effe2f5ab99f1a0c53c7c7415c7b4a1f35805a5b0ce7e7583a42c9f99644999dcd2c34534dac734829bb8bafc330995a989805d2afb68bbfcb7',
-      secAddress: '53a801c4da2cc72cf6be348369678b6f86c5edc1'
+      secAddress: '0000000000000000000000000000000000000001'
     }
 
     let response = {}
-    core.APIs.getUserTxNonce(userInfo.secAddress, (err, nonce) => {
+    core.APIs.getNonce(userInfo.secAddress, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
-        callback(null, response)
       } else {
         let tokenTx = {
           Nonce: nonce,
@@ -250,28 +239,26 @@ let server = jayson.server({
           TxFrom: userInfo.secAddress,
           TxTo: args[0].to,
           Value: args[0].value,
-          ContractAddress: '',
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
           InputData: 'Mobile APP JSONRPC API Function Test',
-          Signature: ''
+          Signature: {}
         }
 
-        let tokenTxObject = core.APIs.createSecTxObject(tokenTx)
-        tokenTx.Signature = tokenTxObject.signTx(userInfo.privKey)
-        tokenTx.TxHash = tokenTxObject.getTxHash()
-        if (!core.CenterController.getBlockchain().initiateTokenTx(tokenTx)) {
-          response.status = '0'
-          response.info = 'Failed to verify transaction signature'
-        } else {
-          response.status = '1'
-          response.info = 'OK'
-          response.TxHash = tokenTx.TxHash
-        }
-
-        callback(null, response)
+        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+          if (err) {
+            response.status = '0'
+            response.info = `Error occurs, error info ${err}`
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.TxHash = tokenTx.TxHash
+          }
+        })
       }
+      callback(null, response)
     })
   },
 
