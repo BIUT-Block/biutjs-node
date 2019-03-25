@@ -283,6 +283,41 @@ let server = jayson.server({
     response.status = '1'
     response.message = 'OK'
     callback(null, response)
+  },
+
+  _setBlock: function (args, callback) {
+    console.log(args[0])
+    let response = {}
+    core.APIs.writeBlock(args[0], (err) => {
+      if (err) {
+        response.status = '0'
+        response.message = 'Failed, reason: ' + err
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+      }
+      callback(response)
+    })
+  },
+
+  _syncFromIp: function (args, callback) {
+    let response = {}
+    if (args[0].ip === null) {
+      response.status = '0'
+      response.message = 'Needs a valid ip address'
+      callback(response)
+    } else {
+      core.APIs.syncFromIp(args[0].ip, (err) => {
+        if (err) {
+          response.status = '0'
+          response.message = 'Failed, reason: ' + err
+        } else {
+          response.status = '1'
+          response.message = 'OK'
+        }
+        callback(response)
+      })
+    }
   }
 })
 

@@ -69,6 +69,18 @@ class APIs {
     return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
+  writeBlock (block, callback) {
+    this.blockChain.SECTokenChain.writeBlock(block, callback)
+  }
+
+  syncFromIp (ip, callback) {
+    this.CenterController.NetworkEventContainer.forEach((networkEvent) => {
+      if (networkEvent.ID.indexOf(ip) > -1) {
+        networkEvent.syncFromIp(ip, callback)
+      }
+    })
+  }
+
   // -------------------------  TRANSACTION CHAIN  ------------------------
   getTransactionBlock (ID, hash, callback) {
     this.SECTxDbDict[ID].getTxBlockFromDB(hash, (err, data) => {
