@@ -564,7 +564,7 @@ class NetworkEvent {
     this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
       if (err) callback(err)
       else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(geneBlock))])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify([geneBlock]))])
         callback()
       }
     })

@@ -74,11 +74,16 @@ class APIs {
   }
 
   syncFromIp (ip, callback) {
+    let foundFlag = false
     this.CenterController.NetworkEventContainer.forEach((networkEvent) => {
-      if (networkEvent.ID.indexOf(ip) > -1) {
-        networkEvent.syncFromIp(ip, callback)
+      if (networkEvent.getInstanceID().indexOf(ip) > -1 && !foundFlag) {
+        foundFlag = true
+        return networkEvent.syncFromIp(ip, callback)
       }
     })
+    if (!foundFlag) {
+      callback(new Error('Node with the IP address not found!'))
+    }
   }
 
   // -------------------------  TRANSACTION CHAIN  ------------------------

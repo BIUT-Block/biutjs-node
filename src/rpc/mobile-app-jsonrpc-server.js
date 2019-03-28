@@ -286,7 +286,6 @@ let server = jayson.server({
   },
 
   _setBlock: function (args, callback) {
-    console.log(args[0])
     let response = {}
     core.APIs.writeBlock(args[0], (err) => {
       if (err) {
@@ -296,7 +295,7 @@ let server = jayson.server({
         response.status = '1'
         response.message = 'OK'
       }
-      callback(response)
+      callback(null, response)
     })
   },
 
@@ -315,7 +314,7 @@ let server = jayson.server({
           response.status = '1'
           response.message = 'OK'
         }
-        callback(response)
+        callback(null, response)
       })
     }
   }
