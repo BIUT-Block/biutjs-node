@@ -150,8 +150,8 @@ class APIs {
    * @param  {String} userAddress - user account address
    * @return {None}
    */
-  getBalance (userAddress, callback) {
-    this.blockChain.getBalance(userAddress, callback)
+  getBalance (userAddress, tokenName, callback) {
+    this.blockChain.getBalance(userAddress, tokenName, callback)
   }
 
   getNonce (userAddress, callback) {
