@@ -121,7 +121,7 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
-    this.getTokenName(tx.TxTo, (err, tokenName) => {
+    this.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
       if (err) return callback(err)
       let tokenTx = new SECTransaction.SECTokenTx(tx)
 
@@ -315,22 +315,6 @@ class BlockChain {
         callback(null, true)
       }
     })
-  }
-
-  isSmartContractAddress (addr) {
-    // TBD
-    return false
-  }
-
-  getTokenName (addr, callback) {
-    if (this.isSmartContractAddress(addr)) {
-      this.SECTokenChain.getTokenName(addr, (err, tokenName) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
-        callback(null, tokenName)
-      })
-    } else {
-      callback(null, 'SEC')
-    }
   }
 }
 
