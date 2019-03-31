@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const chalk = require('chalk')
 const ms = require('ms')
 const async = require('async')
@@ -425,19 +426,42 @@ class NetworkEvent {
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error: ${err}`)
-        else if (this.BlockChain.SECTokenChain.getCurrentHeight() >= remoteHeight) {
-          // synchronizing finished
-          this.syncInfo.flag = false
-          this.syncInfo.address = null
-          clearTimeout(this.syncInfo)
-        } else {
-          // continue synchronizing
-          this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
-            if (err) console.error(`Error: ${err}`)
-            else {
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
-            }
+        else {
+          // remove the duplicated txs
+          _.remove(txArray, (tx) => {
+            this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
+              if (err) {
+                return true
+              } else {
+                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
+                  if (err) return true
+                  else {
+                    return (exiResult || !balResult)
+                  }
+                })
+              }
+            })
           })
+
+          // add the removed txs into pool
+          txArray.forEach((tx) => {
+            this.BlockChain.tokenPool.addTxIntoPool(tx)
+          })
+
+          if (this.BlockChain.SECTokenChain.getCurrentHeight() >= remoteHeight) {
+            // synchronizing finished
+            this.syncInfo.flag = false
+            this.syncInfo.address = null
+            clearTimeout(this.syncInfo)
+          } else {
+            // continue synchronizing
+            this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+              if (err) console.error(`Error: ${err}`)
+              else {
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+              }
+            })
+          }
         }
       })
     })
