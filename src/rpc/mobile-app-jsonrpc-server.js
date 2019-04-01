@@ -180,18 +180,11 @@ let server = jayson.server({
   },
 
   sec_getNodeInfo: function (args, callback) {
-    let timePromise = core.APIs.asyncGetUTCTimeFromServer(args[0].timeServer)
     let response = {}
-    timePromise.then((time) => {
-      core.APIs.getNodeIpv4((ipv4) => {
-        response.status = '1'
-        response.time = time
-        response.ipv4 = ipv4
-        callback(null, response)
-      })
-    }).catch((err) => {
-      response.status = '0'
-      response.info = `Failed to get current system time, error info: ${err}`
+    core.APIs.getNodeIpv4((ipv4) => {
+      response.status = '1'
+      response.time = new Date().getTime()
+      response.ipv4 = ipv4
       callback(null, response)
     })
   },
