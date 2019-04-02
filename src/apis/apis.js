@@ -130,6 +130,10 @@ class APIs {
     return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
   }
 
+  getAccTreeAccInfo (accAddr, callback) {
+    this.blockChain.SECTokenChain.getFromAccTree(accAddr, callback)
+  }
+
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)

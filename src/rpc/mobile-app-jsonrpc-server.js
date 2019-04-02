@@ -278,6 +278,21 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  sec_debug_getAccTreeAccInfo: function (args, callback) {
+    let response = {}
+    core.APIs.getAccTreeAccInfo(args[0], (err, info) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Failed to get Account Info, error info: ${err}`
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.info = info
+      }
+      callback(null, response)
+    })
+  },
+
   _setBlock: function (args, callback) {
     let response = {}
     core.APIs.writeBlock(args[0], (err) => {
