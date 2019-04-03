@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const moment = require('moment-timezone')
 const GEOIPReader = require('@maxmind/geoip2-node').Reader
 const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../GeoIP2-City.mmdb'))
 const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
@@ -114,20 +115,6 @@ let server = jayson.server({
     })
   },
 
-  sec_getNodesTable: function (args, callback) {
-    let response = {}
-    let nodes = core.APIs.getNodesTable()
-    let locations = []
-    nodes.forEach(node => {
-      locations.push({
-        location: geoIPReader.city(node.address),
-        node: node
-      })
-    })
-    response.NodesTable = locations
-    callback(null, response)
-  },
-
   sec_getChainHeight: function (args, callback) {
     let response = {}
     response.ChainHeight = core.APIs.getTokenChainHeight()
@@ -179,12 +166,27 @@ let server = jayson.server({
     })
   },
 
+  sec_getNodesTable: function (args, callback) {
+    let response = {}
+    let nodes = core.APIs.getNodesTable()
+    let locations = []
+    nodes.forEach(node => {
+      locations.push({
+        location: geoIPReader.city(node.address),
+        node: node
+      })
+    })
+    response.NodesTable = locations
+    callback(null, response)
+  },
+
   sec_getNodeInfo: function (args, callback) {
     let response = {}
     core.APIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
+      response.timeZone = moment.tz.guess()
       callback(null, response)
     })
   },
