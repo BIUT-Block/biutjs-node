@@ -255,6 +255,23 @@ let server = jayson.server({
     })
   },
 
+  sec_getBlockByHeight: function (args, callback) {
+    let response = {}
+    let blockHeight = args[0]
+    core.APIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
+      if (err) {
+        response.status = '0'
+        response.message = `Failed to get block, error info: ${err}`
+        response.blockInfo = []
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.blockInfo = block
+      }
+      callback(null, response)
+    })
+  },
+
   sec_getWholeTokenBlockchain: function (args, callback) {
     let response = {}
     core.APIs.getWholeTokenBlockchain((err, value) => {
