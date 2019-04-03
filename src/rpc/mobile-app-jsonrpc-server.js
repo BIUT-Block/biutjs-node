@@ -1,6 +1,6 @@
 const fs = require('fs')
 const path = require('path')
-const moment = require('moment-timezone')
+const geoip = require('geoip-lite')
 const GEOIPReader = require('@maxmind/geoip2-node').Reader
 const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../GeoIP2-City.mmdb'))
 const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
@@ -186,7 +186,7 @@ let server = jayson.server({
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
-      response.timeZone = moment.tz.guess()
+      response.timeZone = geoip.lookup(ipv4).timezone
       callback(null, response)
     })
   },
