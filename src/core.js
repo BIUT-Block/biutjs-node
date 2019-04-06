@@ -9,14 +9,13 @@ const SECConfig = require('../config/default.json')
 class Core {
   constructor (dbconfig = {
     DBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path,
-    cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
-    ID: []
+    SecDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SecPath,
+    SenDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SenPath,
+    cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path
   }) {
-    if (process.env.txChain) {
-      dbconfig.ID.push('1897984547')
-    }
     if (process.env.secTest) {
-      dbconfig.DBPath = dbconfig.DBPath + 'test/'
+      dbconfig.SecDBPath = dbconfig.SecDBPath + 'test/'
+      dbconfig.SenDBPath = dbconfig.SenDBPath + 'test/'
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //

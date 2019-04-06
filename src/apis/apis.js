@@ -9,11 +9,6 @@ class APIs {
     this.blockChain = this.CenterController.getBlockchain()
     this.SECTokenDB = this.blockChain.SECTokenChain.chainDB
     this.dbconfig = config.dbconfig
-
-    this.SECTxDBDict = {}
-    for (let txChainID in this.blockChain.SECTxChainDict) {
-      this.SECTxDBDict[txChainID] = this.blockChain.SECTxChainDict[txChainID].chainDB
-    }
   }
 
   // ----------------------------  TOKEN CHAIN  ---------------------------
@@ -86,54 +81,6 @@ class APIs {
     }
   }
 
-  // -------------------------  TRANSACTION CHAIN  ------------------------
-  getTransactionBlock (ID, hash, callback) {
-    this.SECTxDbDict[ID].getTxBlockFromDB(hash, (err, data) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        callback(null, data[0])
-      }
-    })
-  }
-
-  getTransactionBlockchain (ID, minHeight, maxHeight, callback) {
-    this.SECTxDbDict[ID].getTxChain(minHeight, maxHeight, callback)
-  }
-
-  getWholeTransactionBlockchain (ID, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB(callback)
-  }
-
-  getTxforUser (ID, userAddress, callback) {
-    this.SECTxDbDict[ID].findTxForUser(userAddress, callback)
-  }
-
-  getTransactionTx (ID, txHash, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
-      if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
-      }
-      wholechain.forEach(block => {
-        let transaction = block.Transactions.filter(tx => {
-          return tx.TxHash === txHash
-        })
-        if (transaction.length) {
-          callback(transaction[0])
-        }
-      })
-    })
-  }
-
-  getTransactionTxInPool (ID, txHash) {
-    let txPoolDict = this.blockChain.TxPoolDict
-    return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
-  }
-
-  getAccTreeAccInfo (accAddr, callback) {
-    this.blockChain.SECTokenChain.getFromAccTree(accAddr, callback)
-  }
-
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)
@@ -149,6 +96,10 @@ class APIs {
 
   // -------------------------  Other functions  ------------------------
 
+  getAccTreeAccInfo (accAddr, callback) {
+    this.blockChain.SECTokenChain.getFromAccTree(accAddr, callback)
+  }
+
   /**
    * Calculate user account balance
    * @param  {String} userAddress - user account address
@@ -163,7 +114,7 @@ class APIs {
   }
 
   getTokenChainSize (callback) {
-    getSize(this.dbconfig.DBPath + 'tokenBlockChain', (err, size) => {
+    getSize(this.dbconfig.SecDBPath + 'tokenBlockChain', (err, size) => {
       if (err) {
         callback(err, null)
       } else {

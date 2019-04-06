@@ -112,13 +112,6 @@ class CenterController {
       let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       networkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer.push(networkEvent)
-
-      // -------------------------------  TX BLOCK CHAINS  -------------------------------
-      for (let txChainID in this.TransactionDbDict) {
-        networkEvent = new NetworkEventTx({ ID: txChainID, BlockChain: this.BlockChain, Consensus: this.txConsensusDict[txChainID], NDP: this.ndp })
-        networkEvent.PeerCommunication(peer, addr, sec)
-        this.NetworkEventContainer.push(networkEvent)
-      }
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {
@@ -150,9 +143,6 @@ class CenterController {
 
   _runConsensus () {
     this.tokenConsensus.run()
-    for (let txChainID in this.txConsensusDict) {
-      this.txConsensusDict[txChainID].run()
-    }
   }
 
   initNetwork () {
@@ -174,12 +164,6 @@ class CenterController {
 
     this.config.isTokenChain = true
     this.tokenConsensus = new Consensus(this.config)
-    this.txConsensusDict = {}
-    this.config.isTokenChain = false
-    for (let txChainID in this.TransactionDbDict) {
-      this.config.ID = txChainID
-      this.txConsensusDict[txChainID] = new Consensus(this.config)
-    }
   }
 
   getBlockchain () {
@@ -202,10 +186,6 @@ class CenterController {
       debug(`Peer nodes' IP addresses: ${rlpPeers}`)
       debug(chalk.blue('Current Token Transaction Poll Hash Array:'))
       debug(this.BlockChain.tokenPool.getTxHashArrayFromPool())
-      for (let txChainID in this.txConsensusDict) {
-        debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
-        debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
-      }
       // for refresh NodesTable
       let _peers = []
       peers.forEach(peer => {

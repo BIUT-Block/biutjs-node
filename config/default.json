@@ -1,7 +1,9 @@
 {
   "SECBlock": {
     "dbConfig": {
-      "Path": "/data/"
+      "Path": "/data/",
+      "SecPath": "Sec",
+      "SenPath": "Sen"
     },
     "devp2pConfig": {
       "Port": 13331,
