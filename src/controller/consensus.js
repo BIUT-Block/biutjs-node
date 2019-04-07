@@ -18,38 +18,31 @@ class SECConsensus {
     this.syncInfo = config.syncInfo
     this.powEnableFlag = false
 
-    // -------------------------------  Check block chain type  -------------------------------
-    if (this.isTokenChain) {
-      this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
-      this.isPowRunning = false
+    // -------------------------------  block chain  -------------------------------
+    this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
+    this.isPowRunning = false
 
-      // create an secCircle object
-      let configGroup = SECConfig.SECBlock.groupConfig
-      let configCircle = SECConfig.SECBlock.circleConfig
-      configCircle.minGroup = configGroup.minGroupId
-      configCircle.maxGroup = configGroup.maxGroupId
-      this.secCircle = new SECCircle(configCircle)
+    // create an secCircle object
+    let configGroup = SECConfig.SECBlock.groupConfig
+    let configCircle = SECConfig.SECBlock.circleConfig
+    configCircle.minGroup = configGroup.minGroupId
+    configCircle.maxGroup = configGroup.maxGroupId
+    this.secCircle = new SECCircle(configCircle)
 
-      // init variables
-      this.myGroupId = 0
-      this.groupIdBuffer = 0
-    } else {
-      // init variables
-      this.ID = config.ID
-      this.txChainMinGenPeriod = SECConfig.SECBlock.txChainConfig.minGenPeriod
-      this.txChainMaxGenPeriod = SECConfig.SECBlock.txChainConfig.maxGenPeriod
-    }
+    // init variables
+    this.myGroupId = 0
+    this.groupIdBuffer = 0
   }
 
   runPOW () {
-    let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenChain)
+    let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
 
-    this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
+    this.BlockChain.chain.getLastBlock((err, lastBlock) => {
       if (err) console.error(`Error: ${err}`)
       else {
         newBlock.Number = lastBlock.Number + 1
         newBlock.ParentHash = lastBlock.Hash
-        this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain, (err, lastPowCalcTime) => {
+        this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
           if (err) console.error(`Error: ${err}`)
           else {
             let blockForPOW = {
@@ -75,14 +68,14 @@ class SECConsensus {
         newBlock.MixHash = result.MixHash
         newBlock.Nonce = result.Nonce
         newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
-        newBlock.StateRoot = this.BlockChain.SECTokenChain.accTree.getRoot()
+        newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
         newBlock.TimeStamp = this.secCircle.getLocalHostTime()
 
         let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
         let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
         if (result.result && groupId === BeneGroupId) {
-          let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.tokenPool.getAllTxFromPool()))
+          let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
           TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
 
@@ -119,13 +112,13 @@ class SECConsensus {
           // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
           try {
             let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-            this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
+            this.BlockChain.chain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
               if (err) console.error(`Error: ${err}`)
               else {
-                console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
+                console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
                 console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
                 this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-                this.BlockChain.tokenPool.clear()
+                this.BlockChain.pool.clear()
                 this.resetPOW()
               }
             })
@@ -186,23 +179,11 @@ class SECConsensus {
     clearInterval(this.circleInterval)
   }
 
-  runTxBlockChain (delay = _.random(this.txChainMinGenPeriod, this.txChainMaxGenPeriod)) {
-    this.TxTimer = setTimeout(() => {
-      this.BlockChain.generateTxBlock(this.ID)
-      this.runTxBlockChain()
-    }, delay)
-  }
-
   run () {
     setTimeout(() => {
-      if (this.isTokenChain) {
-        // token chain consensus
-        this.runCircle()
-        this.BlockChain.run()
-      } else {
-        // transaction chain consensus
-        this.runTxBlockChain()
-      }
+      // token chain consensus
+      this.runCircle()
+      this.BlockChain.run()
     }, 2000)
   }
 }

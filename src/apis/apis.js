@@ -7,7 +7,7 @@ class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
     this.blockChain = this.CenterController.getBlockchain()
-    this.SECTokenDB = this.blockChain.SECTokenChain.chainDB
+    this.SECTokenDB = this.blockChain.chain.chainDB
     this.dbconfig = config.dbconfig
   }
 
@@ -52,20 +52,18 @@ class APIs {
   }
 
   getTokenTxInPool (txHash, callback) {
-    let tokenPool = this.blockChain.tokenPool
-    let transaction = tokenPool.getAllTxFromPool().filter(tx => {
+    let transaction = this.blockChain.pool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
     })
     callback(transaction[0])
   }
 
   getTokenTxInPoolByAddress (userAddress) {
-    let tokenPool = this.blockChain.tokenPool
-    return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+    return this.blockChain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
   writeBlock (block, callback) {
-    this.blockChain.SECTokenChain.writeBlock(block, callback)
+    this.blockChain.chain.writeBlock(block, callback)
   }
 
   syncFromIp (ip, callback) {
@@ -97,7 +95,7 @@ class APIs {
   // -------------------------  Other functions  ------------------------
 
   getAccTreeAccInfo (accAddr, callback) {
-    this.blockChain.SECTokenChain.getFromAccTree(accAddr, callback)
+    this.blockChain.chain.getFromAccTree(accAddr, callback)
   }
 
   /**
@@ -159,7 +157,7 @@ class APIs {
   }
 
   getTokenChainHeight () {
-    return this.blockChain.SECTokenChain.getCurrentHeight()
+    return this.blockChain.chain.getCurrentHeight()
   }
 }
 

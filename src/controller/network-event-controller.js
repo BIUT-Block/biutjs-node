@@ -17,15 +17,15 @@ const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
 const SYNC_CHUNK = 20 // each sync package contains 20 blocks
-const TOKEN_CHAIN = Buffer.from('token', 'utf-8')
 
 class NetworkEvent {
   constructor (config) {
-    this.ID = config.ID
     this.BlockChain = config.BlockChain
-    this.Consensus = config.Consensus
+    this.Consensus = config.BlockChain.consensus
     this.NDP = config.NDP
     this.NodesIPSync = config.NodesIPSync
+    this.ChainName = config.chainName
+    this.ChainNameBuff = Buffer.from(config.chainName, 'utf-8')
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     this.CHAIN_ID = SECConfig.SECBlock.checkConfig.CHAIN_ID
@@ -41,10 +41,6 @@ class NetworkEvent {
     this.sec = {}
   }
 
-  getInstanceID () {
-    return this.ID
-  }
-
   PeerCommunication (peer, addr, sec) {
     this.peer = peer
     this.addr = addr
@@ -55,10 +51,10 @@ class NetworkEvent {
       bodies: [],
       msgTypes: {}
     }
-    this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+    this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
       if (err) console.error(`Error: ${err}`)
       else {
-        this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
+        this.BlockChain.chain.getLastBlock((err, lastBlock) => {
           if (err) console.error(`Error: ${err}`)
           else {
             let status = {
@@ -82,7 +78,7 @@ class NetworkEvent {
     // ------------------------------  CHECK FORK  -----------------------------
     this.sec.once('status', () => {
       debug('Running first time Status Check...')
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, this.CHECK_BLOCK_NR])
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [this.ChainNameBuff, this.CHECK_BLOCK_NR])
       this.forkDrop = setTimeout(() => {
         peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
       }, ms('15s'))
@@ -95,9 +91,8 @@ class NetworkEvent {
       } else {
         requests.msgTypes[code] = 1
       }
-      let chainID = payload[0].toString('utf-8')
-      if (chainID !== 'token') {
-        debug(`not token chain, chainID is ${chainID}, typeof chainID is ${typeof chainID}`)
+      if (payload[0].toString('utf-8') !== this.ChainName) {
+        debug(`Not ${this.ChainName} chain, received chain name is ${payload[0].toString('utf-8')}`)
         return
       }
       payload = payload[1]
@@ -177,7 +172,7 @@ class NetworkEvent {
     let blockHash = payload.toString('hex')
     debug(`New Block Hash from Remote: ${blockHash}`)
 
-    this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+    this.BlockChain.chain.getHashList((err, hashList) => {
       if (err) console.error(`Error: ${err}`)
       else if (blockHash in hashList) {
         // skip if the block is already in the database
@@ -191,7 +186,7 @@ class NetworkEvent {
         }, ms('5s'))
 
         debug('Send GET_BLOCK_HEADERS Message')
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [TOKEN_CHAIN, payload])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [this.ChainNameBuff, payload])
         requests.headers.push(blockHash)
       }
     })
@@ -204,27 +199,27 @@ class NetworkEvent {
       // check genesis block
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload))
       if (SECDEVP2P._util.buffer2int(payload) === this.CHECK_BLOCK_NR) {
-        this.BlockChain.SECTokenChain.getBlock(this.CHECK_BLOCK_NR - 1, (err, block) => {
+        this.BlockChain.chain.getBlock(this.CHECK_BLOCK_NR - 1, (err, block) => {
           if (err) console.error(`Error: ${err}`)
           else {
             let checkBlock = new SECBlockChain.SECTokenBlock(block)
 
             debug('SEC Send Message: BLOCK_HEADERS genesis block')
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [TOKEN_CHAIN, checkBlock.getHeaderBuffer()])
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [this.ChainNameBuff, checkBlock.getHeaderBuffer()])
           }
         })
       }
     } else {
       let blockHash = payload.toString('hex')
       debug('Get Block Hash: ' + blockHash)
-      this.BlockChain.SECTokenChain.getBlocksWithHash(blockHash, (err, blockArray) => {
+      this.BlockChain.chain.getBlocksWithHash(blockHash, (err, blockArray) => {
         if (err) console.error(`Error: ${err}`)
         else {
           if (blockArray.length > 0) {
             let localBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
 
             debug('SEC Send Message: BLOCK_HEADERS')
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [TOKEN_CHAIN, localBlock.getHeaderBuffer()])
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS, [this.ChainNameBuff, localBlock.getHeaderBuffer()])
           } else {
             debug(`BLOCK_HEADERS: block header with hash ${blockHash} is not found`)
           }
@@ -242,13 +237,13 @@ class NetworkEvent {
     debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
 
     if (!this.forkVerified) {
-      this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+      this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
         if (err) console.error(`Error: ${err}`)
         else if (block.getHeaderHash() === geneBlock.Hash) {
           debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
           this.forkVerified = true
           clearTimeout(this.forkDrop)
-          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [TOKEN_CHAIN, []])
+          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainNameBuff, []])
 
           this._addPeerToNDP()
           this._startSyncNodesIP()
@@ -269,44 +264,44 @@ class NetworkEvent {
         }
 
         // verify parent block hash
-        this.BlockChain.SECTokenChain.getBlock(header.Number - 1, (err, lastBlock) => {
+        this.BlockChain.chain.getBlock(header.Number - 1, (err, lastBlock) => {
           if (err) {
             // possible reason: block does not exist because received block number is larger than local chain length at least by 2
             debug(`error occurs when verify parent hash: ${err}`)
-            this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+            this.BlockChain.chain.getHashList((err, hashList) => {
               if (err) console.error(`Error: ${err}`)
               else {
                 debug(`getBlock() function error condition: hash list is ${hashList}`)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
               }
             })
           } else {
             // case 1: parent hash successfully verified
             if (lastBlock.Hash === header.ParentHash) {
               debug(`parent hash successfully verified`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [TOKEN_CHAIN, Buffer.from(block.getHeaderHash(), 'hex')])
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [this.ChainNameBuff, Buffer.from(block.getHeaderHash(), 'hex')])
               requests.bodies.push(block)
               debug(`BLOCK_HEADERS2: ${JSON.stringify(header)}`)
             } else {
               debug('parent hash verification failed')
-              let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
+              let localHeight = this.BlockChain.chain.getCurrentHeight()
               if (header.Number === localHeight) {
                 // case 2: parent hash verification failed, local node has a forked chain and the chain has the same length as remote node chain
                 debug('do nothing if two blockchains with the same length are forked')
               } else if (header.Number > localHeight) {
                 // case 3: parent hash verification failed, remote node chain is longer than local chain
                 debug(`remote node has more blocks than local`)
-                this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+                this.BlockChain.chain.getHashList((err, hashList) => {
                   if (err) console.error(`Error: ${err}`)
                   else {
                     debug(`Parent hash verification failed, remote node has longer chain than local, hash list: ${hashList}`)
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
                   }
                 })
               } else {
                 // case 3: parent hash verification failed, remote node chain is shorter than local chain
                 debug('local db has more blocks than remote node')
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [TOKEN_CHAIN, []])
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainNameBuff, []])
               }
             }
           }
@@ -323,7 +318,7 @@ class NetworkEvent {
 
     let blockHash = payload.toString('hex')
     debug('Get Block Hash: ' + blockHash)
-    this.BlockChain.SECTokenChain.getBlocksWithHash(blockHash, (err, blockArray) => {
+    this.BlockChain.chain.getBlocksWithHash(blockHash, (err, blockArray) => {
       if (err) console.error(`Error: ${err}`)
       else {
         let bodies = []
@@ -334,7 +329,7 @@ class NetworkEvent {
           bodies.push(localTokenBlock.getBodyBuffer())
         }
         debug(`Send BLOCK_BODIES, get block with hash result: ${blockArray[0]}`)
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [TOKEN_CHAIN, bodies])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES, [this.ChainNameBuff, bodies])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_BLOCK_BODIES =====`))
@@ -369,7 +364,7 @@ class NetworkEvent {
       let secblock = block.getBlock()
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.SECTokenChain.putBlockToDB(secblock, (err) => {
+      this.BlockChain.chain.putBlockToDB(secblock, (err) => {
         if (err) console.error(`Error: ${err}`)
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
@@ -405,20 +400,20 @@ class NetworkEvent {
     debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
 
     // remove all the blocks which have a larger block number than the first block to be syncronized
-    this.BlockChain.SECTokenChain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
+    this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
       if (err) console.error(`Error: ${err}`)
       async.eachSeries(payload[1], (_payload, callback) => {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
         let block = Object.assign({}, newTokenBlock.getBlock())
         debug(`Syncronizing block ${block.Number}`)
-        this.BlockChain.SECTokenChain.putBlockToDB(block, (err) => {
+        this.BlockChain.chain.putBlockToDB(block, (err) => {
           if (err) callback(err)
           else {
             console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
             this.Consensus.resetPOW()
 
-            this.BlockChain.tokenPool.updateByBlock(block)
+            this.BlockChain.pool.updateByBlock(block)
             callback()
           }
         })
@@ -445,20 +440,20 @@ class NetworkEvent {
 
           // add the removed txs into pool
           txArray.forEach((tx) => {
-            this.BlockChain.tokenPool.addTxIntoPool(tx)
+            this.BlockChain.pool.addTxIntoPool(tx)
           })
 
-          if (this.BlockChain.SECTokenChain.getCurrentHeight() >= remoteHeight) {
+          if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
             // synchronizing finished
             this.syncInfo.flag = false
             this.syncInfo.address = null
             clearTimeout(this.syncInfo)
           } else {
             // continue synchronizing
-            this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+            this.BlockChain.chain.getHashList((err, hashList) => {
               if (err) console.error(`Error: ${err}`)
               else {
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
               }
             })
           }
@@ -480,10 +475,10 @@ class NetworkEvent {
 
   GET_NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_NODE_DATA =====`))
-    this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+    this.BlockChain.chain.getHashList((err, hashList) => {
       if (err) console.error(`Error: ${err}`)
       else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify(hashList))])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
@@ -495,12 +490,12 @@ class NetworkEvent {
     let remoteHeight = remoteHashList[remoteHashList.length - 1].Number
     let remoteLastHash = remoteHashList[remoteHashList.length - 1].Hash
 
-    let localHeight = this.BlockChain.SECTokenChain.getCurrentHeight()
+    let localHeight = this.BlockChain.chain.getCurrentHeight()
     debug('local Height: ' + localHeight)
     debug('remote Height: ' + remoteHeight)
     debug('remote Lasthash: ' + remoteLastHash)
 
-    this.BlockChain.SECTokenChain.getHashList((err, hashList) => {
+    this.BlockChain.chain.getHashList((err, hashList) => {
       if (err) console.error(`Error: ${err}`)
       else if (localHeight > remoteHeight) {
         // Local chain is longer than remote chain
@@ -509,7 +504,7 @@ class NetworkEvent {
         if (blockPosition.length > 0) {
           // No fork found, send 'SYNC_CHUNK' blocks to remote node
           debug('No Fork found!')
-          this.BlockChain.SECTokenChain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
+          this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
             if (err) console.error(`Error: ${err}`)
             else {
               let blockBuffer = newBlocks.map(_block => {
@@ -522,7 +517,7 @@ class NetworkEvent {
                 Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
               ]
               debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [TOKEN_CHAIN, sentMsg])
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainNameBuff, sentMsg])
             }
           })
         } else {
@@ -539,7 +534,7 @@ class NetworkEvent {
           }
 
           // send 'SYNC_CHUNK' blocks to remote node
-          this.BlockChain.SECTokenChain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
+          this.BlockChain.chain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
             if (err) console.error(`Error: ${err}`)
             else {
               let blockBuffer = newBlocks.map(_block => {
@@ -552,7 +547,7 @@ class NetworkEvent {
                 Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
               ]
               debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [TOKEN_CHAIN, sentMsg])
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainNameBuff, sentMsg])
             }
           })
         }
@@ -566,7 +561,7 @@ class NetworkEvent {
 
   GET_RECEIPTS (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_RECEIPTS =====`))
-    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS, [TOKEN_CHAIN, []])
+    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS, [this.ChainNameBuff, []])
     debug(chalk.bold.yellow(`===== End GET_RECEIPTS =====`))
   }
 
@@ -585,10 +580,10 @@ class NetworkEvent {
   }
 
   syncFromIp (ip, callback) {
-    this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+    this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
       if (err) callback(err)
       else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify([geneBlock]))])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify([geneBlock]))])
         callback()
       }
     })
@@ -602,7 +597,7 @@ class NetworkEvent {
     this.BlockChain.isTokenTxExist(tx.getTxHash(), (err, result) => {
       if (err) console.error(`Error: ${err}`)
       else if (!result) {
-        this.BlockChain.tokenPool.addTxIntoPool(tx.getTx())
+        this.BlockChain.pool.addTxIntoPool(tx.getTx())
       }
     })
 
@@ -615,7 +610,7 @@ class NetworkEvent {
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.tokenPool.updateByBlock(newSECTokenBlock.getBlock())
+    this.BlockChain.pool.updateByBlock(newSECTokenBlock.getBlock())
   }
 
   _isValidBlock (blockHeader) {
@@ -630,9 +625,9 @@ class NetworkEvent {
     }
 
     // verify block number
-    if (blockHeader.Number <= this.BlockChain.SECTokenChain.getCurrentHeight()) {
+    if (blockHeader.Number <= this.BlockChain.chain.getCurrentHeight()) {
       // immediately break if block height is incorrect
-      debug(`Error: new block number ${blockHeader.Number} is smaller than local chain height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`)
+      debug(`Error: new block number ${blockHeader.Number} is smaller than local chain height: ${this.BlockChain.chain.getCurrentHeight()}`)
       return false
     }
 
@@ -672,7 +667,7 @@ class NetworkEvent {
       } else {
         _peers = this.NodesIPSync.getNodesTable()
       }
-      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [TOKEN_CHAIN, Buffer.from(JSON.stringify(_peers))])
+      this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC, [this.ChainNameBuff, Buffer.from(JSON.stringify(_peers))])
     }, 120000)
   }
 }

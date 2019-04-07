@@ -4,6 +4,7 @@ const Big = require('big.js')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:blockchain')
 
+const Consensus = require('./consensus')
 const MainUtils = require('../utils/utils')
 const SECDEVP2P = require('@sec-block/secjs-devp2p')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
@@ -14,24 +15,22 @@ const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
 const MAX_TRANSFER_VALUE = 10 ** 8
-const tokenPoolConfig = {
-  poolname: 'tokenpool'
-}
 
 class BlockChain {
   constructor (config) {
     this.config = config
     this.SECAccount = this.config.SECAccount
+    this.consensus = new Consensus(config)
 
-    // token block chain
-    this.tokenPool = new SECTransactionPool(tokenPoolConfig)
-    this.SECTokenChain = new SECBlockChain.SECTokenBlockChain(this.config.dbconfig)
+    // block chain
+    this.pool = new SECTransactionPool({ poolname: 'pool' })
+    this.chain = new SECBlockChain.SECTokenBlockChain(this.config.dbconfig)
   }
 
   init (rlp, callback) {
     this.rlp = rlp
 
-    this.SECTokenChain.init(() => {
+    this.chain.init(() => {
       debug(chalk.blue('Token Blockchain init success'))
       callback()
     })
@@ -39,10 +38,11 @@ class BlockChain {
 
   run () {
     if (process.env.tx) {
-      this.TokenTimer = setInterval(() => {
-        this.generateTokenTx()
+      this.Timer = setInterval(() => {
+        this.generateTx()
       }, ms('200s'))
     }
+    this.consensus.run()
   }
 
   // -------------------------------------------------------------------------------------------------- //
@@ -78,10 +78,10 @@ class BlockChain {
     })
   }
 
-  generateTokenTx () {
+  generateTx () {
     const tx = SECRandomData.generateTokenTransaction()
     const tokenTx = new SECTransaction.SECTokenTx(tx)
-    this.tokenPool.addTxIntoPool(tokenTx.getTx())
+    this.pool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
   }
 
@@ -111,10 +111,10 @@ class BlockChain {
           if (err) callback(err)
           else {
             if (!result) {
-              this.tokenPool.addTxIntoPool(tokenTx.getTx())
+              this.pool.addTxIntoPool(tokenTx.getTx())
             }
 
-            debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
+            debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
             this.sendNewTokenTx(tokenTx)
             callback(null)
           }
@@ -131,12 +131,12 @@ class BlockChain {
    * Get user account balance
    */
   getBalance (userAddress, callback) {
-    this.SECTokenChain.accTree.getBalance(userAddress, (err, balance) => {
+    this.chain.accTree.getBalance(userAddress, (err, balance) => {
       if (err) callback(err)
       else {
         balance = new Big(balance)
 
-        let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
         txArray.forEach((tx) => {
           if (tx.TxFrom === userAddress) {
             balance = balance.minus(tx.Value).minus(tx.TxFee)
@@ -154,11 +154,11 @@ class BlockChain {
    * Get user account address
    */
   getNonce (userAddress, callback) {
-    this.SECTokenChain.accTree.getNonce(userAddress, (err, nonce) => {
+    this.chain.accTree.getNonce(userAddress, (err, nonce) => {
       if (err) callback(err, null)
       else {
         nonce = parseInt(nonce)
-        let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
         nonce = nonce + txArray.length
         nonce = nonce.toString()
         callback(null, nonce)
@@ -201,7 +201,7 @@ class BlockChain {
       GasLimit: '0',
       GasUsedByTxn: '0',
       GasPrice: '0',
-      Nonce: this.SECTokenChain.getCurrentHeight().toString(),
+      Nonce: this.chain.getCurrentHeight().toString(),
       InputData: `Mining reward`
     }
     rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
@@ -210,7 +210,7 @@ class BlockChain {
 
   isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
-    this.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
+    this.chain.txDB.getTx(txHash, (err, txData) => {
       if (err) callback(null, false)
       else {
         callback(null, true)
