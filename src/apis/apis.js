@@ -6,14 +6,14 @@ const getSize = require('get-folder-size')
 class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
-    this.blockChain = this.CenterController.getSecChain()
-    this.SECTokenDB = this.blockChain.chain.chainDB
+    this.secChain = this.CenterController.getSecChain()
+    this.secChainDB = this.secChain.chain.chainDB
     this.dbconfig = config.dbconfig
   }
 
-  // ----------------------------  TOKEN CHAIN  ---------------------------
+  // ----------------------------  SEC CHAIN  ---------------------------
   getTokenBlock (hash, callback) {
-    this.SECTokenDB.getTokenBlockFromDB(hash, (err, data) => {
+    this.secChainDB.getTokenBlockFromDB(hash, (err, data) => {
       if (err) {
         callback(err, null)
       } else {
@@ -23,15 +23,15 @@ class APIs {
   }
 
   getTokenBlockchain (minHeight, maxHeight, callback) {
-    this.SECTokenDB.getTokenChain(minHeight, maxHeight, callback)
+    this.secChainDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
   getWholeTokenBlockchain (callback) {
-    this.SECTokenDB.getTokenBlockChainDB(callback)
+    this.secChainDB.getTokenBlockChainDB(callback)
   }
 
   getTokenTx (TxHash, callback) {
-    this.SECTokenDB.getTokenBlockChainDB((err, wholechain) => {
+    this.secChainDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
         console.error(`Error: Can not Token Transaction from database`)
       }
@@ -48,22 +48,22 @@ class APIs {
   }
 
   getTokenTxForUser (userAddress, callback) {
-    this.SECTokenDB.findTxForUser(userAddress, callback)
+    this.secChainDB.findTxForUser(userAddress, callback)
   }
 
   getTokenTxInPool (txHash, callback) {
-    let transaction = this.blockChain.pool.getAllTxFromPool().filter(tx => {
+    let transaction = this.secChain.pool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
     })
     callback(transaction[0])
   }
 
   getTokenTxInPoolByAddress (userAddress) {
-    return this.blockChain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+    return this.secChain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
   writeBlock (block, callback) {
-    this.blockChain.chain.writeBlock(block, callback)
+    this.secChain.chain.writeBlock(block, callback)
   }
 
   syncFromIp (ip, callback) {
@@ -95,7 +95,7 @@ class APIs {
   // -------------------------  Other functions  ------------------------
 
   getAccTreeAccInfo (accAddr, callback) {
-    this.blockChain.chain.getFromAccTree(accAddr, callback)
+    this.secChain.chain.getFromAccTree(accAddr, callback)
   }
 
   /**
@@ -104,11 +104,11 @@ class APIs {
    * @return {None}
    */
   getBalance (userAddress, callback) {
-    this.blockChain.getBalance(userAddress, callback)
+    this.secChain.getBalance(userAddress, callback)
   }
 
   getNonce (userAddress, callback) {
-    this.blockChain.getNonce(userAddress, callback)
+    this.secChain.getNonce(userAddress, callback)
   }
 
   getTokenChainSize (callback) {
@@ -149,7 +149,7 @@ class APIs {
   }
 
   clearDB (callback) {
-    this.SECTokenDB.clearDB(callback)
+    this.secChainDB.clearDB(callback)
   }
 
   getNodesTable () {
@@ -157,7 +157,7 @@ class APIs {
   }
 
   getTokenChainHeight () {
-    return this.blockChain.chain.getCurrentHeight()
+    return this.secChain.chain.getCurrentHeight()
   }
 }
 

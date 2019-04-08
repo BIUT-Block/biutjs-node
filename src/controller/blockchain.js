@@ -52,13 +52,13 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx (TokenTx, excludePeer = { _socket: {} }) {
+  sendNewTokenTx (tx, excludePeer = { _socket: {} }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new Token Tx to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainName, 'utf-8'), [TokenTx.getTxBuffer()]])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainName, 'utf-8'), [tx.getTxBuffer()]])
         }
       } catch (err) {
         console.error(`Error: ${err}`)
@@ -66,9 +66,9 @@ class BlockChain {
     })
   }
 
-  sendNewTokenBlockHash (tokenBlock, excludePeer = { _socket: {} }) {
-    debug(chalk.blue('Send Token Block Hash -> sendNewTokenBlockHash()'))
-    let blockHeaderHash = tokenBlock.getHeaderHash()
+  sendNewBlockHash (block, excludePeer = { _socket: {} }) {
+    debug(chalk.blue('Send Token Block Hash -> sendNewBlockHash()'))
+    let blockHeaderHash = block.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
