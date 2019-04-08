@@ -6,20 +6,19 @@ const CenterController = require('./controller/center-controller.js')
 const SECConfig = require('../config/default.json')
 
 // -------------------------------  set SEC DataBase configuration  -------------------------------
-let dbconfig = {
-  DBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path,
-  cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
-  ID: []
-}
-if (process.env.txChain) {
-  dbconfig.ID.push('1897984547')
-}
-if (process.env.secTest) {
-  dbconfig.DBPath = dbconfig.DBPath + 'test/'
-}
-
 class Core {
-  constructor () {
+  constructor (dbconfig = {
+    DBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path,
+    cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
+    ID: []
+  }) {
+    if (process.env.txChain) {
+      dbconfig.ID.push('1897984547')
+    }
+    if (process.env.secTest) {
+      dbconfig.DBPath = dbconfig.DBPath + 'test/'
+    }
+
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
     this.Account = new Account()
     this.CenterController = new CenterController({

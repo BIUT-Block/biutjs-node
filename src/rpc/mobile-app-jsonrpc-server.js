@@ -16,15 +16,14 @@ let server = jayson.server({
   */
   sec_getBalance: function (args, callback) {
     let response = {}
-    // if (args[0].coinType = null) {
-    // return all coins
-    // } else {
-    // args[0].coinType
-    // }
     try {
       let accAddr = args[0]
+      let tokenName = args[1]
+      if (tokenName === undefined) {
+        tokenName = 'All'
+      }
       // let time = args[1] 'latest'
-      core.APIs.getBalance(accAddr, (err, balance) => {
+      core.APIs.getBalance(accAddr, tokenName, (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
@@ -366,6 +365,40 @@ let server = jayson.server({
     response.status = '1'
     response.message = 'OK'
     callback(null, response)
+  },
+
+  _setBlock: function (args, callback) {
+    let response = {}
+    core.APIs.writeBlock(args[0], (err) => {
+      if (err) {
+        response.status = '0'
+        response.message = 'Failed, reason: ' + err
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+      }
+      callback(null, response)
+    })
+  },
+
+  _syncFromIp: function (args, callback) {
+    let response = {}
+    if (args[0].ip === null) {
+      response.status = '0'
+      response.message = 'Needs a valid ip address'
+      callback(response)
+    } else {
+      core.APIs.syncFromIp(args[0].ip, (err) => {
+        if (err) {
+          response.status = '0'
+          response.message = 'Failed, reason: ' + err
+        } else {
+          response.status = '1'
+          response.message = 'OK'
+        }
+        callback(null, response)
+      })
+    }
   }
 })
 

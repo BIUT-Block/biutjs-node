@@ -121,40 +121,43 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
-    let tokenTx = new SECTransaction.SECTokenTx(tx)
+    this.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
+      if (err) return callback(err)
+      let tokenTx = new SECTransaction.SECTokenTx(tx)
 
-    // check balance
-    this.getBalance(tx.TxFrom, (err, value) => {
-      if (err) callback(err)
-      else if (value < parseFloat(tx.Value)) {
-        let err = new Error(`Balance not enough`)
-        return callback(err)
-      } else if (value >= MAX_TRANSFER_VALUE) {
-        let err = new Error(`Exceed max allowed transfer value`)
-        return callback(err)
-      } else {
-        // free charge tx
-        if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
-          // verify tx signature
-          if (!tokenTx.verifySignature()) {
-            let err = new Error('Failed to verify transaction signature')
-            return callback(err)
-          }
-        }
-
-        this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
-          if (err) callback(err)
-          else {
-            if (!result) {
-              this.tokenPool.addTxIntoPool(tokenTx.getTx())
+      // check balance
+      this.getBalance(tx.TxFrom, tokenName, (err, value) => {
+        if (err) callback(err)
+        else if (value < parseFloat(tx.Value)) {
+          let err = new Error(`Balance not enough`)
+          return callback(err)
+        } else if (value >= MAX_TRANSFER_VALUE) {
+          let err = new Error(`Exceed max allowed transfer value`)
+          return callback(err)
+        } else {
+          // free charge tx
+          if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
+            // verify tx signature
+            if (!tokenTx.verifySignature()) {
+              let err = new Error('Failed to verify transaction signature')
+              return callback(err)
             }
-
-            debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
-            this.sendNewTokenTx(tokenTx)
-            callback(null)
           }
-        })
-      }
+
+          this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
+            if (err) callback(err)
+            else {
+              if (!result) {
+                this.tokenPool.addTxIntoPool(tokenTx.getTx())
+              }
+
+              debug(`this.tokenPool: ${JSON.stringify(this.tokenPool.getAllTxFromPool())}`)
+              this.sendNewTokenTx(tokenTx)
+              callback(null)
+            }
+          })
+        }
+      })
     })
   }
 
@@ -226,8 +229,8 @@ class BlockChain {
   /**
    * Get user account balance
    */
-  getBalance (userAddress, callback) {
-    this.SECTokenChain.accTree.getBalance(userAddress, (err, balance) => {
+  getBalance (userAddress, tokenName, callback) {
+    this.SECTokenChain.accTree.getBalance(userAddress, tokenName, (err, balance) => {
       if (err) callback(err)
       else {
         balance = new Big(balance)
@@ -262,7 +265,7 @@ class BlockChain {
     })
   }
 
-  checkBalance (userAddress, callback) {
+  checkBalance (userAddress, tokenName, callback) {
     // pow reward tx
     if (userAddress === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -272,7 +275,7 @@ class BlockChain {
       return callback(null, true)
     }
 
-    this.getBalance(userAddress, (err, balance) => {
+    this.getBalance(userAddress, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {

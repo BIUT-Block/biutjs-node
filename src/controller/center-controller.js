@@ -156,7 +156,6 @@ class CenterController {
   }
 
   initNetwork () {
-    console.log('Hello')
     // -------------------------  IMPORTANT INSTANT  -------------------------
     this.runningFlag = true
     this.config.rlp = this.rlp

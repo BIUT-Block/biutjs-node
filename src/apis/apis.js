@@ -69,6 +69,23 @@ class APIs {
     return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
+  writeBlock (block, callback) {
+    this.blockChain.SECTokenChain.writeBlock(block, callback)
+  }
+
+  syncFromIp (ip, callback) {
+    let foundFlag = false
+    this.CenterController.NetworkEventContainer.forEach((networkEvent) => {
+      if (networkEvent.getInstanceID().indexOf(ip) > -1 && !foundFlag) {
+        foundFlag = true
+        return networkEvent.syncFromIp(ip, callback)
+      }
+    })
+    if (!foundFlag) {
+      callback(new Error('Node with the IP address not found!'))
+    }
+  }
+
   // -------------------------  TRANSACTION CHAIN  ------------------------
   getTransactionBlock (ID, hash, callback) {
     this.SECTxDbDict[ID].getTxBlockFromDB(hash, (err, data) => {
@@ -133,8 +150,8 @@ class APIs {
    * @param  {String} userAddress - user account address
    * @return {None}
    */
-  getBalance (userAddress, callback) {
-    this.blockChain.getBalance(userAddress, callback)
+  getBalance (userAddress, tokenName, callback) {
+    this.blockChain.getBalance(userAddress, tokenName, callback)
   }
 
   getNonce (userAddress, callback) {

@@ -360,6 +360,11 @@ class NetworkEvent {
       }
 
       block.setBody(payload[1])
+      if (!block.verifyTxRoot()) {
+        debug('Failed to verify transaction root')
+        break
+      }
+
       let secblock = block.getBlock()
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
@@ -553,6 +558,16 @@ class NetworkEvent {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  syncFromIp (ip, callback) {
+    this.BlockChain.SECTokenChain.getGenesisBlock((err, geneBlock) => {
+      if (err) callback(err)
+      else {
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [TOKEN_CHAIN, Buffer.from(JSON.stringify([geneBlock]))])
+        callback()
+      }
+    })
   }
 
   _onNewTx (tx) {
