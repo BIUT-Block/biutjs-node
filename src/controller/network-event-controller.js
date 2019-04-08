@@ -24,8 +24,8 @@ class NetworkEvent {
     this.Consensus = config.BlockChain.consensus
     this.NDP = config.NDP
     this.NodesIPSync = config.NodesIPSync
-    this.ChainName = config.chainName
-    this.ChainNameBuff = Buffer.from(config.chainName, 'utf-8')
+    this.ChainName = config.ChainName
+    this.ChainNameBuff = Buffer.from(config.ChainName, 'utf-8')
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     this.CHAIN_ID = SECConfig.SECBlock.checkConfig.CHAIN_ID
@@ -39,6 +39,10 @@ class NetworkEvent {
     this.peer = {}
     this.addr = {}
     this.sec = {}
+  }
+
+  getInstanceID () {
+    return this.ID
   }
 
   PeerCommunication (peer, addr, sec) {

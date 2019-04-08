@@ -19,7 +19,10 @@ const MAX_TRANSFER_VALUE = 10 ** 8
 class BlockChain {
   constructor (config) {
     this.config = config
+    this.chainName = config.chainName
     this.SECAccount = this.config.SECAccount
+
+    config.self = this
     this.consensus = new Consensus(config)
 
     // block chain
@@ -31,7 +34,7 @@ class BlockChain {
     this.rlp = rlp
 
     this.chain.init(() => {
-      debug(chalk.blue('Token Blockchain init success'))
+      debug(chalk.blue('Blockchain init success'))
       callback()
     })
   }
@@ -55,7 +58,7 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new Token Tx to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from('token', 'utf-8'), [TokenTx.getTxBuffer()]])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainName, 'utf-8'), [TokenTx.getTxBuffer()]])
         }
       } catch (err) {
         console.error(`Error: ${err}`)
@@ -70,7 +73,7 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from('token', 'utf-8'), Buffer.from(blockHeaderHash, 'hex')])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainName, 'utf-8'), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
         console.error(`Error: ${err}`)

@@ -52,13 +52,15 @@ class CenterController {
       address: null,
       timer: null
     }
-    this.NetworkEventContainer = []
+    this.NetworkEventContainer = {}
 
     this.config.syncInfo = this.syncInfo
     config.chainName = 'SEC'
+    config.dbconfig.DBPath = config.dbconfig.SecDBPath
     this.secChain = new BlockChain(config)
 
     config.chainName = 'SEN'
+    config.dbconfig.DBPath = config.dbconfig.SenDBPath
     this.senChain = new BlockChain(config)
 
     this.runningFlag = false
@@ -113,22 +115,24 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  SEC BLOCK CHAIN  -------------------------------
-      let networkEvent = new NetworkEvent({ ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      let networkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       networkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer.push(networkEvent)
+      this.NetworkEventContainer['SEC'] = networkEvent
 
       // -------------------------------  SEN BLOCK CHAIN  -------------------------------
-      networkEvent = new NetworkEvent({ ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      networkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       networkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer.push(networkEvent)
+      this.NetworkEventContainer['SEN'] = networkEvent
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {
       const who = disconnectWe ? 'Disconnect' : 'Peer disconnect'
       const total = this.rlp.getPeers().length
       // remove useless NetworkEvent Instance
-      _.remove(this.NetworkEventContainer, networkEvent => {
-        return networkEvent.getInstanceID() === Utils.getPeerAddr(peer)
+      Object.keys(this.NetworkEventContainer).forEach((chainName) => {
+        if (this.NetworkEventContainer[chainName].getInstanceID() === Utils.getPeerAddr(peer)) {
+          delete this.NetworkEventContainer[chainName]
+        }
       })
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
     })

@@ -12,7 +12,7 @@ class SECConsensus {
   constructor (config) {
     // -------------------------------  Init class global variables  -------------------------------
     this.rlp = config.rlp
-    this.BlockChain = config.BlockChain
+    this.BlockChain = config.self
     this.cacheDBPath = config.dbconfig.cacheDBPath
     this.isTokenChain = config.isTokenChain
     this.syncInfo = config.syncInfo

@@ -6,7 +6,7 @@ const getSize = require('get-folder-size')
 class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
-    this.blockChain = this.CenterController.getBlockchain()
+    this.blockChain = this.CenterController.getSecChain()
     this.SECTokenDB = this.blockChain.chain.chainDB
     this.dbconfig = config.dbconfig
   }
