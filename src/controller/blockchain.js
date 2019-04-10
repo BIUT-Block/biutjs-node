@@ -27,7 +27,7 @@ class BlockChain {
 
     // block chain
     this.pool = new SECTransactionPool({ poolname: 'pool' })
-    this.chain = new SECBlockChain.SECTokenBlockChain(this.config.dbconfig)
+    this.chain = new SECBlockChain.SECTokenBlockChain(config)
   }
 
   init (rlp, callback) {
