@@ -2,7 +2,6 @@ const chalk = require('chalk')
 const ms = require('ms')
 const assert = require('assert')
 const SECConfig = require('../../config/default.json')
-const _ = require('lodash')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:center-controller')
 

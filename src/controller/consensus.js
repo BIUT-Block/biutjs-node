@@ -112,13 +112,13 @@ class SECConsensus {
           let _newBlock = JSON.parse(JSON.stringify(newBlock))
           // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
           try {
-            let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-            this.BlockChain.chain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
+            let newSenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
+            this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
               if (err) console.error(`Error: ${err}`)
               else {
-                console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
-                this.BlockChain.sendNewBlockHash(newSECTokenBlock)
+                console.log(chalk.green(`New ${this.chainName} block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
+                this.BlockChain.sendNewBlockHash(newSenBlock)
                 this.BlockChain.pool.clear()
                 this.resetPOW()
               }
@@ -234,7 +234,6 @@ class SECConsensus {
       setTimeout(() => {
         // sen chain consensus
         this.runCircle()
-        this.BlockChain.run()
       }, 2000)
     } else {
       console.log('Invalid chain name, no corresponding consensus method found')
