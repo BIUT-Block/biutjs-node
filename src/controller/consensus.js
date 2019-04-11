@@ -39,12 +39,12 @@ class SECConsensus {
     let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
 
     this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-      if (err) console.error(`Error: ${err}`)
+      if (err) console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
       else {
         newBlock.Number = lastBlock.Number + 1
         newBlock.ParentHash = lastBlock.Hash
         this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
-          if (err) console.error(`Error: ${err}`)
+          if (err) console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
           else {
             let blockForPOW = {
               Number: newBlock.Number,
@@ -114,7 +114,7 @@ class SECConsensus {
           try {
             let newSenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
             this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
-              if (err) console.error(`Error: ${err}`)
+              if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
               else {
                 console.log(chalk.green(`New ${this.chainName} block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                 console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
@@ -124,7 +124,7 @@ class SECConsensus {
               }
             })
           } catch (error) {
-            console.error(`Error: ${error}`)
+            console.error(`Error in consensus.js, runPow function, catch: ${error}`)
             this.resetPOW()
           }
         } else {
@@ -187,7 +187,7 @@ class SECConsensus {
       // generate sec block
       let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
       this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-        if (err) console.error(`Error: ${err}`)
+        if (err) console.error(`Error in consensus.js, runSec function, getLastBlock: ${err}`)
         else {
           newBlock.Number = lastBlock.Number + 1
           newBlock.ParentHash = lastBlock.Hash
@@ -211,7 +211,7 @@ class SECConsensus {
           let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
 
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
-            if (err) console.error(`Error: ${err}`)
+            if (err) console.error(`Error in consensus.js, runSec function, putBlockToDB: ${err}`)
             else {
               console.log(chalk.green(`New Block generated, ${secBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
               console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))

@@ -61,7 +61,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainName, 'utf-8'), [tx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.error(`Error in sendNewTokenTx function: ${err}`)
       }
     })
   }
@@ -76,7 +76,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainName, 'utf-8'), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.error(`Error in sendNewBlockHash function: ${err}`)
       }
     })
   }
