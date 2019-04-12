@@ -114,14 +114,14 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  SEC BLOCK CHAIN  -------------------------------
-      let networkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
-      networkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer['SEC'] = networkEvent
+      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      secNetworkEvent.PeerCommunication(peer, addr, sec)
+      this.NetworkEventContainer['SEC'] = secNetworkEvent
 
       // -------------------------------  SEN BLOCK CHAIN  -------------------------------
-      networkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
-      networkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer['SEN'] = networkEvent
+      let senNetworkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      senNetworkEvent.PeerCommunication(peer, addr, sec)
+      this.NetworkEventContainer['SEN'] = senNetworkEvent
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {
