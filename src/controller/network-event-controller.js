@@ -482,7 +482,7 @@ class NetworkEvent {
     this.BlockChain.chain.getHashList((err, hashList) => {
       if (err) console.error(`Error in GET_NODE_DATA state, getHashList: ${err}`)
       else {
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainNameBuff, Buffer.from(JSON.stringify(hashList))])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
