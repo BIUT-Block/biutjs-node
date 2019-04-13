@@ -32,6 +32,10 @@ class SECConsensus {
     // init variables
     this.myGroupId = 0
     this.groupIdBuffer = 0
+
+    if (this.chainName === 'SEN') {
+      this.secChain = config.secChain
+    }
   }
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
@@ -116,11 +120,14 @@ class SECConsensus {
             this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
               if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
               else {
-                console.log(chalk.green(`New ${this.chainName} block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                console.log(chalk.green(`New SEN block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                 console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
                 this.BlockChain.sendNewBlockHash(newSenBlock)
                 this.BlockChain.pool.clear()
                 this.resetPOW()
+
+                // generate Sec blockchain block
+                this.secChain.consensus.generateSecBlock()
               }
             })
           } catch (error) {
@@ -181,13 +188,13 @@ class SECConsensus {
   }
 
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
-  // sec block generation period: 1200s = 20min
-  runSec (delay = 1200000) {
-    this.TxTimer = setTimeout(() => {
+  generateSecBlock () {
+    let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
+    if (txsInPoll.length !== 0) {
       // generate sec block
       let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
       this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-        if (err) console.error(`Error in consensus.js, runSec function, getLastBlock: ${err}`)
+        if (err) console.error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`)
         else {
           newBlock.Number = lastBlock.Number + 1
           newBlock.ParentHash = lastBlock.Hash
@@ -198,7 +205,6 @@ class SECConsensus {
           newBlock.Nonce = ''
           newBlock.Beneficiary = ''
 
-          let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // assign txHeight
           let txHeight = 0
           txsInPoll.forEach((tx) => {
@@ -211,9 +217,9 @@ class SECConsensus {
           let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
 
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
-            if (err) console.error(`Error in consensus.js, runSec function, putBlockToDB: ${err}`)
+            if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
             else {
-              console.log(chalk.green(`New Block generated, ${secBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
+              console.log(chalk.green(`New SEC block generated, ${secBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
               console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
               this.BlockChain.sendNewBlockHash(secBlock)
               this.BlockChain.pool.clear()
@@ -221,15 +227,14 @@ class SECConsensus {
           })
         }
       })
-
-      this.runSec()
-    }, delay)
+    } else {
+      // do nothing if tx pool is empty
+    }
   }
 
   run () {
     if (this.chainName === 'SEC') {
-      // sec chain consensus
-      this.runSec()
+      // do nothing
     } else if (this.chainName === 'SEN') {
       setTimeout(() => {
         // sen chain consensus

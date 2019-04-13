@@ -60,6 +60,7 @@ class CenterController {
 
     config.chainName = 'SEN'
     config.dbconfig.DBPath = config.dbconfig.SenDBPath
+    config.secChain = this.secChain
     this.senChain = new BlockChain(config)
 
     this.runningFlag = false
