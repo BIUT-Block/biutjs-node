@@ -422,14 +422,12 @@ class NetworkEvent {
             callback()
           }
         })
-
-        // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error: ${err}`)
         else {
           // remove the duplicated txs
           _.remove(txArray, (tx) => {
-            this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
+            this.BlockChain.checkBalance(tx, (err, balResult) => {
               if (err) {
                 return true
               } else {

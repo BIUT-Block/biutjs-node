@@ -35,20 +35,12 @@ class APIs {
     this.SECTokenDB.getTokenBlockChainDB(callback)
   }
 
-  getTokenTx (TxHash, callback) {
-    this.SECTokenDB.getTokenBlockChainDB((err, wholechain) => {
+  getTokenTx (txHash, callback) {
+    this.blockChain.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
       if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
+        console.error(`Error: Can not find transaction with hash ${txHash} from database`)
       }
-      wholechain.forEach(block => {
-        let transaction = block.Transactions.filter(tx => {
-          return tx.TxHash === TxHash
-        })
-        if (transaction.length) {
-          return callback(transaction[0])
-        }
-      })
-      callback(null)
+      callback(txData)
     })
   }
 

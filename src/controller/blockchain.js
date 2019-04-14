@@ -13,7 +13,6 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
-const MAX_TRANSFER_VALUE = 10 ** 8
 const tokenPoolConfig = {
   poolname: 'tokenpool'
 }
@@ -128,9 +127,6 @@ class BlockChain {
       if (err) callback(err)
       else if (value < parseFloat(tx.Value)) {
         let err = new Error(`Balance not enough`)
-        return callback(err)
-      } else if (value >= MAX_TRANSFER_VALUE) {
-        let err = new Error(`Exceed max allowed transfer value`)
         return callback(err)
       } else {
         // free charge tx
@@ -262,22 +258,22 @@ class BlockChain {
     })
   }
 
-  checkBalance (userAddress, callback) {
+  checkBalance (tx, callback) {
     // pow reward tx
-    if (userAddress === '0000000000000000000000000000000000000000') {
+    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
     }
     // free charge tx
-    if (userAddress === '0000000000000000000000000000000000000001') {
+    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
       return callback(null, true)
     }
 
-    this.getBalance(userAddress, (err, balance) => {
+    this.getBalance(tx.TxFrom, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {
         let result = false
-        if (balance >= 0) {
+        if (balance >= parseFloat(tx.Value)) {
           result = true
         }
         callback(null, result)
