@@ -302,12 +302,7 @@ class BlockChain {
 
   isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
-    this.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
-      if (err) callback(null, false)
-      else {
-        callback(null, true)
-      }
-    })
+    this.SECTokenChain.txDB.isTxExist(txHash, callback)
   }
 }
 
