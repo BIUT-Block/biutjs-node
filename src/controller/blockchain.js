@@ -11,7 +11,6 @@ const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECTransaction = require('@sec-block/secjs-tx')
 const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
-const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
 const MAX_TRANSFER_VALUE = 10 ** 8
@@ -190,25 +189,6 @@ class BlockChain {
         callback(null, result)
       }
     })
-  }
-
-  genPowRewardTx () {
-    // reward transaction
-    let rewardTx = {
-      Version: '0.1',
-      TxReceiptStatus: 'success',
-      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-      TxFrom: '0000000000000000000000000000000000000000',
-      TxTo: this.SECAccount.getAddress(),
-      Value: '2',
-      GasLimit: '0',
-      GasUsedByTxn: '0',
-      GasPrice: '0',
-      Nonce: this.chain.getCurrentHeight().toString(),
-      InputData: `Mining reward`
-    }
-    rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
-    return rewardTx
   }
 
   isTokenTxExist (txHash, callback) {

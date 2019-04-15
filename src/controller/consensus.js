@@ -7,6 +7,7 @@ const SECConfig = require('../../config/default.json')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECCircle = require('./circle')
+const SENReward = require('./reward')
 
 class SECConsensus {
   constructor (config) {
@@ -28,6 +29,11 @@ class SECConsensus {
     configCircle.minGroup = configGroup.minGroupId
     configCircle.maxGroup = configGroup.maxGroupId
     this.secCircle = new SECCircle(configCircle)
+
+    // init Reward object
+    if (this.chainName === 'SEN') {
+      this.reward = new SENReward(this.BlockChain)
+    }
 
     // init variables
     this.myGroupId = 0
@@ -82,7 +88,7 @@ class SECConsensus {
         if (result.result && groupId === BeneGroupId) {
           let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
-          TxsInPoll.unshift(this.BlockChain.genPowRewardTx())
+          TxsInPoll.unshift(this.SENReward.getRewardTx())
 
           // remove txs which already exist in previous blocks
           _.remove(TxsInPoll, (tx) => {
