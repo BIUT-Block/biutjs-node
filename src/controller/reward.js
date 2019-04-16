@@ -1,59 +1,130 @@
+const async = require('async')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTransaction = require('@sec-block/secjs-tx')
 
+const MAX_MORTGAGE = 100000
+const START_INSTANT = 1555338208000
+const PERIOD_INTERVAL = 7776000000
+const INIT_TX_AMOUNT = 100000
+const INIT_TOT_REWARD = 90000
+
 class SENReward {
-  constructor (config) {
-    this.startInstant = 1555318590000
-    this.periodInterval = 777600000 // 3 months
-    this.firstPeriodTxAmount = 100
+  constructor (chain) {
+    this.chain = chain
+    this.reset(() => {})
   }
 
-  lastPeriodRewardAmount () {
-    // 近三个月产出量
+  reset (cb) {
+    let currentTimeStamp = SECUtils.currentUnixTimeInMillisecond()
+    let currentPeriodId = Math.floor((currentTimeStamp - START_INSTANT) / PERIOD_INTERVAL)
+    this.periodList = [] // [[txAmount, rewardAmount], ...]
+    for (let i = 0; i <= currentPeriodId; i++) {
+      this.periodList[i] = i
+    }
+
+    async.eachSeries(this.periodList, (index, callback) => {
+      if (index === 0) {
+        this.periodList[0] = [INIT_TX_AMOUNT, INIT_TOT_REWARD]
+      } else {
+        let sTimeStamp = START_INSTANT + (index - 1) * PERIOD_INTERVAL
+        let eTimestamp = START_INSTANT + index * PERIOD_INTERVAL
+        this._getPeriodTxsInfo(sTimeStamp, eTimestamp, (err, data) => {
+          if (err) {
+            callback(err)
+          } else {
+            this.periodList[index] = data
+          }
+        })
+      }
+    }, (err) => {
+      cb(err)
+    })
   }
 
-  lastPeriodTxAmount () {
-    // 上一周期交易量
+  _getPeriodTxsInfo (sTimeStamp, eTimestamp, callback) {
+    let txAmount = 0
+    let rewardAmount = 0
+    this.chain.SECTokenChain.chainDB.createReadStream().on('data', function (data) {
+      if (data.key.length !== 64) {
+        data.value = JSON.parse(data.value)
+        // if the block is generated within the period
+        if (data.value['TimeStamp'] >= sTimeStamp && data.value['TimeStamp'] <= eTimestamp) {
+          txAmount = txAmount + data.value['Transactions'].length - 1
+          rewardAmount = rewardAmount + data.value['Transactions'][0].Value
+        }
+      }
+    }).on('error', function (err) {
+      // console.log('Stream occurs an error when trying to read all data!')
+      callback(err, null)
+    }).on('close', function () {
+      // console.log('Stream closed')
+    }).on('end', function () {
+      // console.log('Stream ended')
+      callback(null, [txAmount, rewardAmount])
+    })
   }
 
-  currentPeriodTxAmount () {
-    // 当前周期交易量
+  _outputAdjustment (lastTxAmount, secondLastTxAmount) {
+    let outAdj = Math.sqrt(lastTxAmount / secondLastTxAmount)
+    if (outAdj > 100) {
+      outAdj = 100
+    }
+    return outAdj
   }
 
-  parameterA () {
-    let B = (this.currentPeriodTxAmount - this.lastPeriodTxAmount) / this.lastPeriodTxAmount
-    if (B >= 0) {
-      return B
+  _currPeriodOutput () {
+    let currentTimeStamp = SECUtils.currentUnixTimeInMillisecond()
+    let currentPeriodId = Math.floor((currentTimeStamp - START_INSTANT) / PERIOD_INTERVAL)
+    if (currentPeriodId > this.periodList.length) {
+      throw new Error('SENReward class need reset')
+    }
+
+    if (currentPeriodId === 0) {
+      return this.periodList[currentPeriodId][0]
     } else {
-      return 1 + B
+      let outAdj = this._outputAdjustment(this.periodList[currentPeriodId][0], this.periodList[currentPeriodId - 1][0])
+      return outAdj * this.periodList[currentPeriodId][1]
     }
   }
 
-  outputAdjustment () {
-    Math.sqrt(this.currentPeriodTxAmount - this.lastPeriodTxAmount)
+  _getReward (addr, callback) {
+    let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
+    this.chain.getBalance(addr, (err, balance) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        if (balance > MAX_MORTGAGE) {
+          balance = MAX_MORTGAGE
+        }
+        let reward = balance * rewardFactor / 100000
+        callback(null, reward)
+      }
+    })
   }
 
-  getReward () {
-    return this.lastPeriodRewardAmount * this.parameterA * this.outputAdjustment
-  }
-
-  getRewardTx () {
-    // reward transaction
-    let rewardTx = {
-      Version: '0.1',
-      TxReceiptStatus: 'success',
-      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-      TxFrom: '0000000000000000000000000000000000000000',
-      TxTo: this.SECAccount.getAddress(),
-      Value: this.getReward.toString(),
-      GasLimit: '0',
-      GasUsedByTxn: '0',
-      GasPrice: '0',
-      Nonce: this.SECTokenChain.getCurrentHeight().toString(),
-      InputData: `Mining reward`
-    }
-    rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
-    return rewardTx
+  getRewardTx (callback) {
+    this._getReward(this.chain.SECAccount.getAddress(), (err, reward) => {
+      if (err) {
+        callback(err)
+      } else {
+        // reward transaction
+        let rewardTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: '0000000000000000000000000000000000000000',
+          TxTo: this.chain.SECAccount.getAddress(),
+          Value: reward.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: this.chain.SECTokenChain.getCurrentHeight().toString(),
+          InputData: `Mining reward`
+        }
+        rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
+        callback(null, rewardTx)
+      }
+    })
   }
 }
 
