@@ -88,7 +88,7 @@ class SECConsensus {
         if (result.result && groupId === BeneGroupId) {
           let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
-          this.SENReward.getRewardTx((err, rewardTx) => {
+          this.reward.getRewardTx((err, rewardTx) => {
             if (err) {
               return this.resetPOW()
             }

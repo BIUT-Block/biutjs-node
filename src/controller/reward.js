@@ -118,7 +118,7 @@ class SENReward {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
-          Nonce: this.chain.SECTokenChain.getCurrentHeight().toString(),
+          Nonce: this.chain.chain.getCurrentHeight().toString(),
           InputData: `Mining reward`
         }
         rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()

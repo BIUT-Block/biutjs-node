@@ -28,8 +28,8 @@ class Core {
 
     this.secAPIs = new APIs({
       CenterController: this.CenterController,
-      dbconfig: dbconfig,
-      chainName: 'SEC'
+      Dbconfig: dbconfig,
+      ChainName: 'SEC'
     })
 
     this.senAPIs = new APIs({
