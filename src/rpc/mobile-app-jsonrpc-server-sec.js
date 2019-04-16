@@ -25,7 +25,7 @@ let server = jayson.server({
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
-      core.APIs.getBalance(accAddr, (err, balance) => {
+      core.secAPIs.getBalance(accAddr, (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
@@ -51,14 +51,14 @@ let server = jayson.server({
   sec_getTransactions: function (args, callback) {
     let response = {}
     let accAddr = args[0] // address
-    core.APIs.getTokenTxForUser(accAddr, (err, txArray) => {
+    core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
       if (err) {
         response.status = '0'
         response.message = `Failed to get user transactions, error info: ${err}`
         response.resultInChain = []
         response.resultInPool = []
       } else {
-        let txArraryInPool = core.APIs.getTokenTxInPoolByAddress(accAddr)
+        let txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
         txArray = txArray.sort((a, b) => {
           return b.TimeStamp - a.TimeStamp
         })
@@ -79,7 +79,7 @@ let server = jayson.server({
   */
   sec_sendRawTransaction: function (args, callback) {
     let response = {}
-    core.APIs.getNonce(args[0].from, (err, nonce) => {
+    core.secAPIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
@@ -99,7 +99,7 @@ let server = jayson.server({
           InputData: args[0].inputData,
           Signature: args[0].data
         }
-        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
@@ -117,7 +117,7 @@ let server = jayson.server({
 
   sec_getChainHeight: function (args, callback) {
     let response = {}
-    response.ChainHeight = core.APIs.getTokenChainHeight()
+    response.ChainHeight = core.secAPIs.getTokenChainHeight()
     callback(null, response)
   },
 
@@ -130,7 +130,7 @@ let server = jayson.server({
     }
 
     let response = {}
-    core.APIs.getNonce(userInfo.secAddress, (err, nonce) => {
+    core.secAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
@@ -150,7 +150,7 @@ let server = jayson.server({
           Signature: {}
         }
 
-        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
@@ -168,7 +168,7 @@ let server = jayson.server({
 
   sec_getNodesTable: function (args, callback) {
     let response = {}
-    let nodes = core.APIs.getNodesTable()
+    let nodes = core.secAPIs.getNodesTable()
     let locations = []
     nodes.forEach(node => {
       locations.push({
@@ -182,7 +182,7 @@ let server = jayson.server({
 
   sec_getNodeInfo: function (args, callback) {
     let response = {}
-    core.APIs.getNodeIpv4((ipv4) => {
+    core.secAPIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
@@ -192,7 +192,7 @@ let server = jayson.server({
   },
 
   sec_getTokenChainSize: function (args, callback) {
-    core.APIs.getTokenChainSize((err, size) => {
+    core.secAPIs.getTokenChainSize((err, size) => {
       let response = {}
       if (err) {
         response.status = '0'
@@ -212,11 +212,11 @@ let server = jayson.server({
     let command = args[0] // '0' means disable POW, '1' means enable POW
 
     if (command === '0') {
-      core.APIs.disablePOW()
+      core.secAPIs.disablePOW()
       response.status = '1'
       response.info = 'OK'
     } else if (command === '1') {
-      core.APIs.enablePOW()
+      core.secAPIs.enablePOW()
       response.status = '1'
       response.info = 'OK'
     } else {
@@ -228,7 +228,7 @@ let server = jayson.server({
 
   sec_startNetworkEvent: function (args, callback) {
     let response = {}
-    core.APIs.startNetworkEvent((result) => {
+    core.secAPIs.startNetworkEvent((result) => {
       if (result === true) {
         response.status = '1'
         response.info = 'OK'
@@ -243,7 +243,7 @@ let server = jayson.server({
   sec_getBlockByHash: function (args, callback) {
     let response = {}
     let blockHash = args[0]
-    core.APIs.getTokenBlock(blockHash, (err, block) => {
+    core.secAPIs.getTokenBlock(blockHash, (err, block) => {
       if (err) {
         response.status = '0'
         response.message = `Failed to get user Block, error info: ${err}`
@@ -260,7 +260,7 @@ let server = jayson.server({
   sec_getBlockByHeight: function (args, callback) {
     let response = {}
     let blockHeight = args[0]
-    core.APIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
+    core.secAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
       if (err) {
         response.status = '0'
         response.message = `Failed to get block, error info: ${err}`
@@ -276,7 +276,7 @@ let server = jayson.server({
 
   sec_getWholeTokenBlockchain: function (args, callback) {
     let response = {}
-    core.APIs.getWholeTokenBlockchain((err, value) => {
+    core.secAPIs.getWholeTokenBlockchain((err, value) => {
       if (err) {
         response.status = '0'
         response.info = `Failed to get Whole TokenBlockchain, error info: ${err}`
@@ -291,7 +291,7 @@ let server = jayson.server({
 
   sec_setAddress: function (args, callback) {
     let response = {}
-    core.APIs.setAddress(args[0])
+    core.secAPIs.setAddress(args[0])
     response.status = '1'
     response.message = 'OK'
     callback(null, response)
@@ -299,7 +299,7 @@ let server = jayson.server({
 
   sec_debug_getAccTreeAccInfo: function (args, callback) {
     let response = {}
-    core.APIs.getAccTreeAccInfo(args[0], (err, info) => {
+    core.secAPIs.getAccTreeAccInfo(args[0], (err, info) => {
       if (err) {
         response.status = '0'
         response.info = `Failed to get Account Info, error info: ${err}`
@@ -314,7 +314,7 @@ let server = jayson.server({
 
   _setBlock: function (args, callback) {
     let response = {}
-    core.APIs.writeBlock(args[0], (err) => {
+    core.secAPIs.writeBlock(args[0], (err) => {
       if (err) {
         response.status = '0'
         response.message = 'Failed, reason: ' + err
@@ -333,7 +333,7 @@ let server = jayson.server({
       response.message = 'Needs a valid ip address'
       callback(response)
     } else {
-      core.APIs.syncFromIp(args[0].ip, (err) => {
+      core.secAPIs.syncFromIp(args[0].ip, (err) => {
         if (err) {
           response.status = '0'
           response.message = 'Failed, reason: ' + err

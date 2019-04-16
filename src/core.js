@@ -26,9 +26,16 @@ class Core {
       dbconfig: dbconfig
     })
 
-    this.APIs = new APIs({
+    this.secAPIs = new APIs({
       CenterController: this.CenterController,
-      dbconfig: dbconfig
+      dbconfig: dbconfig,
+      chainName: 'SEC'
+    })
+
+    this.senAPIs = new APIs({
+      CenterController: this.CenterController,
+      Dbconfig: dbconfig,
+      ChainName: 'SEN'
     })
   }
 

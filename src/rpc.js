@@ -1,6 +1,7 @@
 const chalk = require('chalk')
 
-const SECMobileAppRPCServer = require('./rpc/mobile-app-jsonrpc-server')
+const SecRpcServer = require('./rpc/mobile-app-jsonrpc-server-sec')
+const SenRpcServer = require('./rpc/mobile-app-jsonrpc-server-sen')
 
 class SECRPC {
   constructor (core) {
@@ -10,7 +11,8 @@ class SECRPC {
   runRPCServer () {
     if (process.env.RPC !== 'false') {
       console.log(chalk.yellow('Starting RPC'))
-      SECMobileAppRPCServer.runRpc(this.core)
+      SecRpcServer.runRpc(this.core)
+      SenRpcServer.runRpc(this.core)
     }
   }
 }
