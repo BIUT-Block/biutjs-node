@@ -23,7 +23,7 @@
   "dependencies": {
     "@maxmind/geoip2-node": "^0.4.0",
     "@sec-block/secjs-blockchain": "^1.0.155",
-    "@sec-block/secjs-datahandler": "^1.1.46",
+    "@sec-block/secjs-datahandler": "^1.1.47",
     "@sec-block/secjs-devp2p": "^1.0.21",
     "@sec-block/secjs-pow": "^1.0.14",
     "@sec-block/secjs-randomdatagenerator": "^1.0.49",
