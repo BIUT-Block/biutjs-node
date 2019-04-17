@@ -93,7 +93,7 @@ class BlockChain {
     // check balance
     this.getBalance(tx.TxFrom, (err, value) => {
       if (err) callback(err)
-      else if (value < parseFloat(tx.Value)) {
+      else if (value < parseFloat(tx.Value) + parseFloat(tx.TxFee)) {
         let err = new Error(`Balance not enough`)
         return callback(err)
       } else if (value >= MAX_TRANSFER_VALUE) {
