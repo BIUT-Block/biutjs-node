@@ -230,9 +230,7 @@ class SECConsensus {
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
             if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
             else {
-              if (secBlock.Transactions !== undefined) {
-                console.log(chalk.green(`New SEC block generated, ${secBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
-              }
+              console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
               console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
               this.BlockChain.sendNewBlockHash(secBlock)
               this.BlockChain.pool.clear()
