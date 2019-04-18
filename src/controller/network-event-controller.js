@@ -100,7 +100,7 @@ class NetworkEvent {
         return
       }
       payload = payload[1]
-      debug(chalk.bold.greenBright(`==================== On Message from ${this.addr} ====================`))
+      debug(chalk.bold.greenBright(`==================== On Message from ${this.ChainName} ${this.addr} ====================`))
       // debug('Requests: ')
       // debug(requests)
       // debug('Code: ' + code)
@@ -157,7 +157,7 @@ class NetworkEvent {
           this.NODES_IP_SYNC(payload, requests)
           break
       }
-      debug(chalk.bold.greenBright(`==================== End On Message from ${this.addr} ====================\n\n`))
+      debug(chalk.bold.greenBright(`==================== End On Message from ${this.ChainName} ${this.addr} ====================\n\n`))
     })
   }
 
