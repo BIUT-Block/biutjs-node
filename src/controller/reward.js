@@ -149,8 +149,8 @@ class SENReward {
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEC blockchain transactions service charge`
     }
-    txFeeTx = new SECTransaction.SECTokenTx(txFeeTx).getTx()
-    return txFeeTx
+    let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
+    return txFeeTxObject
   }
 }
 

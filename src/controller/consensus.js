@@ -234,7 +234,8 @@ class Consensus {
               this.BlockChain.pool.clear()
 
               let txFeeTx = this.reward.getTxFeeTx(secBlock.getBlock())
-              this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx)
+              this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx.getTx())
+              this.BlockChain.sendNewTokenTx(txFeeTx)
             }
           })
         }
