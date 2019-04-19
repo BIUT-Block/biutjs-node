@@ -126,6 +126,32 @@ class SENReward {
       }
     })
   }
+
+  // ------------------------------------------------------------------------------------------------ //
+  // ----------------------------------  SEC blockchain Functions  ---------------------------------- //
+  // ------------------------------------------------------------------------------------------------ //
+  getTxFeeTx (block) {
+    let txFee = 0
+    block.Transactions.forEach((tx) => {
+      txFee = txFee + parseFloat(tx.TxFee)
+    })
+
+    let txFeeTx = {
+      Version: '0.1',
+      TxReceiptStatus: 'success',
+      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+      TxFrom: '0000000000000000000000000000000000000002',
+      TxTo: block.Beneficiary,
+      Value: txFee.toString(),
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      Nonce: this.chain.chain.getCurrentHeight().toString(),
+      InputData: `SEC blockchain transactions service charge`
+    }
+    txFeeTx = new SECTransaction.SECTokenTx(txFeeTx).getTx()
+    return txFeeTx
+  }
 }
 
 module.exports = SENReward

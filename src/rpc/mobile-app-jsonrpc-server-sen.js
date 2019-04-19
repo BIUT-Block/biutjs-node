@@ -96,6 +96,7 @@ let server = jayson.server({
           GasLimit: args[0].gasLimit,
           GasUsedByTxn: args[0].gas,
           GasPrice: args[0].gasPrice,
+          TxFee: args[0].txFee,
           InputData: args[0].inputData,
           Signature: args[0].data
         }

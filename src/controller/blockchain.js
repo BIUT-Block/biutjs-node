@@ -21,12 +21,20 @@ class BlockChain {
     this.chainName = config.chainName
     this.SECAccount = this.config.SECAccount
 
+    // only for SEC chain
+    this.senChain = null
+
     config.self = this
     this.consensus = new Consensus(config)
 
     // block chain
     this.pool = new SECTransactionPool({ poolname: 'pool' })
     this.chain = new SECBlockChain.SECTokenBlockChain(config)
+  }
+
+  // only for SEC chain
+  setSenChain (senChain) {
+    this.senChain = senChain
   }
 
   init (rlp, callback) {
