@@ -142,11 +142,13 @@ class APIs {
 
   startNetworkEvent (callback) {
     if (this.CenterController.runningFlag) {
-      callback('network event is already running')
+      let msg = 'network event is already running'
+      callback(msg)
     } else {
       try {
         this.CenterController.initNetwork()
-        callback(true)
+        let flag = true
+        callback(flag)
       } catch (err) {
         callback(err)
       }
