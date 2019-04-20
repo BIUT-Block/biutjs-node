@@ -242,44 +242,27 @@ class BlockChain {
     }
   }
 
-  checkNegaBalance (tx, callback) {
+  isPositiveBalance (addr, callback) {
     // pow reward tx
-    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
+    if (addr === '0000000000000000000000000000000000000000') {
       return callback(null, true)
     }
     // free charge tx
-    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
+    if (addr === '0000000000000000000000000000000000000001') {
       return callback(null, true)
     }
 
-    if (this.chainName === 'SEC') {
-      this.getBalance(tx.TxFrom, (err, balance) => {
-        if (err) {
-          callback(err, null)
-        } else {
-          let result = false
-          if (parseFloat(balance) >= 0) {
-            result = true
-          } else {
-            callback(null, result)
-          }
+    this.getBalance(addr, (err, balance) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let result = false
+        if (parseFloat(balance) >= 0) {
+          result = true
         }
-      })
-    }
-
-    if (this.chainName === 'SEN') {
-      this.getBalance(tx.TxFrom, (err, balance) => {
-        if (err) {
-          callback(err, null)
-        } else {
-          let result = false
-          if (parseFloat(balance) >= 0) {
-            result = true
-          }
-          callback(null, result)
-        }
-      })
-    }
+        callback(null, result)
+      }
+    })
   }
 
   isTokenTxExist (txHash, callback) {

@@ -432,7 +432,7 @@ class NetworkEvent {
         else {
           // remove the duplicated txs
           _.remove(txArray, (tx) => {
-            this.BlockChain.checkNegaBalance(tx, (err, balResult) => {
+            this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
               if (err) {
                 return true
               } else {

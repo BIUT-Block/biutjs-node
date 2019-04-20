@@ -98,7 +98,7 @@ class Consensus {
                 tx = JSON.parse(tx)
               }
 
-              this.BlockChain.checkNegaBalance(tx, (err, balResult) => {
+              this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
                 if (err) {
                   return true
                 } else {
