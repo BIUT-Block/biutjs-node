@@ -96,11 +96,12 @@ let server = jayson.server({
           GasLimit: args[0].gasLimit,
           GasUsedByTxn: args[0].gas,
           GasPrice: args[0].gasPrice,
+          TxFee: args[0].txFee,
           InputData: args[0].inputData,
           Signature: args[0].data
         }
         tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+        core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
             response.info = `Error occurs: ${err}`
@@ -151,7 +152,7 @@ let server = jayson.server({
         }
 
         tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+        core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
             response.info = `Error occurs, error info ${err}`

@@ -9,7 +9,7 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECCircle = require('./circle')
 const SENReward = require('./reward')
 
-class SECConsensus {
+class Consensus {
   constructor (config) {
     // -------------------------------  Init class global variables  -------------------------------
     this.rlp = config.rlp
@@ -31,9 +31,7 @@ class SECConsensus {
     this.secCircle = new SECCircle(configCircle)
 
     // init Reward object
-    if (this.chainName === 'SEN') {
-      this.reward = new SENReward(this.BlockChain)
-    }
+    this.reward = new SENReward(this.BlockChain)
 
     // init variables
     this.myGroupId = 0
@@ -137,7 +135,7 @@ class SECConsensus {
                   this.resetPOW()
 
                   // generate Sec blockchain block
-                  this.secChain.consensus.generateSecBlock()
+                  this.secChain.consensus.generateSecBlock(_newBlock.Beneficiary)
                 }
               })
             } catch (error) {
@@ -199,7 +197,7 @@ class SECConsensus {
   }
 
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
-  generateSecBlock () {
+  generateSecBlock (beneficiary) {
     let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
     if (txsInPoll.length !== 0) {
       // generate sec block
@@ -214,7 +212,7 @@ class SECConsensus {
           newBlock.Difficulty = ''
           newBlock.MixHash = ''
           newBlock.Nonce = ''
-          newBlock.Beneficiary = ''
+          newBlock.Beneficiary = beneficiary
 
           // assign txHeight
           let txHeight = 0
@@ -230,10 +228,14 @@ class SECConsensus {
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
             if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
             else {
-              console.log(chalk.green(`New SEC block generated, ${secBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
+              console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
               console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
               this.BlockChain.sendNewBlockHash(secBlock)
               this.BlockChain.pool.clear()
+
+              let txFeeTx = this.reward.getTxFeeTx(secBlock.getBlock())
+              this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx.getTx())
+              this.BlockChain.senChain.sendNewTokenTx(txFeeTx)
             }
           })
         }
@@ -257,4 +259,4 @@ class SECConsensus {
   }
 }
 
-module.exports = SECConsensus
+module.exports = Consensus

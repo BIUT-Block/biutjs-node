@@ -1,6 +1,6 @@
 {
   "name": "@sec-block/secjs-node",
-  "version": "1.2.19",
+  "version": "1.2.22",
   "description": "sec blockchain node",
   "main": "index.js",
   "directories": {
@@ -23,12 +23,12 @@
   "dependencies": {
     "@maxmind/geoip2-node": "^0.4.0",
     "@sec-block/secjs-blockchain": "^1.0.155",
-    "@sec-block/secjs-datahandler": "^1.1.47",
+    "@sec-block/secjs-datahandler": "^1.1.49",
     "@sec-block/secjs-devp2p": "^1.0.21",
     "@sec-block/secjs-pow": "^1.0.14",
     "@sec-block/secjs-randomdatagenerator": "^1.0.49",
     "@sec-block/secjs-transactionpool": "^1.0.9",
-    "@sec-block/secjs-tx": "^0.1.34",
+    "@sec-block/secjs-tx": "^0.1.35",
     "@sec-block/secjs-util": "^1.1.22",
     "big.js": "^5.2.2",
     "chalk": "^2.4.2",

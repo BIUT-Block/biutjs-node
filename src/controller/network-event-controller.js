@@ -373,7 +373,9 @@ class NetworkEvent {
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
           let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
-          this.Consensus.resetPOW()
+          if (this.ChainName === 'SEN') {
+            this.Consensus.resetPOW()
+          }
           this._onNewBlock(newSECTokenBlock)
         }
       })
@@ -415,7 +417,9 @@ class NetworkEvent {
           else {
             console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-            this.Consensus.resetPOW()
+            if (this.ChainName === 'SEN') {
+              this.Consensus.resetPOW()
+            }
 
             this.BlockChain.pool.updateByBlock(block)
             callback()
@@ -619,13 +623,15 @@ class NetworkEvent {
 
   _isValidBlock (blockHeader) {
     // verify that the beneficiary is in the corresponding group
-    let beneAddress = blockHeader.Beneficiary
-    let timestamp = blockHeader.TimeStamp
-    let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
-    let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
-    if (groupId !== BeneGroupId) {
-      debug(`ERROR: BLOCK_HEADERS state: groupId = ${groupId}, BeneGroupId = ${BeneGroupId}`)
-      return false
+    if (this.ChainName === 'SEN') {
+      let beneAddress = blockHeader.Beneficiary
+      let timestamp = blockHeader.TimeStamp
+      let groupId = this.Consensus.secCircle.getTimestampWorkingGroupId(timestamp)
+      let BeneGroupId = this.Consensus.secCircle.getTimestampGroupId(beneAddress, timestamp)
+      if (groupId !== BeneGroupId) {
+        debug(`ERROR: BLOCK_HEADERS state: groupId = ${groupId}, BeneGroupId = ${BeneGroupId}`)
+        return false
+      }
     }
 
     // verify block number
