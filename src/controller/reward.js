@@ -118,6 +118,7 @@ class SENReward {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: this.chain.chain.getCurrentHeight().toString(),
           InputData: `Mining reward`
         }
@@ -146,6 +147,7 @@ class SENReward {
       GasLimit: '0',
       GasUsedByTxn: '0',
       GasPrice: '0',
+      TxFee: '0',
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEC blockchain transactions service charge`
     }
