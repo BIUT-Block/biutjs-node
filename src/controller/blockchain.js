@@ -13,7 +13,6 @@ const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 
 const DEC_NUM = 8
-const MAX_TRANSFER_VALUE = 10 ** 8
 
 class BlockChain {
   constructor (config) {
@@ -96,31 +95,33 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
+    // pow reward tx
+    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
+      return callback(new Error('Invalid TxFrom address'))
+    }
+    // free charge tx
+    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
+      return callback(new Error('Invalid TxFrom address'))
+    }
+
     let tokenTx = new SECTransaction.SECTokenTx(tx)
 
     // check balance
-    this.getBalance(tx.TxFrom, (err, value) => {
+    this.checkBalance(tx, (err, result) => {
       if (err) callback(err)
-      else if (value < parseFloat(tx.Value) + parseFloat(tx.TxFee)) {
-        let err = new Error(`Balance not enough`)
-        return callback(err)
-      } else if (value >= MAX_TRANSFER_VALUE) {
-        let err = new Error(`Exceed max allowed transfer value`)
-        return callback(err)
+      else if (!result) {
+        return callback(new Error(`Balance not enough`))
       } else {
-        // free charge tx
-        if (tx.TxFrom !== '0000000000000000000000000000000000000001') {
-          // verify tx signature
-          if (!tokenTx.verifySignature()) {
-            let err = new Error('Failed to verify transaction signature')
-            return callback(err)
-          }
+        // verify tx signature
+        if (!tokenTx.verifySignature()) {
+          let err = new Error('Failed to verify transaction signature')
+          return callback(err)
         }
 
-        this.isTokenTxExist(tokenTx.getTxHash(), (err, result) => {
+        this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
           if (err) callback(err)
           else {
-            if (!result) {
+            if (!_result) {
               this.pool.addTxIntoPool(tokenTx.getTx())
             }
 
@@ -146,15 +147,31 @@ class BlockChain {
       else {
         balance = new Big(balance)
 
-        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
-        txArray.forEach((tx) => {
-          if (tx.TxFrom === userAddress) {
-            balance = balance.minus(tx.Value).minus(tx.TxFee)
-          }
-        })
+        if (this.chainName === 'SEC') {
+          let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
+          txArray.forEach((tx) => {
+            balance = balance.minus(tx.Value)
+          })
 
-        balance = balance.toFixed(DEC_NUM)
-        balance = parseFloat(balance).toString()
+          balance = balance.toFixed(DEC_NUM)
+          balance = parseFloat(balance).toString()
+        }
+
+        if (this.chainName === 'SEN') {
+          let senArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
+          senArray.forEach((tx) => {
+            balance = balance.minus(tx.Value).minus(tx.TxFee)
+          })
+
+          let secArray = this.config.secChain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
+          secArray.forEach((tx) => {
+            balance = balance.minus(tx.TxFee)
+          })
+
+          balance = balance.toFixed(DEC_NUM)
+          balance = parseFloat(balance).toString()
+        }
+
         callback(null, balance)
       }
     })
@@ -176,27 +193,93 @@ class BlockChain {
     })
   }
 
-  checkBalance (userAddress, callback) {
+  checkBalance (tx, callback) {
     // pow reward tx
-    if (userAddress === '0000000000000000000000000000000000000000') {
+    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
     }
     // free charge tx
-    if (userAddress === '0000000000000000000000000000000000000001') {
+    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
       return callback(null, true)
     }
 
-    this.getBalance(userAddress, (err, balance) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        let result = false
-        if (balance >= 0) {
-          result = true
+    if (this.chainName === 'SEC') {
+      this.getBalance(tx.TxFrom, (err, balance) => {
+        if (err) {
+          callback(err, null)
+        } else {
+          let result = false
+          if (parseFloat(balance) >= parseFloat(tx.Value)) {
+            this.senChain.getBalance(tx.TxFrom, (err, _balance) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                if (parseFloat(_balance) >= parseFloat(tx.TxFee)) {
+                  result = true
+                }
+                callback(null, result)
+              }
+            })
+          } else {
+            callback(null, result)
+          }
         }
-        callback(null, result)
-      }
-    })
+      })
+    }
+
+    if (this.chainName === 'SEN') {
+      this.getBalance(tx.TxFrom, (err, balance) => {
+        if (err) {
+          callback(err, null)
+        } else {
+          let result = false
+          if (parseFloat(balance) >= parseFloat(tx.Value) + parseFloat(tx.TxFee)) {
+            result = true
+          }
+          callback(null, result)
+        }
+      })
+    }
+  }
+
+  checkNegaBalance (tx, callback) {
+    // pow reward tx
+    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
+      return callback(null, true)
+    }
+    // free charge tx
+    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
+      return callback(null, true)
+    }
+
+    if (this.chainName === 'SEC') {
+      this.getBalance(tx.TxFrom, (err, balance) => {
+        if (err) {
+          callback(err, null)
+        } else {
+          let result = false
+          if (parseFloat(balance) >= 0) {
+            result = true
+          } else {
+            callback(null, result)
+          }
+        }
+      })
+    }
+
+    if (this.chainName === 'SEN') {
+      this.getBalance(tx.TxFrom, (err, balance) => {
+        if (err) {
+          callback(err, null)
+        } else {
+          let result = false
+          if (parseFloat(balance) >= 0) {
+            result = true
+          }
+          callback(null, result)
+        }
+      })
+    }
   }
 
   isTokenTxExist (txHash, callback) {

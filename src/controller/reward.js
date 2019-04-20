@@ -141,7 +141,7 @@ class SENReward {
       Version: '0.1',
       TxReceiptStatus: 'success',
       TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-      TxFrom: '0000000000000000000000000000000000000002',
+      TxFrom: '0000000000000000000000000000000000000000',
       TxTo: block.Beneficiary,
       Value: txFee.toString(),
       GasLimit: '0',
