@@ -132,12 +132,12 @@ class APIs {
   }
 
   enablePOW () {
-    this.CenterController.tokenConsensus.powEnableFlag = true
+    this.CenterController.senChain.Consensus.powEnableFlag = true
   }
 
   disablePOW () {
-    this.CenterController.tokenConsensus.resetPOW()
-    this.CenterController.tokenConsensus.powEnableFlag = false
+    this.CenterController.senChain.Consensus.resetPOW()
+    this.CenterController.senChain.Consensus.powEnableFlag = false
   }
 
   startNetworkEvent (callback) {
