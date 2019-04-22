@@ -117,14 +117,12 @@ class BlockChain {
           let err = new Error('Failed to verify transaction signature')
           return callback(err)
         }
-
         this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
           if (err) callback(err)
           else {
             if (!_result) {
               this.pool.addTxIntoPool(tokenTx.getTx())
             }
-
             debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
             this.sendNewTokenTx(tokenTx)
             callback(null)
@@ -137,7 +135,6 @@ class BlockChain {
   // --------------------------------------------------------------------------------- //
   // -------------------------------  Other Functions  ------------------------------- //
   // --------------------------------------------------------------------------------- //
-
   /**
    * Get user account balance
    */
@@ -146,7 +143,6 @@ class BlockChain {
       if (err) callback(err)
       else {
         balance = new Big(balance)
-
         if (this.chainName === 'SEC') {
           let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
           txArray.forEach((tx) => {
@@ -156,7 +152,6 @@ class BlockChain {
           balance = balance.toFixed(DEC_NUM)
           balance = parseFloat(balance).toString()
         }
-
         if (this.chainName === 'SEN') {
           let senArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
           senArray.forEach((tx) => {

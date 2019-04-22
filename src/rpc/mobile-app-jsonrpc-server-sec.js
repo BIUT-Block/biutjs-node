@@ -79,6 +79,7 @@ let server = jayson.server({
   */
   sec_sendRawTransaction: function (args, callback) {
     let response = {}
+    // get nonce for signing the tx
     core.secAPIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
@@ -88,7 +89,6 @@ let server = jayson.server({
         let tokenTx = {
           Nonce: nonce,
           TxReceiptStatus: 'pending',
-
           TimeStamp: args[0].timestamp,
           TxFrom: args[0].from,
           TxTo: args[0].to,
@@ -139,7 +139,6 @@ let server = jayson.server({
         let tokenTx = {
           Nonce: nonce,
           TxReceiptStatus: 'pending',
-
           TimeStamp: new Date().getTime(),
           TxFrom: userInfo.secAddress,
           TxTo: args[0].to,
