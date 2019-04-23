@@ -136,7 +136,6 @@ class SENReward {
     block.Transactions.forEach((tx) => {
       txFee = txFee + parseFloat(tx.TxFee)
     })
-
     let txFeeTx = {
       Version: '0.1',
       TxReceiptStatus: 'success',

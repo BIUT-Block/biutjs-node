@@ -88,7 +88,6 @@ let server = jayson.server({
         let tokenTx = {
           Nonce: nonce,
           TxReceiptStatus: 'pending',
-
           TimeStamp: args[0].timestamp,
           TxFrom: args[0].from,
           TxTo: args[0].to,
