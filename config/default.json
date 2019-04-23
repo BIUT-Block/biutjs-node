@@ -27,14 +27,6 @@
         {
           "ip": "127.0.0.1",
           "port": "13331"
-        },
-        {
-          "ip": "35.180.100.27",
-          "port": "13331"
-        },
-        {
-          "ip": "13.209.41.52",
-          "port": "13331"
         }
       ],
       "txCache": 1000,
@@ -86,7 +78,7 @@
     },
     "powConfig": {
       "path": "powCache",
-      "expectedDifficulty": 300000
+      "expectedDifficulty": 100000
     }
   }
 }

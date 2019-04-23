@@ -93,7 +93,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from('token', 'utf-8'), [TokenTx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -108,7 +108,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from('token', 'utf-8'), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -174,7 +174,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(txChainID, 'utf-8'), [TxTx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -189,7 +189,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(txChainID, 'utf-8'), [Buffer.from(blockHeaderHash, 'hex')]])
         }
       } catch (err) {
-        console.error(`Error: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -230,9 +230,10 @@ class BlockChain {
    * Get user account balance
    */
   getBalance (userAddress, tokenName, callback) {
-    this.SECTokenChain.accTree.getBalance(userAddress, tokenName, (err, balance) => {
+    this.SECTokenChain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) callback(err)
       else {
+        let balance = value[tokenName]
         balance = new Big(balance)
 
         let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))

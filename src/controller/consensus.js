@@ -46,12 +46,12 @@ class SECConsensus {
     let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.SECTokenChain)
 
     this.BlockChain.SECTokenChain.getLastBlock((err, lastBlock) => {
-      if (err) console.error(`Error: ${err}`)
+      if (err) console.log(err.stack)
       else {
         newBlock.Number = lastBlock.Number + 1
         newBlock.ParentHash = lastBlock.Hash
         this.secCircle.getLastPowDuration(this.BlockChain.SECTokenChain, (err, lastPowCalcTime) => {
-          if (err) console.error(`Error: ${err}`)
+          if (err) console.log(err.stack)
           else {
             let blockForPOW = {
               Number: newBlock.Number,
@@ -92,39 +92,39 @@ class SECConsensus {
             if (typeof tx !== 'object') {
               tx = JSON.parse(tx)
             }
-
-            this.BlockChain.checkBalance(tx.TxFrom, (err, balResult) => {
-              if (err) {
-                return true
-              } else {
-                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                  if (err) return true
-                  else {
-                    return (exiResult || !balResult)
-                  }
-                })
-              }
+            this.BlockChain.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
+              if (err) return true
+              this.BlockChain.checkBalance(tx.TxFrom, tokenName, (err, balResult) => {
+                if (err) {
+                  return true
+                } else {
+                  this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
+                    if (err) return true
+                    else {
+                      return (exiResult || !balResult)
+                    }
+                  })
+                }
+              })
             })
           })
 
           // assign txHeight
-          let txHeight = 0
-          TxsInPoll.forEach((tx) => {
-            tx.TxReceiptStatus = 'success'
-            tx.TxHeight = txHeight
-            txHeight = txHeight + 1
-            if (SECUtils.isContractAddr(tx.TxTo)) {
+          let runcontractPromise = function(tx){
+            return new Promise((resolve, reject) => {
               let secRunContract = new SECRunContract(tx, this.BlockChain.SECTokenChain)
               secRunContract.run((err, contractResult)=>{
-                console.log(contractResult)
-                if (Object.keys(contractResult.transferResult).length > 0){
-                  this.BlockChain.SECTokenChain.accTree.getNonce(tx.To, (err, nonce) => {
+                if (err) {
+                  reject(err)
+                }
+                if ('transferResult' in contractResult){
+                  this.BlockChain.SECTokenChain.accTree.getNonce(tx.TxTo, (err, nonce) => {
                     if (err) {
-                      
+                      reject(err)
                     }
                     else {
                       nonce = parseInt(nonce)
-                      let txArray = this.tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+                      let txArray = this.BlockChain.tokenPool.getAllTxFromPool().filter(txObj => (txObj.TxFrom === tx.TxFrom || txObj.TxTo === tx.TxFrom))
                       nonce = nonce + txArray.length
                       nonce = nonce.toString()
                       let tokenTx = {
@@ -132,44 +132,77 @@ class SECConsensus {
                         TxReceiptStatus: 'success',
                         TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
                         TxFrom: tx.TxTo,
-                        TxTo: contractResult.transferResult.TxToAddr,
-                        Value: contractResult.transferResult.TxAmount,
+                        TxTo: contractResult.transferResult.Address,
+                        Value: contractResult.transferResult.Amount.toString(),
                         GasLimit: '0',
                         GasUsedByTxn: '0',
                         GasPrice: '0',
                         Nonce: nonce,
                         InputData: `Smart Contract Transaction`
                       }
-                      console.log(tokenTx)
-                      contractTransactions.push(tokenTx)
+                      let txHashBuffer = [
+                        Buffer.from(tokenTx.Version),
+                        SECUtils.intToBuffer(tokenTx.TimeStamp),
+                        Buffer.from(tokenTx.TxFrom, 'hex'),
+                        Buffer.from(tokenTx.TxTo, 'hex'),
+                        Buffer.from(tokenTx.Value),
+                        Buffer.from(tokenTx.GasLimit),
+                        Buffer.from(tokenTx.GasUsedByTxn),
+                        Buffer.from(tokenTx.GasPrice),
+                        Buffer.from(tokenTx.Nonce),
+                        Buffer.from(tokenTx.InputData)
+                      ]
+                  
+                      tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+                      resolve(tokenTx)
                     }
                   })
+                } else if('otherResult' in contractResult){
+                  //reject(contractResult.otherResult)
+                  resolve()
                 } else {
-                  console.log(contractResult.otherResults)
+                  //reject(contractResult)
+                  resolve()
                 }
               })
+            })  
+          }.bind(this)
+
+          let txHeight = 0
+          let contractTransactions = []
+          TxsInPoll.forEach((tx) => {
+            tx.TxReceiptStatus = 'success'
+            tx.TxHeight = txHeight
+            txHeight = txHeight + 1
+            if (SECUtils.isContractAddr(tx.TxTo)){
+              contractTransactions.push(runcontractPromise(tx))
             }
           })
 
-          newBlock.Transactions = TxsInPoll
-          let _newBlock = JSON.parse(JSON.stringify(newBlock))
-          // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-          try {
-            let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-            this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
-              if (err) console.error(`Error: ${err}`)
-              else {
-                console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
-                console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
-                this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
-                this.BlockChain.tokenPool.clear()
-                this.resetPOW()
-              }
-            })
-          } catch (error) {
-            console.error(`Error: ${error}`)
-            this.resetPOW()
-          }
+          Promise.all(contractTransactions).then((contractTransactions) => {
+            contractTransactions = contractTransactions.filter(tx => (tx!=null))
+            newBlock.Transactions = TxsInPoll.concat(contractTransactions)
+            let _newBlock = JSON.parse(JSON.stringify(newBlock))
+            // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+            try {
+              let newSECTokenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
+              this.BlockChain.SECTokenChain.putBlockToDB(newSECTokenBlock.getBlock(), (err) => {
+                if (err) console.log(err.stack)
+                else {
+                  console.log(chalk.green(`Token Blockchain | New Block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, Current Token Blockchain Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
+                  console.log(chalk.green(`New generated block hash is: ${newSECTokenBlock.getHeaderHash()}`))
+                  this.BlockChain.sendNewTokenBlockHash(newSECTokenBlock)
+                  this.BlockChain.tokenPool.clear()
+                  this.resetPOW()
+                }
+              })
+            } catch (err) {
+              console.log(`Error:`, err.stack)
+              this.resetPOW()
+            }
+          }).catch((err) => {
+            console.log(err.stack)
+          })
         } else {
           this.resetPOW()
         }

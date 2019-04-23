@@ -27,6 +27,7 @@ let server = jayson.server({
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
+          console.log(err.stack)
         } else {
           response.status = '1'
           response.info = 'OK'
@@ -36,6 +37,7 @@ let server = jayson.server({
         callback(null, response)
       })
     } catch (err) {
+      console.log(err.stack)
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
@@ -101,7 +103,7 @@ let server = jayson.server({
         core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Error occurs: ${err}`
+            response.info = `Error occurs: ${err.stack}`
           } else {
             response.status = '1'
             response.info = 'OK'
@@ -135,36 +137,56 @@ let server = jayson.server({
 
   sec_createContractTransaction: function(args, callback) {
     let response = {}
-    core.APIs.getNonce(args[0].from, (err, nonce) => {
+    let tokenName = args[1]
+    core.APIs.getContractAddress(tokenName, (err, address) => {
       if (err) {
         response.status = '0'
-        response.info = `Unexpected error occurs, error info: ${err}`
+        response.info = `Unexpected error occurs, error info: ${err.stack}`
+        callback(null, response)
+      } else if (address) {
+        response.status = '0'
+        response.info = `Contract for TokenName already exists under: ${address}`
         callback(null, response)
       } else {
-        let tokenTx = {
-          Nonce: nonce,
-          TxReceiptStatus: 'pending',
-          TimeStamp: args[0].timestamp,
-          TxFrom: args[0].from,
-          TxTo: args[0].to,
-          Value: args[0].value,
-          GasLimit: args[0].gasLimit,
-          GasUsedByTxn: args[0].gas,
-          GasPrice: args[0].gasPrice,
-          InputData: args[0].inputData,
-          Signature: args[0].data
-        }
-        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+        core.APIs.getNonce(args[0].from, (err, nonce) => {
           if (err) {
             response.status = '0'
-            response.info = `Error occurs: ${err}`
+            response.info = `Unexpected error occurs, error info: ${err.stack}`
+            callback(null, response)
           } else {
-            response.status = '1'
-            response.info = 'OK'
-            response.txHash = tokenTx.TxHash
+            let tokenTx = {
+              Nonce: nonce,
+              TxReceiptStatus: 'pending',
+              TimeStamp: args[0].timestamp,
+              TxFrom: args[0].from,
+              TxTo: args[0].to,
+              Value: args[0].value,
+              GasLimit: args[0].gasLimit,
+              GasUsedByTxn: args[0].gas,
+              GasPrice: args[0].gasPrice,
+              InputData: args[0].inputData,
+              Signature: args[0].data
+            }
+            tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+            core.APIs.addTokenNameMap(tokenName, args[0].to, (err)=>{
+              if(err) {
+                response.status = '0'
+                response.info = `Error occurs: ${err.stack}`
+              } else {
+                core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+                  if (err) {
+                    response.status = '0'
+                    response.info = `Error occurs: ${err.stack}`
+                  } else {
+                    response.status = '1'
+                    response.info = 'OK'
+                    response.txHash = tokenTx.TxHash
+                  }
+                  callback(null, response)
+                })
+              }
+            })
           }
-          callback(null, response)
         })
       }
     })
@@ -172,46 +194,57 @@ let server = jayson.server({
 
   sec_sendContractTransaction: function(args, callback) {
     let response = {}
-    core.APIs.getNonce(args[0].from, (err, nonce) => {
+    core.APIs.getTokenName(args[0].to, (err, tokenname) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
         callback(null, response)
+      } else if (!tokenname) {
+        response.status = '0'
+        response.info = `ContractAddress doesn't exist`
+        callback(null, response)
       } else {
-        let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
-        console.log(args[0].inputData)
-        if(args[0].inputData.match(regexPattern)){
-          let txAmount = RegExp.$2
-          if (txAmount > args[0].value) {
-            response.status = '0'
-            response.info = 'Smart Contract transaction requires more than sent'
-            callback(null, response)
-          }
-        }
-        let tokenTx = {
-          Nonce: nonce,
-          TxReceiptStatus: 'pending',
-          TimeStamp: args[0].timestamp,
-          TxFrom: args[0].from,
-          TxTo: args[0].to,
-          Value: args[0].value,
-          GasLimit: args[0].gasLimit,
-          GasUsedByTxn: args[0].gas,
-          GasPrice: args[0].gasPrice,
-          InputData: args[0].inputData,
-          Signature: args[0].data
-        }
-        tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+        core.APIs.getNonce(args[0].from, (err, nonce) => {
           if (err) {
             response.status = '0'
-            response.info = `Error occurs: ${err}`
+            response.info = `Unexpected error occurs, error info: ${err}`
+            callback(null, response)
           } else {
-            response.status = '1'
-            response.info = 'OK'
-            response.txHash = tokenTx.TxHash
+            let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
+            if(args[0].inputData.match(regexPattern)){
+              let txAmount = RegExp.$2
+              if (txAmount > args[0].value) {
+                response.status = '0'
+                response.info = 'Smart Contract transaction requires more than sent'
+                callback(null, response)
+              }
+            }
+            let tokenTx = {
+              Nonce: nonce,
+              TxReceiptStatus: 'pending',
+              TimeStamp: args[0].timestamp,
+              TxFrom: args[0].from,
+              TxTo: args[0].to,
+              Value: args[0].value,
+              GasLimit: args[0].gasLimit,
+              GasUsedByTxn: args[0].gas,
+              GasPrice: args[0].gasPrice,
+              InputData: args[0].inputData,
+              Signature: args[0].data
+            }
+            tokenTx = core.APIs.createSecTxObject(tokenTx).getTx()
+            core.CenterController.getBlockchain().initiateTokenTx(tokenTx, (err) => {
+              if (err) {
+                response.status = '0'
+                response.info = `Error occurs: ${err.stack}`
+              } else {
+                response.status = '1'
+                response.info = 'OK'
+                response.txHash = tokenTx.TxHash
+              }
+              callback(null, response)
+            })
           }
-          callback(null, response)
         })
       }
     })

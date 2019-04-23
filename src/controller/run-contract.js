@@ -7,9 +7,7 @@ class SECRunContract{
         this.SECTokenBlockChain = SECTokenBlockChain
         this.response = {
             status: 0,
-            message: '',
-            transferResult: {},
-            otherResults: {}
+            message: ''
         }
     }
 
@@ -24,25 +22,26 @@ class SECRunContract{
                         return a.TimeStamp - b.TimeStamp
                     })
                     let rawByteCode = txArray[0].InputData
-                    console.log(txArray)
                     this.response.code = new Buffer(rawByteCode, 'base64').toString()
                     this.response.callInfo = new Buffer(this.SECTx.InputData, 'base64').toString()
                     this.response.status = 1
-                    this.response.message = 'Code Fetched'
-
-                    let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
-                    if(this.response.callInfo.match(regexPattern)){
-                        this.response.transferResult.txToAddr = RegExp.$1
-                        this.response.transferResult.TxAmount = RegExp.$2
-                    } else {
-                        const runScript = this.response.code + '/n otherResults = ' + this.response.callInfo
-                        const sandbox = {
-                            otherResults: ''
-                        }
-                        vm.createContext(sandbox)
-                        vm.runInContext(runScript, sandbox)
-                        this.response.otherResults = sandbox.otherResults
+                    this.response.message = 'Call Smart Contract Success'
+                
+                    const runScript = this.response.code + '; Results = ' + this.response.callInfo
+                    const sandbox = {
+                        transferFlag: false,
+                        Results: ''
                     }
+                    vm.createContext(sandbox)
+                    vm.runInContext(runScript, sandbox)
+                    if(sandbox.transferFlag){
+                        this.response.transferResult = sandbox.Results
+                    }else{
+                        this.response.otherResult = sandbox.Results
+                    }
+                } else {
+                    this.response.status = 1
+                    this.response.message = 'Create Smart Contract Success'
                 }
             }
             callback(null, this.response)

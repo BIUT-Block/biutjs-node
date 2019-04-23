@@ -68,7 +68,7 @@ class CenterController {
 
     this.ndp.on('close', () => debug(chalk.green('NDP | NDP Server closed')))
 
-    this.ndp.on('error', err => console.error(chalk.red(`NDP | NDP error: ${err.stack || err}`)))
+    this.ndp.on('error', err => console.log(chalk.red(`NDP | NDP error: ${err.stack || err}`)))
 
     this.ndp.on('peer:added', peer => {
       const info = `(${peer.id.toString('hex')}, ${peer.address}:${peer.udpPort}:${peer.tcpPort})`
@@ -97,7 +97,7 @@ class CenterController {
       }
     })
     for (let bootnode of BOOTNODES) {
-      this.ndp.bootstrap(bootnode).catch(err => console.error(chalk.bold.red(err.stack || err)))
+      this.ndp.bootstrap(bootnode).catch(err => console.log(chalk.bold.red(err.stack || err)))
     }
   }
 
@@ -136,13 +136,13 @@ class CenterController {
       if (err instanceof assert.AssertionError) {
         const peerId = peer.getId()
         if (peerId !== null) this.ndp.banPeer(peerId, ms('5m'))
-        console.error(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
+        console.log(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
         return
       }
-      console.error(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
+      console.log(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
     })
 
-    this.rlp.on('error', err => console.error(chalk.red(`RLP | RLP error: ${err.stack || err}`)))
+    this.rlp.on('error', err => console.log(chalk.red(`RLP | RLP error: ${err.stack || err}`)))
 
     // Start RLP service and listen port 13331
     this.rlp.listen(SECConfig.SECBlock.devp2pConfig.rlp.endpoint.tcpPort, SECConfig.SECBlock.devp2pConfig.rlp.endpoint.address)
@@ -234,7 +234,7 @@ class CenterController {
         this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
           console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
         }).catch((err) => {
-          console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+          console.log(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
     }, ms('30m'))

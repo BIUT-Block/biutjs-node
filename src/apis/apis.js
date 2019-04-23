@@ -38,7 +38,7 @@ class APIs {
   getTokenTx (TxHash, callback) {
     this.SECTokenDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
+        console.log(`Error: Can not Token Transaction from database`)
       }
       wholechain.forEach(block => {
         let transaction = block.Transactions.filter(tx => {
@@ -112,7 +112,7 @@ class APIs {
   getTransactionTx (ID, txHash, callback) {
     this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
       if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
+        console.log(`Error: Can not Token Transaction from database`)
       }
       wholechain.forEach(block => {
         let transaction = block.Transactions.filter(tx => {
@@ -206,6 +206,21 @@ class APIs {
   getTokenChainHeight () {
     return this.blockChain.SECTokenChain.getCurrentHeight()
   }
+  
+  // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
+
+  getTokenName(addr, callback) {
+    this.blockChain.SECTokenChain.getTokenName(addr, callback)
+  }
+
+  getContractAddress(tokenname, callback){
+    this.blockChain.SECTokenChain.getContractAddress(tokenname, callback)
+  }
+
+  addTokenNameMap(tokenname, addr, callback) {
+    this.blockChain.SECTokenChain.add(tokenname, addr, callback)
+  }
+  
 }
 
 module.exports = APIs
