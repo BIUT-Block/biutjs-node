@@ -90,14 +90,14 @@ class NetworkEvent {
     })
 
     this.sec.on('message', async (code, payload) => {
+      if (payload[0].toString('utf-8') !== this.ChainName) {
+        debug(`Not ${this.ChainName} chain, received chain name is ${payload[0].toString('utf-8')}`)
+        return
+      }
       if (code in requests.msgTypes) {
         requests.msgTypes[code] += 1
       } else {
         requests.msgTypes[code] = 1
-      }
-      if (payload[0].toString('utf-8') !== this.ChainName) {
-        debug(`Not ${this.ChainName} chain, received chain name is ${payload[0].toString('utf-8')}`)
-        return
       }
       payload = payload[1]
       debug(chalk.bold.greenBright(`==================== On Message from ${this.ChainName} ${this.addr} ====================`))
@@ -244,6 +244,8 @@ class NetworkEvent {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
         if (err) console.error(`Error in BLOCK_HEADERS state, getGenesisBlock: ${err}`)
         else if (block.getHeaderHash() === geneBlock.Hash) {
+          debug(`Chain Name: ${this.ChainName}`)
+          debug(`${block.getHeaderHash()} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
           debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
           this.forkVerified = true
           clearTimeout(this.forkDrop)
@@ -252,6 +254,8 @@ class NetworkEvent {
           this._addPeerToNDP()
           this._startSyncNodesIP()
         } else {
+          debug(`Chain Name: ${this.ChainName}`)
+          debug(`${block.getHeaderHash()} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
           debug(`${this.addr} is NOT on the same side of the ${this.CHECK_BLOCK_TITLE}`)
           debug(`Expected Hash: ${geneBlock.Hash}, Remote Hash: ${block.getHeaderHash()}`)
         }
