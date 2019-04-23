@@ -55,10 +55,12 @@ class CenterController {
 
     this.config.syncInfo = this.syncInfo
     config.chainName = 'SEC'
+    config.chainID = '010001'
     config.dbconfig.DBPath = config.dbconfig.SecDBPath
     this.secChain = new BlockChain(config)
 
     config.chainName = 'SEN'
+    config.chainID = '010002'
     config.dbconfig.DBPath = config.dbconfig.SenDBPath
     config.secChain = this.secChain
     this.senChain = new BlockChain(config)
@@ -116,13 +118,15 @@ class CenterController {
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
       // -------------------------------  SEC BLOCK CHAIN  -------------------------------
-      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      // Add new config param ChainID, the first 01 means token chain, last 0001 means this chain is the first token chain
+      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010001', ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
       secNetworkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer['SEC'] = secNetworkEvent
 
       // -------------------------------  SEN BLOCK CHAIN  -------------------------------
+      // Add new config param ChainID, the first 01 means token chain, last 0002 means this chain is the second token chain
       setTimeout(() => {
-        let senNetworkEvent = new NetworkEvent({ ID: addr, ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+        let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
         senNetworkEvent.PeerCommunication(peer, addr, sec)
         this.NetworkEventContainer['SEN'] = senNetworkEvent
       }, 200)
