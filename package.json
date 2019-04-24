@@ -24,7 +24,7 @@
     "@maxmind/geoip2-node": "^0.4.0",
     "@sec-block/secjs-blockchain": "^1.0.155",
     "@sec-block/secjs-datahandler": "^1.1.50",
-    "@sec-block/secjs-devp2p": "^1.0.22",
+    "@sec-block/secjs-devp2p": "^1.0.23",
     "@sec-block/secjs-pow": "^1.0.14",
     "@sec-block/secjs-randomdatagenerator": "^1.0.49",
     "@sec-block/secjs-transactionpool": "^1.0.9",

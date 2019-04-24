@@ -70,7 +70,7 @@ class NetworkEvent {
               bestHash: Buffer.from(lastBlock.Hash, 'hex'),
               genesisHash: Buffer.from(geneBlock.Hash, 'hex')
             }
-            debug(chalk.bold.yellowBright('Sending Local Status to Peer...'))
+            debug(chalk.bold.yellowBright(`${this.ChainID} Chain Sending Local Status to Peer...`))
             debug(status)
             try {
               this.sec.sendStatus(status)
@@ -84,13 +84,11 @@ class NetworkEvent {
 
     // ------------------------------  CHECK FORK  -----------------------------
     this.sec.once('status', (status) => {
-      console.log(status)
-      console.log(status.chainID.toString())
       if (status.chainID.toString() !== this.ChainID) {
         debug(`Status check failed, not same chainID => remote: ${status.chainID}, local: ${this.ChainID}`)
         return
       }
-      debug('Running first time Status Check...')
+      debug(`${this.ChainID} Chain Running first time Status Check...`)
       this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [this.ChainIDBuff, this.CHECK_BLOCK_NR])
       this.forkDrop = setTimeout(() => {
         peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
@@ -100,7 +98,6 @@ class NetworkEvent {
 
     this.sec.on('message', async (code, payload) => {
       if (payload[0].toString() !== this.ChainID) {
-        console.log(chalk.red(payload))
         debug(`Not ${this.ChainID} chain, received chainID is ${payload[0].toString()}`)
         return
       }
@@ -248,7 +245,8 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
-    debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
+    // TODO: uncomment later
+    // debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
 
     if (!this.forkVerified) {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {

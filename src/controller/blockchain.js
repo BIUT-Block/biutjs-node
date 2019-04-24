@@ -80,6 +80,9 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
+          // TODO: remove later
+          console.log(this.chainName)
+          console.log(this.chainID)
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
