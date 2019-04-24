@@ -215,6 +215,25 @@ class Consensus {
           newBlock.Nonce = ''
           newBlock.Beneficiary = beneficiary
 
+          // remove txs which already exist in previous blocks
+          _.remove(txsInPoll, (tx) => {
+            if (typeof tx !== 'object') {
+              tx = JSON.parse(tx)
+            }
+            this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
+              if (err) {
+                return true
+              } else {
+                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
+                  if (err) return true
+                  else {
+                    return (exiResult || !balResult)
+                  }
+                })
+              }
+            })
+          })
+
           // assign txHeight
           let txHeight = 0
           txsInPoll.forEach((tx) => {
