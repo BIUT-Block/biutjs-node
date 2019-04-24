@@ -64,7 +64,7 @@ class NetworkEvent {
           if (err) console.error(`Error in network.js, PeerCommunication function, getLastBlock: ${err}`)
           else {
             let status = {
-              chainId: this.ChainID,
+              chainID: Buffer.from(this.ChainID),
               networkId: this.NETWORK_ID,
               td: Buffer.from(geneBlock.Difficulty),
               bestHash: Buffer.from(lastBlock.Hash, 'hex'),
@@ -84,8 +84,9 @@ class NetworkEvent {
 
     // ------------------------------  CHECK FORK  -----------------------------
     this.sec.once('status', (status) => {
-      console.log(chalk.red(status))
-      if (status.chainID !== this.ChainID) {
+      console.log(status)
+      console.log(status.chainID.toString())
+      if (status.chainID.toString() !== this.ChainID) {
         debug(`Status check failed, not same chainID => remote: ${status.chainID}, local: ${this.ChainID}`)
         return
       }
