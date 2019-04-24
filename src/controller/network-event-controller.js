@@ -245,8 +245,7 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
-    // TODO: uncomment later
-    // debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
+    debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
 
     if (!this.forkVerified) {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
@@ -437,7 +436,6 @@ class NetworkEvent {
             callback()
           }
         })
-
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)

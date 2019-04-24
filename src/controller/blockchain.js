@@ -80,9 +80,6 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
-          // TODO: remove later
-          console.log(this.chainName)
-          console.log(this.chainID)
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
@@ -125,7 +122,29 @@ class BlockChain {
           if (err) callback(err)
           else {
             if (!_result) {
-              this.pool.addTxIntoPool(tokenTx.getTx())
+              console.log('\n******************** FeeTx test **********************')
+              let tx = tokenTx.getTx()
+              console.log('Origin Tx: ')
+              console.log(tx)
+              this.pool.addTxIntoPool(tx)
+              if (tx.TxFee !== '0') {
+                let _tx = JSON.parse(JSON.stringify(tx))
+                _tx.TxTo = '0000000000000000000000000000000000000000'
+                _tx.Value = tx.TxFee
+                _tx.TxFee = '0'
+                _tx.TxHeight = ''
+                let feeTx = new SECTransaction.SECTokenTx(_tx)
+                console.log('Fee Tx: ')
+                console.log(feeTx.getTx())
+                if (this.chainName === 'SEC') {
+                  this.senChain.pool.addTxIntoPool(feeTx.getTx())
+                  this.senChain.sendNewTokenTx(feeTx)
+                } else if (this.chainName === 'SEN') {
+                  this.pool.addTxIntoPool(feeTx.getTx())
+                  this.sendNewTokenTx(feeTx)
+                }
+              }
+              console.log('******************** FeeTx test End **********************\n')
             }
             debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
             this.sendNewTokenTx(tokenTx)
