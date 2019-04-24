@@ -122,9 +122,9 @@ class BlockChain {
           if (err) callback(err)
           else {
             if (!_result) {
-              console.log('\n******************** FeeTx test **********************')
+              console.log('\n******************** FeeTx test ********************')
               let tx = tokenTx.getTx()
-              console.log('Origin Tx: ')
+              console.log(chalk.yellow('Origin Tx: '))
               console.log(tx)
               this.pool.addTxIntoPool(tx)
               if (tx.TxFee !== '0') {
@@ -134,7 +134,7 @@ class BlockChain {
                 _tx.TxFee = '0'
                 _tx.TxHeight = ''
                 let feeTx = new SECTransaction.SECTokenTx(_tx)
-                console.log('Fee Tx: ')
+                console.log(chalk.yellow('Fee Tx: '))
                 console.log(feeTx.getTx())
                 if (this.chainName === 'SEC') {
                   this.senChain.pool.addTxIntoPool(feeTx.getTx())
@@ -144,10 +144,10 @@ class BlockChain {
                   this.sendNewTokenTx(feeTx)
                 }
               }
-              console.log('******************** FeeTx test End **********************\n')
+              console.log('******************** FeeTx test End ********************\n')
+              debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
+              this.sendNewTokenTx(tokenTx)
             }
-            debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
-            this.sendNewTokenTx(tokenTx)
             callback(null)
           }
         })
