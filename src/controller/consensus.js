@@ -223,14 +223,16 @@ class Consensus {
             txHeight = txHeight + 1
 
             // add tx into sen for txfee
-            let _tx = JSON.parse(JSON.stringify(tx))
-            _tx.TxTo = '0000000000000000000000000000000000000000'
-            _tx.Value = tx.TxFee
-            _tx.TxFee = '0'
-            _tx.TxHeight = ''
-            let senTx = new SECTransaction.SECTokenTx(_tx)
-            this.BlockChain.senChain.pool.addTxIntoPool(senTx.getTx())
-            this.BlockChain.senChain.sendNewTokenTx(senTx)
+            if (tx.TxFee !== '0') {
+              let _tx = JSON.parse(JSON.stringify(tx))
+              _tx.TxTo = '0000000000000000000000000000000000000000'
+              _tx.Value = tx.TxFee
+              _tx.TxFee = '0'
+              _tx.TxHeight = ''
+              let senTx = new SECTransaction.SECTokenTx(_tx)
+              this.BlockChain.senChain.pool.addTxIntoPool(senTx.getTx())
+              this.BlockChain.senChain.sendNewTokenTx(senTx)
+            }
           })
 
           newBlock.Transactions = txsInPoll
