@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const chalk = require('chalk')
 const ms = require('ms')
 const async = require('async')

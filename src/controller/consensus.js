@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const chalk = require('chalk')
 const cp = require('child_process')
 const path = require('path')
@@ -108,13 +107,13 @@ class Consensus {
                 newBlock.Transactions = txArray
                 // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
                 try {
-                  let newSenBlock = new SECBlockChain.SECTokenBlock(newBlock)
-                  this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
+                  let senBlock = new SECBlockChain.SECTokenBlock(newBlock)
+                  this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
                     if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                     else {
                       console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                      console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
-                      this.BlockChain.sendNewBlockHash(newSenBlock)
+                      console.log(chalk.green(`New generated block is: ${senBlock.getBlock()}`))
+                      this.BlockChain.sendNewBlockHash(senBlock)
                       this.BlockChain.pool.clear()
                       this.resetPOW()
 
@@ -219,7 +218,7 @@ class Consensus {
                 if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
                 else {
                   console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                  console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
+                  console.log(chalk.green(`New generated block is: ${secBlock.getBlock()}`))
                   this.BlockChain.sendNewBlockHash(secBlock)
                   this.BlockChain.pool.clear()
 
