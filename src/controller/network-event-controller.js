@@ -432,8 +432,10 @@ class NetworkEvent {
               this.Consensus.resetPOW()
             }
 
-            this.BlockChain.pool.updateByBlock(block)
-            callback()
+            this.BlockChain.pool.updateByBlockChain(this.BlockChain.chain, (err) => {
+              if (err) return callback(err)
+              callback()
+            })
           }
         })
         // TODO: put removed block-transactions back to transaction pool
@@ -628,7 +630,7 @@ class NetworkEvent {
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.pool.updateByBlock(newSECTokenBlock.getBlock())
+    this.BlockChain.pool.updateByBlockChain(this.BlockChain.chain, () => {})
   }
 
   _isValidBlock (blockHeader) {
