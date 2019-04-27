@@ -423,8 +423,8 @@ class NetworkEvent {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
         let block = Object.assign({}, newTokenBlock.getBlock())
         debug(`Syncronizing block ${block.Number}`)
-        this.BlockChain.chain.putBlockToDB(block, (err) => {
-          if (err) callback(err)
+        this.BlockChain.chain.putBlockToDB(block, (_err) => {
+          if (_err) callback(_err)
           else {
             console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
@@ -432,51 +432,37 @@ class NetworkEvent {
               this.Consensus.resetPOW()
             }
 
-            this.BlockChain.pool.updateByBlockChain(this.BlockChain.chain, (err) => {
-              if (err) return callback(err)
-              callback()
-            })
+            this.BlockChain.pool.updateByBlock(block)
           }
         })
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
         else {
-          // remove the duplicated txs
-          _.remove(txArray, (tx) => {
-            this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
-              if (err) {
-                return true
+          this.BlockChain.checkTxArray(txArray, (_err, _txArray) => {
+            if (_err) console.error(`Error in NEW_BLOCK state, eachSeries else: ${_err}`)
+            else {
+              // add the removed txs into pool
+              _txArray.forEach((tx) => {
+                this.BlockChain.pool.addTxIntoPool(tx)
+              })
+
+              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+                // synchronizing finished
+                this.syncInfo.flag = false
+                this.syncInfo.address = null
+                clearTimeout(this.syncInfo)
               } else {
-                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                  if (err) return true
+                // continue synchronizing
+                this.BlockChain.chain.getHashList((__err, hashList) => {
+                  if (__err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${__err}`)
                   else {
-                    return (exiResult || !balResult)
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
                   }
                 })
               }
-            })
+            }
           })
-
-          // add the removed txs into pool
-          txArray.forEach((tx) => {
-            this.BlockChain.pool.addTxIntoPool(tx)
-          })
-
-          if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-            // synchronizing finished
-            this.syncInfo.flag = false
-            this.syncInfo.address = null
-            clearTimeout(this.syncInfo)
-          } else {
-            // continue synchronizing
-            this.BlockChain.chain.getHashList((err, hashList) => {
-              if (err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              else {
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
-              }
-            })
-          }
         }
       })
     })
@@ -630,7 +616,7 @@ class NetworkEvent {
     debug('----------------------------------------------------------------------------------------------------------')
     console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.pool.updateByBlockChain(this.BlockChain.chain, () => {})
+    this.BlockChain.pool.updateByBlock(newSECTokenBlock.getBlock())
   }
 
   _isValidBlock (blockHeader) {

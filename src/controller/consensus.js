@@ -85,64 +85,49 @@ class Consensus {
         let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
         if (result.result && groupId === BeneGroupId) {
-          let TxsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
+          let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
           this.reward.getRewardTx((err, rewardTx) => {
             if (err) {
               return this.resetPOW()
             }
-            TxsInPoll.unshift(rewardTx)
+            txsInPoll.unshift(rewardTx)
 
-            // remove txs which already exist in previous blocks
-            _.remove(TxsInPoll, (tx) => {
-              if (typeof tx !== 'object') {
-                tx = JSON.parse(tx)
-              }
+            this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+              if (err) {
+                return this.resetPOW()
+              } else {
+                // assign txHeight
+                let txHeight = 0
+                txArray.forEach((tx) => {
+                  tx.TxReceiptStatus = 'success'
+                  tx.TxHeight = txHeight
+                  txHeight = txHeight + 1
+                })
 
-              this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
-                if (err) {
-                  return true
-                } else {
-                  this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                    if (err) return true
+                newBlock.Transactions = txArray
+                // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+                try {
+                  let newSenBlock = new SECBlockChain.SECTokenBlock(newBlock)
+                  this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
+                    if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                     else {
-                      return (exiResult || !balResult)
+                      console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                      console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
+                      this.BlockChain.sendNewBlockHash(newSenBlock)
+                      this.BlockChain.pool.clear()
+                      this.resetPOW()
+
+                      // generate Sec blockchain block
+                      this.secChain.consensus.generateSecBlock(newBlock.Beneficiary)
                     }
                   })
-                }
-              })
-            })
-
-            // assign txHeight
-            let txHeight = 0
-            TxsInPoll.forEach((tx) => {
-              tx.TxReceiptStatus = 'success'
-              tx.TxHeight = txHeight
-              txHeight = txHeight + 1
-            })
-
-            newBlock.Transactions = TxsInPoll
-            let _newBlock = JSON.parse(JSON.stringify(newBlock))
-            // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-            try {
-              let newSenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
-              this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
-                if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                else {
-                  console.log(chalk.green(`New SEN block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                  console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
-                  this.BlockChain.sendNewBlockHash(newSenBlock)
-                  this.BlockChain.pool.clear()
+                } catch (error) {
+                  console.error(`Error in consensus.js, runPow function, catch: ${error}`)
                   this.resetPOW()
-
-                  // generate Sec blockchain block
-                  this.secChain.consensus.generateSecBlock(_newBlock.Beneficiary)
                 }
-              })
-            } catch (error) {
-              console.error(`Error in consensus.js, runPow function, catch: ${error}`)
-              this.resetPOW()
-            }
+              }
+            })
           })
         } else {
           this.resetPOW()
@@ -215,47 +200,34 @@ class Consensus {
           newBlock.Nonce = ''
           newBlock.Beneficiary = beneficiary
 
-          // remove txs which already exist in previous blocks
-          _.remove(txsInPoll, (tx) => {
-            if (typeof tx !== 'object') {
-              tx = JSON.parse(tx)
-            }
-            this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
-              if (err) {
-                return true
-              } else {
-                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                  if (err) return true
-                  else {
-                    return (exiResult || !balResult)
-                  }
-                })
-              }
-            })
-          })
+          this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+            if (err) {
+              return this.resetPOW()
+            } else {
+              // assign txHeight
+              let txHeight = 0
+              txArray.forEach((tx) => {
+                tx.TxReceiptStatus = 'success'
+                tx.TxHeight = txHeight
+                txHeight = txHeight + 1
+              })
 
-          // assign txHeight
-          let txHeight = 0
-          txsInPoll.forEach((tx) => {
-            tx.TxReceiptStatus = 'success'
-            tx.TxHeight = txHeight
-            txHeight = txHeight + 1
-          })
+              newBlock.Transactions = txArray
+              let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
 
-          newBlock.Transactions = txsInPoll
-          let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
+              this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
+                if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
+                else {
+                  console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                  console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
+                  this.BlockChain.sendNewBlockHash(secBlock)
+                  this.BlockChain.pool.clear()
 
-          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
-            if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
-            else {
-              console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
-              console.log(chalk.green(`New generated block hash is: ${secBlock.getHeaderHash()}`))
-              this.BlockChain.sendNewBlockHash(secBlock)
-              this.BlockChain.pool.clear()
-
-              let txFeeTx = this.reward.getTxFeeTx(secBlock.getBlock())
-              this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx.getTx())
-              this.BlockChain.senChain.sendNewTokenTx(txFeeTx)
+                  let txFeeTx = this.reward.getTxFeeTx(secBlock.getBlock())
+                  this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx.getTx())
+                  this.BlockChain.senChain.sendNewTokenTx(txFeeTx)
+                }
+              })
             }
           })
         }

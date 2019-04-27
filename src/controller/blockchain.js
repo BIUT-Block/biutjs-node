@@ -1,6 +1,7 @@
 const ms = require('ms')
 const chalk = require('chalk')
 const Big = require('big.js')
+const async = require('async')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:blockchain')
 
@@ -289,6 +290,40 @@ class BlockChain {
       if (err) callback(null, false)
       else {
         callback(null, true)
+      }
+    })
+  }
+
+  checkTxArray (txArray, cb) {
+    let index = 0
+    let indexArray = []
+    let _txArray = txArray
+
+    async.eachSeries(_txArray, (tx, callback) => {
+      if (typeof tx !== 'object') {
+        tx = JSON.parse(tx)
+      }
+
+      this.isPositiveBalance(tx.TxFrom, (err, balResult) => {
+        if (err) return callback(err)
+        this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {
+          if (_err) return callback(_err)
+          else {
+            if (exiResult || !balResult) {
+              indexArray.push(index)
+            }
+            index++
+            callback()
+          }
+        })
+      })
+    }, (err) => {
+      if (err) cb(err, null)
+      else {
+        indexArray.reverse().forEach((i) => {
+          _txArray.splice(i, 1)
+        })
+        cb(null, _txArray)
       }
     })
   }
