@@ -124,17 +124,18 @@ class BlockChain {
           else {
             if (!_result) {
               console.log('\n******************** FeeTx test ********************')
-              let tx = tokenTx.getTx()
+              let _tx = tokenTx.getTx()
               console.log(chalk.yellow('Origin Tx: '))
-              console.log(tx)
-              this.pool.addTxIntoPool(tx)
-              if (tx.TxFee !== '0') {
-                let _tx = JSON.parse(JSON.stringify(tx))
-                _tx.TxTo = '0000000000000000000000000000000000000000'
-                _tx.Value = tx.TxFee
-                _tx.TxFee = '0'
-                _tx.TxHeight = ''
-                let feeTx = new SECTransaction.SECTokenTx(_tx)
+              console.log(_tx)
+              this.pool.addTxIntoPool(_tx)
+              if (_tx.TxFee !== '0') {
+                let __tx = JSON.parse(JSON.stringify(_tx))
+                __tx.TxTo = '0000000000000000000000000000000000000000'
+                __tx.Value = tx.TxFee
+                __tx.TxFee = '0'
+                __tx.TxHeight = ''
+                __tx.InputData = 'Handling fee transaction'
+                let feeTx = new SECTransaction.SECTokenTx(__tx)
                 console.log(chalk.yellow('Fee Tx: '))
                 console.log(feeTx.getTx())
                 if (this.chainName === 'SEC') {
@@ -167,29 +168,13 @@ class BlockChain {
       if (err) callback(err)
       else {
         balance = new Big(balance)
-        if (this.chainName === 'SEC') {
-          let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-          txArray.forEach((tx) => {
-            balance = balance.minus(tx.Value)
-          })
+        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
+        txArray.forEach((tx) => {
+          balance = balance.minus(tx.Value)
+        })
 
-          balance = balance.toFixed(DEC_NUM)
-          balance = parseFloat(balance).toString()
-        }
-        if (this.chainName === 'SEN') {
-          let senArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-          senArray.forEach((tx) => {
-            balance = balance.minus(tx.Value).minus(tx.TxFee)
-          })
-
-          let secArray = this.config.secChain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-          secArray.forEach((tx) => {
-            balance = balance.minus(tx.TxFee)
-          })
-
-          balance = balance.toFixed(DEC_NUM)
-          balance = parseFloat(balance).toString()
-        }
+        balance = balance.toFixed(DEC_NUM)
+        balance = parseFloat(balance).toString()
 
         callback(null, balance)
       }
