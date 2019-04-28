@@ -432,6 +432,7 @@ class NetworkEvent {
             }
 
             this.BlockChain.pool.updateByBlock(block)
+            callback()
           }
         })
         // TODO: put removed block-transactions back to transaction pool
