@@ -89,6 +89,10 @@ class APIs {
     this.chain.chain.txDB.getTxAmount(callback)
   }
 
+  getTotalRewards (callback) {
+    this.chain.chain.chainDB.getTotalRewards(callback)
+  }
+
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)

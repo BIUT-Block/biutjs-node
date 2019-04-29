@@ -278,6 +278,21 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  sec_getTotalReward: function (args, callback) {
+    let response = {}
+    core.senAPIs.getTotalRewards((err, reward) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Failed to get total reward amount, error info: ${err}`
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.info = reward
+      }
+      callback(null, response)
+    })
+  },
+
   sec_debug_getAccTreeAccInfo: function (args, callback) {
     let response = {}
     core.senAPIs.getAccTreeAccInfo(args[0], (err, info) => {
