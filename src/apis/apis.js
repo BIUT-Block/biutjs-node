@@ -39,7 +39,7 @@ class APIs {
   getTokenTx (TxHash, callback) {
     this.chainDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
+        console.log(`Error: Can not Token Transaction from database`)
       }
       wholechain.forEach(block => {
         let transaction = block.Transactions.filter(tx => {
@@ -89,6 +89,39 @@ class APIs {
     this.chain.chain.txDB.getTxAmount(callback)
   }
 
+  getTransactionBlockchain (ID, minHeight, maxHeight, callback) {
+    this.SECTxDbDict[ID].getTxChain(minHeight, maxHeight, callback)
+  }
+
+  getWholeTransactionBlockchain (ID, callback) {
+    this.SECTxDbDict[ID].getTxBlockChainDB(callback)
+  }
+
+  getTxforUser (ID, userAddress, callback) {
+    this.SECTxDbDict[ID].findTxForUser(userAddress, callback)
+  }
+
+  getTransactionTx (ID, txHash, callback) {
+    this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
+      if (err) {
+        console.log(`Error: Can not Token Transaction from database`)
+      }
+      wholechain.forEach(block => {
+        let transaction = block.Transactions.filter(tx => {
+          return tx.TxHash === txHash
+        })
+        if (transaction.length) {
+          callback(transaction[0])
+        }
+      })
+    })
+  }
+
+  getTransactionTxInPool (ID, txHash) {
+    let txPoolDict = this.blockChain.TxPoolDict
+    return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
+  }
+
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)
@@ -113,8 +146,8 @@ class APIs {
    * @param  {String} userAddress - user account address
    * @return {None}
    */
-  getBalance (userAddress, callback) {
-    this.chain.getBalance(userAddress, callback)
+  getBalance (userAddress, tokenName, callback) {
+    this.blockChain.getBalance(userAddress, tokenName, callback)
   }
 
   getNonce (userAddress, callback) {
@@ -171,6 +204,21 @@ class APIs {
   getTokenChainHeight () {
     return this.chain.chain.getCurrentHeight()
   }
+  
+  // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
+
+  getTokenName(addr, callback) {
+    this.blockChain.SECTokenChain.getTokenName(addr, callback)
+  }
+
+  getContractAddress(tokenname, callback){
+    this.blockChain.SECTokenChain.getContractAddress(tokenname, callback)
+  }
+
+  addTokenNameMap(tokenname, addr, callback) {
+    this.blockChain.SECTokenChain.add(tokenname, addr, callback)
+  }
+  
 }
 
 module.exports = APIs

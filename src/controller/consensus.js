@@ -3,7 +3,8 @@ const chalk = require('chalk')
 const cp = require('child_process')
 const path = require('path')
 const SECConfig = require('../../config/default.json')
-
+const SECUtils = require('@sec-block/secjs-util')
+const SECRunContract = require('./run-contract')
 const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECTransaction = require('@sec-block/secjs-tx')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
@@ -92,14 +93,13 @@ class Consensus {
               return this.resetPOW()
             }
             TxsInPoll.unshift(rewardTx)
-
-            // remove txs which already exist in previous blocks
             _.remove(TxsInPoll, (tx) => {
               if (typeof tx !== 'object') {
                 tx = JSON.parse(tx)
               }
-
-              this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
+            this.BlockChain.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
+              if (err) return true
+              this.BlockChain.checkBalance(tx.TxFrom, tokenName, (err, balResult) => {
                 if (err) {
                   return true
                 } else {
@@ -113,36 +113,101 @@ class Consensus {
               })
             })
 
-            // assign txHeight
-            let txHeight = 0
-            TxsInPoll.forEach((tx) => {
-              tx.TxReceiptStatus = 'success'
-              tx.TxHeight = txHeight
-              txHeight = txHeight + 1
-            })
+          // assign txHeight
+          let runcontractPromise = function(tx){
+            return new Promise((resolve, reject) => {
+              let secRunContract = new SECRunContract(tx, this.BlockChain.SECTokenChain)
+              secRunContract.run((err, contractResult)=>{
+                if (err) {
+                  reject(err)
+                }
+                if ('transferResult' in contractResult){
+                  this.BlockChain.SECTokenChain.accTree.getNonce(tx.TxTo, (err, nonce) => {
+                    if (err) {
+                      reject(err)
+                    }
+                    else {
+                      nonce = parseInt(nonce)
+                      let txArray = this.BlockChain.tokenPool.getAllTxFromPool().filter(txObj => (txObj.TxFrom === tx.TxFrom || txObj.TxTo === tx.TxFrom))
+                      nonce = nonce + txArray.length
+                      nonce = nonce.toString()
+                      let tokenTx = {
+                        Version: '0.1',
+                        TxReceiptStatus: 'success',
+                        TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+                        TxFrom: tx.TxTo,
+                        TxTo: contractResult.transferResult.Address,
+                        Value: contractResult.transferResult.Amount.toString(),
+                        GasLimit: '0',
+                        GasUsedByTxn: '0',
+                        GasPrice: '0',
+                        Nonce: nonce,
+                        InputData: `Smart Contract Transaction`
+                      }
+                      let txHashBuffer = [
+                        Buffer.from(tokenTx.Version),
+                        SECUtils.intToBuffer(tokenTx.TimeStamp),
+                        Buffer.from(tokenTx.TxFrom, 'hex'),
+                        Buffer.from(tokenTx.TxTo, 'hex'),
+                        Buffer.from(tokenTx.Value),
+                        Buffer.from(tokenTx.GasLimit),
+                        Buffer.from(tokenTx.GasUsedByTxn),
+                        Buffer.from(tokenTx.GasPrice),
+                        Buffer.from(tokenTx.Nonce),
+                        Buffer.from(tokenTx.InputData)
+                      ]
+                  
+                      tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+                      resolve(tokenTx)
+                    }
+                  })
+                } else if('otherResult' in contractResult){
+                  //reject(contractResult.otherResult)
+                  resolve()
+                } else {
+                  //reject(contractResult)
+                  resolve()
+                }
+              })
+            })  
+          }.bind(this)
 
-            newBlock.Transactions = TxsInPoll
+          let txHeight = 0
+          let contractTransactions = []
+          TxsInPoll.forEach((tx) => {
+            tx.TxReceiptStatus = 'success'
+            tx.TxHeight = txHeight
+            txHeight = txHeight + 1
+            if (SECUtils.isContractAddr(tx.TxTo)){
+              contractTransactions.push(runcontractPromise(tx))
+            }
+          })
+
+          Promise.all(contractTransactions).then((contractTransactions) => {
+            contractTransactions = contractTransactions.filter(tx => (tx!=null))
+            newBlock.Transactions = TxsInPoll.concat(contractTransactions)
             let _newBlock = JSON.parse(JSON.stringify(newBlock))
             // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
             try {
               let newSenBlock = new SECBlockChain.SECTokenBlock(_newBlock)
               this.BlockChain.chain.putBlockToDB(newSenBlock.getBlock(), (err) => {
-                if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                if (err) console.log(err.stack)
                 else {
                   console.log(chalk.green(`New SEN block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                   console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
                   this.BlockChain.sendNewBlockHash(newSenBlock)
                   this.BlockChain.pool.clear()
                   this.resetPOW()
-
                   // generate Sec blockchain block
                   this.secChain.consensus.generateSecBlock(_newBlock.Beneficiary)
                 }
               })
-            } catch (error) {
-              console.error(`Error in consensus.js, runPow function, catch: ${error}`)
+            } catch (err) {
+              console.log(`Error:`, err.stack)
               this.resetPOW()
             }
+          }).catch((err) => {
+            console.log(err.stack)
           })
         } else {
           this.resetPOW()

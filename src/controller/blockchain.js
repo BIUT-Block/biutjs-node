@@ -68,7 +68,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), [tx.getTxBuffer()]])
         }
       } catch (err) {
-        console.error(`Error in sendNewTokenTx function: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -83,7 +83,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
-        console.error(`Error in sendNewBlockHash function: ${err}`)
+        console.log(err.stack)
       }
     })
   }
@@ -106,14 +106,17 @@ class BlockChain {
     }
 
     let tokenTx = new SECTransaction.SECTokenTx(tx)
+    this.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
+      if (err) return callback(err)
+      let tokenTx = new SECTransaction.SECTokenTx(tx)
 
-    // check balance
-    this.checkBalance(tx, (err, result) => {
-      if (err) callback(err)
-      else if (!result) {
-        return callback(new Error(`Balance not enough`))
-      } else {
-        // verify tx signature
+      // check balance
+      this.getBalance(tx.TxFrom, tokenName, (err, value) => {
+        if (err) callback(err)
+        else if (value < parseFloat(tx.Value)) {
+          let err = new Error(`Balance not enough`)
+          return callback(err)
+        } else {
         if (!tokenTx.verifySignature()) {
           let err = new Error('Failed to verify transaction signature')
           return callback(err)
@@ -139,10 +142,11 @@ class BlockChain {
   /**
    * Get user account balance
    */
-  getBalance (userAddress, callback) {
-    this.chain.accTree.getBalance(userAddress, (err, balance) => {
+  getBalance (userAddress, tokenName, callback) {
+    this.SECTokenChain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) callback(err)
       else {
+        let balance = value[tokenName]
         balance = new Big(balance)
         if (this.chainName === 'SEC') {
           let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
@@ -189,7 +193,7 @@ class BlockChain {
     })
   }
 
-  checkBalance (tx, callback) {
+  checkBalance (userAddress, tokenName, callback) {
     // pow reward tx
     if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -248,7 +252,7 @@ class BlockChain {
       return callback(null, true)
     }
 
-    this.getBalance(addr, (err, balance) => {
+    this.getBalance(userAddress, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {

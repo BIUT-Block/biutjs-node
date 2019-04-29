@@ -23,15 +23,7 @@
       ],
       "testBootstrapNodes": [
         {
-          "ip": "18.197.120.79",
-          "port": "13331"
-        },
-        {
-          "ip": "35.180.100.27",
-          "port": "13331"
-        },
-        {
-          "ip": "13.209.41.52",
+          "ip": "127.0.0.1",
           "port": "13331"
         }
       ],
@@ -84,7 +76,7 @@
     },
     "powConfig": {
       "path": "powCache",
-      "expectedDifficulty": 300000
+      "expectedDifficulty": 100000
     }
   }
 }
