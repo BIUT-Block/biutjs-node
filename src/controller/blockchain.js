@@ -97,14 +97,16 @@ class BlockChain {
   }
 
   initiateTokenTx (tx, callback) {
+    let freeChargeFlag = false
     // pow reward tx
     // if (tx.TxFrom === '0000000000000000000000000000000000000000') {
     //   return callback(new Error('Invalid TxFrom address'))
     // }
     // free charge tx
-    // if (tx.TxFrom === '0000000000000000000000000000000000000001') {
-    //   return callback(new Error('Invalid TxFrom address'))
-    // }
+    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
+      freeChargeFlag = true
+      // return callback(new Error('Invalid TxFrom address'))
+    }
 
     let tokenTx = new SECTransaction.SECTokenTx(tx)
 
@@ -115,9 +117,11 @@ class BlockChain {
         return callback(new Error(`Balance not enough`))
       } else {
         // verify tx signature
-        if (!tokenTx.verifySignature()) {
-          let err = new Error('Failed to verify transaction signature')
-          return callback(err)
+        if (!freeChargeFlag) {
+          if (!tokenTx.verifySignature()) {
+            let err = new Error('Failed to verify transaction signature')
+            return callback(err)
+          }
         }
         this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
           if (err) callback(err)
