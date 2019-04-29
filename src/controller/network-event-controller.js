@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const chalk = require('chalk')
 const ms = require('ms')
 const async = require('async')
@@ -64,13 +63,13 @@ class NetworkEvent {
           if (err) console.error(`Error in network.js, PeerCommunication function, getLastBlock: ${err}`)
           else {
             let status = {
-              chainId: this.ChainID,
+              chainID: Buffer.from(this.ChainID),
               networkId: this.NETWORK_ID,
               td: Buffer.from(geneBlock.Difficulty),
               bestHash: Buffer.from(lastBlock.Hash, 'hex'),
               genesisHash: Buffer.from(geneBlock.Hash, 'hex')
             }
-            debug(chalk.bold.yellowBright('Sending Local Status to Peer...'))
+            debug(chalk.bold.yellowBright(`${this.ChainID} Chain Sending Local Status to Peer...`))
             debug(status)
             try {
               this.sec.sendStatus(status)
@@ -84,12 +83,11 @@ class NetworkEvent {
 
     // ------------------------------  CHECK FORK  -----------------------------
     this.sec.once('status', (status) => {
-      console.log(chalk.red(status))
-      if (status.chainID !== this.ChainID) {
+      if (status.chainID.toString() !== this.ChainID) {
         debug(`Status check failed, not same chainID => remote: ${status.chainID}, local: ${this.ChainID}`)
         return
       }
-      debug('Running first time Status Check...')
+      debug(`${this.ChainID} Chain Running first time Status Check...`)
       this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS, [this.ChainIDBuff, this.CHECK_BLOCK_NR])
       this.forkDrop = setTimeout(() => {
         peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.USELESS_PEER)
@@ -99,7 +97,6 @@ class NetworkEvent {
 
     this.sec.on('message', async (code, payload) => {
       if (payload[0].toString() !== this.ChainID) {
-        console.log(chalk.red(payload))
         debug(`Not ${this.ChainID} chain, received chainID is ${payload[0].toString()}`)
         return
       }
@@ -425,8 +422,8 @@ class NetworkEvent {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
         let block = Object.assign({}, newTokenBlock.getBlock())
         debug(`Syncronizing block ${block.Number}`)
-        this.BlockChain.chain.putBlockToDB(block, (err) => {
-          if (err) callback(err)
+        this.BlockChain.chain.putBlockToDB(block, (_err) => {
+          if (_err) callback(_err)
           else {
             console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
@@ -438,46 +435,34 @@ class NetworkEvent {
             callback()
           }
         })
-
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
         else {
-          // remove the duplicated txs
-          _.remove(txArray, (tx) => {
-            this.BlockChain.isPositiveBalance(tx.TxFrom, (err, balResult) => {
-              if (err) {
-                return true
+          this.BlockChain.checkTxArray(txArray, (_err, _txArray) => {
+            if (_err) console.error(`Error in NEW_BLOCK state, eachSeries else: ${_err}`)
+            else {
+              // add the removed txs into pool
+              _txArray.forEach((tx) => {
+                this.BlockChain.pool.addTxIntoPool(tx)
+              })
+
+              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+                // synchronizing finished
+                this.syncInfo.flag = false
+                this.syncInfo.address = null
+                clearTimeout(this.syncInfo)
               } else {
-                this.BlockChain.isTokenTxExist(tx.TxHash, (err, exiResult) => {
-                  if (err) return true
+                // continue synchronizing
+                this.BlockChain.chain.getHashList((__err, hashList) => {
+                  if (__err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${__err}`)
                   else {
-                    return (exiResult || !balResult)
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
                   }
                 })
               }
-            })
+            }
           })
-
-          // add the removed txs into pool
-          txArray.forEach((tx) => {
-            this.BlockChain.pool.addTxIntoPool(tx)
-          })
-
-          if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-            // synchronizing finished
-            this.syncInfo.flag = false
-            this.syncInfo.address = null
-            clearTimeout(this.syncInfo)
-          } else {
-            // continue synchronizing
-            this.BlockChain.chain.getHashList((err, hashList) => {
-              if (err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              else {
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
-              }
-            })
-          }
         }
       })
     })

@@ -1,9 +1,4 @@
-const fs = require('fs')
-const path = require('path')
 const geoip = require('geoip-lite')
-const GEOIPReader = require('@maxmind/geoip2-node').Reader
-const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../GeoIP2-City.mmdb'))
-const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
 const jayson = require('jayson')
 
 let core = {}
@@ -164,20 +159,6 @@ let server = jayson.server({
       }
       callback(null, response)
     })
-  },
-
-  sec_getNodesTable: function (args, callback) {
-    let response = {}
-    let nodes = core.secAPIs.getNodesTable()
-    let locations = []
-    nodes.forEach(node => {
-      locations.push({
-        location: geoIPReader.city(node.address),
-        node: node
-      })
-    })
-    response.NodesTable = locations
-    callback(null, response)
   },
 
   sec_getNodeInfo: function (args, callback) {

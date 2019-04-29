@@ -129,7 +129,7 @@ class CenterController {
         let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
         senNetworkEvent.PeerCommunication(peer, addr, sec)
         this.NetworkEventContainer['SEN'] = senNetworkEvent
-      }, 200)
+      }, 10000)
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {

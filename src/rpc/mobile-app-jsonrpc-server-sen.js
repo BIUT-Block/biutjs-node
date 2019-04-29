@@ -1,9 +1,4 @@
-const fs = require('fs')
-const path = require('path')
 const geoip = require('geoip-lite')
-const GEOIPReader = require('@maxmind/geoip2-node').Reader
-const dbBuffer = fs.readFileSync(path.resolve(__dirname, '../GeoIP2-City.mmdb'))
-const geoIPReader = GEOIPReader.openBuffer(dbBuffer)
 const jayson = require('jayson')
 
 let core = {}
@@ -166,20 +161,6 @@ let server = jayson.server({
     })
   },
 
-  sec_getNodesTable: function (args, callback) {
-    let response = {}
-    let nodes = core.senAPIs.getNodesTable()
-    let locations = []
-    nodes.forEach(node => {
-      locations.push({
-        location: geoIPReader.city(node.address),
-        node: node
-      })
-    })
-    response.NodesTable = locations
-    callback(null, response)
-  },
-
   sec_getNodeInfo: function (args, callback) {
     let response = {}
     core.senAPIs.getNodeIpv4((ipv4) => {
@@ -295,6 +276,21 @@ let server = jayson.server({
     response.status = '1'
     response.message = 'OK'
     callback(null, response)
+  },
+
+  sec_getTotalReward: function (args, callback) {
+    let response = {}
+    core.senAPIs.getTotalRewards((err, reward) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Failed to get total reward amount, error info: ${err}`
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.info = reward
+      }
+      callback(null, response)
+    })
   },
 
   sec_debug_getAccTreeAccInfo: function (args, callback) {

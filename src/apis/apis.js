@@ -89,37 +89,8 @@ class APIs {
     this.chain.chain.txDB.getTxAmount(callback)
   }
 
-  getTransactionBlockchain (ID, minHeight, maxHeight, callback) {
-    this.SECTxDbDict[ID].getTxChain(minHeight, maxHeight, callback)
-  }
-
-  getWholeTransactionBlockchain (ID, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB(callback)
-  }
-
-  getTxforUser (ID, userAddress, callback) {
-    this.SECTxDbDict[ID].findTxForUser(userAddress, callback)
-  }
-
-  getTransactionTx (ID, txHash, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
-      if (err) {
-        console.log(`Error: Can not Token Transaction from database`)
-      }
-      wholechain.forEach(block => {
-        let transaction = block.Transactions.filter(tx => {
-          return tx.TxHash === txHash
-        })
-        if (transaction.length) {
-          callback(transaction[0])
-        }
-      })
-    })
-  }
-
-  getTransactionTxInPool (ID, txHash) {
-    let txPoolDict = this.blockChain.TxPoolDict
-    return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
+  getTotalRewards (callback) {
+    this.chain.chain.chainDB.getTotalRewards(callback)
   }
 
   // ---------------------------  secjs libs  --------------------------
