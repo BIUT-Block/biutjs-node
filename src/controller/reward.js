@@ -3,6 +3,7 @@ const SECUtils = require('@sec-block/secjs-util')
 const SECTransaction = require('@sec-block/secjs-tx')
 
 const MAX_MORTGAGE = 100000
+const MIN_MORTGAGE = 0.24
 const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
 const INIT_TX_AMOUNT = 100000
@@ -88,13 +89,17 @@ class SENReward {
   }
 
   _getReward (addr, callback) {
-    let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
+    // TODO: only for short time, later must be corrected
+    let rewardFactor = 41.6667
+    // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
+        } else if (balance < MIN_MORTGAGE) {
+          balance = MIN_MORTGAGE
         }
         let reward = balance * rewardFactor / 100000
         callback(null, reward)
