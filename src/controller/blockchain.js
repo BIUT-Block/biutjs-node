@@ -98,13 +98,13 @@ class BlockChain {
 
   initiateTokenTx (tx, callback) {
     // pow reward tx
-    if (tx.TxFrom === '0000000000000000000000000000000000000000') {
-      return callback(new Error('Invalid TxFrom address'))
-    }
+    // if (tx.TxFrom === '0000000000000000000000000000000000000000') {
+    //   return callback(new Error('Invalid TxFrom address'))
+    // }
     // free charge tx
-    if (tx.TxFrom === '0000000000000000000000000000000000000001') {
-      return callback(new Error('Invalid TxFrom address'))
-    }
+    // if (tx.TxFrom === '0000000000000000000000000000000000000001') {
+    //   return callback(new Error('Invalid TxFrom address'))
+    // }
 
     let tokenTx = new SECTransaction.SECTokenTx(tx)
 
