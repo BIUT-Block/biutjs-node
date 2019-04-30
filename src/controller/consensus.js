@@ -39,6 +39,7 @@ class Consensus {
 
     if (this.chainName === 'SEN') {
       this.secChain = config.secChain
+      this.secReward = new SENReward(this.secChain)
     }
   }
 
@@ -86,7 +87,7 @@ class Consensus {
         if (result.result && groupId === BeneGroupId) {
           let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
-          this.reward.getRewardTx((err, rewardTx) => {
+          this.secReward.getRewardTx((err, rewardTx) => {
             if (err) {
               return this.resetPOW()
             }
