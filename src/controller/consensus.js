@@ -7,7 +7,7 @@ const SECBlockChain = require('@sec-block/secjs-blockchain')
 // const SECTransaction = require('@sec-block/secjs-tx')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECCircle = require('./circle')
-const SENReward = require('./reward')
+const SECReward = require('./reward')
 
 class Consensus {
   constructor (config) {
@@ -31,7 +31,7 @@ class Consensus {
     this.secCircle = new SECCircle(configCircle)
 
     // init Reward object
-    this.reward = new SENReward(this.BlockChain)
+    this.reward = new SECReward(this.BlockChain)
 
     // init variables
     this.myGroupId = 0
@@ -39,7 +39,7 @@ class Consensus {
 
     if (this.chainName === 'SEN') {
       this.secChain = config.secChain
-      this.secReward = new SENReward(this.secChain)
+      this.secReward = new SECReward(this.secChain)
     }
   }
 
