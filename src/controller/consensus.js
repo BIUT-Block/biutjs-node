@@ -89,15 +89,17 @@ class Consensus {
           // append the pow reward tx
           this.secReward.getRewardTx((err, rewardTx) => {
             if (err) return this.resetPOW()
+            let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
             this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, secTxFeeTx) => {
               if (err) return this.resetPOW()
 
+              let _secTxFeeTx = JSON.parse(JSON.stringify(secTxFeeTx))
               let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary).getTx()
               txsInPoll.unshift(senTxFeeTx)
-              if (secTxFeeTx !== null) {
-                txsInPoll.unshift(secTxFeeTx)
+              if (_secTxFeeTx !== null) {
+                txsInPoll.unshift(_secTxFeeTx)
               }
-              txsInPoll.unshift(rewardTx)
+              txsInPoll.unshift(_rewardTx)
 
               this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
                 if (err) return this.resetPOW()
