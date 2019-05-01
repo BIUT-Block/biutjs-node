@@ -30,9 +30,6 @@ class Consensus {
     configCircle.maxGroup = configGroup.maxGroupId
     this.secCircle = new SECCircle(configCircle)
 
-    // init Reward object
-    this.reward = new SECReward(this.BlockChain)
-
     // init variables
     this.myGroupId = 0
     this.groupIdBuffer = 0
@@ -88,15 +85,17 @@ class Consensus {
           let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
           this.secReward.getRewardTx((err, rewardTx) => {
-            if (err) {
-              return this.resetPOW()
-            }
-            txsInPoll.unshift(rewardTx)
+            if (err) return this.resetPOW()
+            this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (_err, secTxFeeTx) => {
+              if (_err) return this.resetPOW()
 
-            this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-              if (err) {
-                return this.resetPOW()
-              } else {
+              let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
+              txsInPoll.unshift(senTxFeeTx)
+              txsInPoll.unshift(secTxFeeTx)
+              txsInPoll.unshift(rewardTx)
+
+              this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+                if (err) return this.resetPOW()
                 // assign txHeight
                 let txHeight = 0
                 txArray.forEach((tx) => {
@@ -107,26 +106,18 @@ class Consensus {
 
                 newBlock.Transactions = txArray
                 // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-                try {
-                  let senBlock = new SECBlockChain.SECTokenBlock(newBlock)
-                  this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                    if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                    else {
-                      console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                      console.log(chalk.green(`New generated block is: ${senBlock.getBlock()}`))
-                      this.BlockChain.sendNewBlockHash(senBlock)
-                      this.BlockChain.pool.clear()
-                      this.resetPOW()
-
-                      // generate Sec blockchain block
-                      this.secChain.consensus.generateSecBlock(newBlock.Beneficiary)
-                    }
-                  })
-                } catch (error) {
-                  console.error(`Error in consensus.js, runPow function, catch: ${error}`)
-                  this.resetPOW()
-                }
-              }
+                let senBlock = new SECBlockChain.SECTokenBlock(newBlock)
+                this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                  if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                  else {
+                    console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                    console.log(chalk.green(`New generated block is: ${senBlock.getBlock()}`))
+                    this.BlockChain.sendNewBlockHash(senBlock)
+                    this.BlockChain.pool.clear()
+                    this.resetPOW()
+                  }
+                })
+              })
             })
           })
         } else {
@@ -157,9 +148,7 @@ class Consensus {
         let isNextPeriod = this.secCircle.isNextPeriod()
         if (isNextPeriod) {
           this.secCircle.resetCircle((err) => {
-            if (err) {
-              console.log(err)
-            }
+            if (err) console.log(err)
           })
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
@@ -183,54 +172,46 @@ class Consensus {
   }
 
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
-  generateSecBlock (beneficiary) {
+  generateSecBlock (beneficiary, callback) {
     let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
     if (txsInPoll.length !== 0) {
       // generate sec block
       let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
       this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-        if (err) console.error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`)
-        else {
-          newBlock.Number = lastBlock.Number + 1
-          newBlock.ParentHash = lastBlock.Hash
-          newBlock.TimeStamp = this.secCircle.getLocalHostTime()
-          newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
-          newBlock.Difficulty = ''
-          newBlock.MixHash = ''
-          newBlock.Nonce = ''
-          newBlock.Beneficiary = beneficiary
+        if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`), null)
+        newBlock.Number = lastBlock.Number + 1
+        newBlock.ParentHash = lastBlock.Hash
+        newBlock.TimeStamp = this.secCircle.getLocalHostTime()
+        newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
+        newBlock.Difficulty = ''
+        newBlock.MixHash = ''
+        newBlock.Nonce = ''
+        newBlock.Beneficiary = beneficiary
 
-          this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-            if (err) {
-              return this.resetPOW()
-            } else {
-              // assign txHeight
-              let txHeight = 0
-              txArray.forEach((tx) => {
-                tx.TxReceiptStatus = 'success'
-                tx.TxHeight = txHeight
-                txHeight = txHeight + 1
-              })
-
-              newBlock.Transactions = txArray
-              let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
-
-              this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
-                if (err) console.error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`)
-                else {
-                  console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                  console.log(chalk.green(`New generated block is: ${secBlock.getBlock()}`))
-                  this.BlockChain.sendNewBlockHash(secBlock)
-                  this.BlockChain.pool.clear()
-
-                  let txFeeTx = this.reward.getTxFeeTx(secBlock.getBlock())
-                  this.BlockChain.senChain.pool.addTxIntoPool(txFeeTx.getTx())
-                  this.BlockChain.senChain.sendNewTokenTx(txFeeTx)
-                }
-              })
-            }
+        this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+          if (err) return this.resetPOW()
+          // assign txHeight
+          let txHeight = 0
+          txArray.forEach((tx) => {
+            tx.TxReceiptStatus = 'success'
+            tx.TxHeight = txHeight
+            txHeight = txHeight + 1
           })
-        }
+
+          newBlock.Transactions = txArray
+          let secBlock = new SECBlockChain.SECTokenBlock(newBlock)
+
+          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
+            if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
+            console.log(chalk.green(`New SEC block generated, ${secBlock.getBlock().Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
+            console.log(chalk.green(`New generated block is: ${secBlock.getBlock()}`))
+            this.BlockChain.sendNewBlockHash(secBlock)
+            this.BlockChain.pool.clear()
+
+            let txFeeTx = this.secReward.getSecTxFeeTx(secBlock.getBlock())
+            callback(null, txFeeTx.getTx())
+          })
+        })
       })
     } else {
       // do nothing if tx pool is empty

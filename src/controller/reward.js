@@ -136,7 +136,7 @@ class SENReward {
   // ------------------------------------------------------------------------------------------------ //
   // ----------------------------------  SEC blockchain Functions  ---------------------------------- //
   // ------------------------------------------------------------------------------------------------ //
-  getTxFeeTx (block) {
+  getSecTxFeeTx (block) {
     let txFee = 0
     block.Transactions.forEach((tx) => {
       txFee = txFee + parseFloat(tx.TxFee)
@@ -154,6 +154,32 @@ class SENReward {
       TxFee: '0',
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEC blockchain transactions service charge`
+    }
+    let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
+    return txFeeTxObject
+  }
+
+  // ------------------------------------------------------------------------------------------------ //
+  // ----------------------------------  SEN blockchain Functions  ---------------------------------- //
+  // ------------------------------------------------------------------------------------------------ //
+  getSenTxFeeTx (txArray, beneficiary) {
+    let txFee = 0
+    txArray.forEach((tx) => {
+      txFee = txFee + parseFloat(tx.TxFee)
+    })
+    let txFeeTx = {
+      Version: '0.1',
+      TxReceiptStatus: 'success',
+      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: beneficiary,
+      Value: txFee.toString(),
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      TxFee: '0',
+      Nonce: this.chain.chain.getCurrentHeight().toString(),
+      InputData: `SEN blockchain transactions service charge`
     }
     let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
     return txFeeTxObject
