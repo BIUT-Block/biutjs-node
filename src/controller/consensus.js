@@ -34,6 +34,9 @@ class Consensus {
     this.myGroupId = 0
     this.groupIdBuffer = 0
 
+    // init Reward object
+    this.reward = new SECReward(this.BlockChain)
+
     if (this.chainName === 'SEN') {
       this.secChain = config.secChain
       this.secReward = new SECReward(this.secChain)
@@ -86,12 +89,14 @@ class Consensus {
           // append the pow reward tx
           this.secReward.getRewardTx((err, rewardTx) => {
             if (err) return this.resetPOW()
-            this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (_err, secTxFeeTx) => {
-              if (_err) return this.resetPOW()
+            this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, secTxFeeTx) => {
+              if (err) return this.resetPOW()
 
-              let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
+              let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary).getTx()
               txsInPoll.unshift(senTxFeeTx)
-              txsInPoll.unshift(secTxFeeTx)
+              if (secTxFeeTx !== null) {
+                txsInPoll.unshift(secTxFeeTx)
+              }
               txsInPoll.unshift(rewardTx)
 
               this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
@@ -189,7 +194,7 @@ class Consensus {
         newBlock.Beneficiary = beneficiary
 
         this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-          if (err) return this.resetPOW()
+          if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, checkTxArray: ${err}`), null)
           // assign txHeight
           let txHeight = 0
           txArray.forEach((tx) => {
@@ -208,12 +213,13 @@ class Consensus {
             this.BlockChain.sendNewBlockHash(secBlock)
             this.BlockChain.pool.clear()
 
-            let txFeeTx = this.secReward.getSecTxFeeTx(secBlock.getBlock())
+            let txFeeTx = this.reward.getSecTxFeeTx(secBlock.getBlock())
             callback(null, txFeeTx.getTx())
           })
         })
       })
     } else {
+      callback(null, null)
       // do nothing if tx pool is empty
     }
   }
