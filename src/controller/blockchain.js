@@ -162,6 +162,7 @@ class BlockChain {
         })
       }
     })
+  })
   }
 
   // --------------------------------------------------------------------------------- //
@@ -171,8 +172,11 @@ class BlockChain {
    * Get user account balance
    */
   getBalance (userAddress, tokenName, callback) {
-    this.SECTokenChain.accTree.getBalance(userAddress, tokenName, (err, value) => {
-      if (err) callback(err)
+    this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
+      if (err) {
+        console.log('ming', userAddress, tokenName, callback)
+        callback(err)
+      }
       else {
         let balance = value[tokenName]
         balance = new Big(balance)
@@ -216,7 +220,7 @@ class BlockChain {
     }
 
     if (this.chainName === 'SEC') {
-      this.getBalance(tx.TxFrom, (err, balance) => {
+      this.getBalance(tx.TxFrom, 'SEC', (err, balance) => {
         if (err) {
           callback(err, null)
         } else {
@@ -240,7 +244,7 @@ class BlockChain {
     }
 
     if (this.chainName === 'SEN') {
-      this.getBalance(tx.TxFrom, (err, balance) => {
+      this.getBalance(tx.TxFrom, 'SEN', (err, balance) => {
         if (err) {
           callback(err, null)
         } else {

@@ -174,9 +174,9 @@ class Consensus {
                     this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
                       if (err) console.log(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                       else {
-                        console.log(chalk.green(`New SEN block generated, ${_newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                        console.log(chalk.green(`New generated block hash is: ${newSenBlock.getHeaderHash()}`))
-                        this.BlockChain.sendNewBlockHash(newSenBlock)
+                        console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                        console.log(chalk.green(`New generated block hash is: ${senBlock.getHeaderHash()}`))
+                        this.BlockChain.sendNewBlockHash(senBlock)
                         this.BlockChain.pool.clear()
                         this.resetPOW()
                         // generate Sec blockchain block

@@ -87,9 +87,9 @@ class SENReward {
     }
   }
 
-  _getReward (addr, callback) {
+  _getReward (addr, tokenName, callback) {
     let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
-    this.chain.getBalance(addr, (err, balance) => {
+    this.chain.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {
@@ -103,7 +103,7 @@ class SENReward {
   }
 
   getRewardTx (callback) {
-    this._getReward(this.chain.SECAccount.getAddress(), (err, reward) => {
+    this._getReward(this.chain.SECAccount.getAddress(), 'SEC', (err, reward) => {
       if (err) {
         callback(err)
       } else {
