@@ -614,7 +614,7 @@ class NetworkEvent {
   _onNewBlock (newSECTokenBlock) {
     this.BlockChain.sendNewBlockHash(newSECTokenBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
-    console.log(`New Token block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
+    console.log(`New ${this.ChainName} block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
     this.BlockChain.pool.updateByBlock(newSECTokenBlock.getBlock())
   }

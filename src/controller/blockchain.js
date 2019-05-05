@@ -80,7 +80,7 @@ class BlockChain {
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
-          debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
+          debug(`Send new ${this.chainName} block to Peer: ${MainUtils.getPeerAddr(peer)}`)
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
@@ -132,6 +132,7 @@ class BlockChain {
               console.log(chalk.yellow('Origin Tx: '))
               console.log(_tx)
               this.pool.addTxIntoPool(_tx)
+              this.sendNewTokenTx(tokenTx)
               if (_tx.TxFee !== '0') {
                 let __tx = JSON.parse(JSON.stringify(_tx))
                 __tx.TxTo = '0000000000000000000000000000000000000000'
@@ -152,7 +153,6 @@ class BlockChain {
               }
               console.log('******************** FeeTx test End ********************\n')
               debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
-              this.sendNewTokenTx(tokenTx)
             }
             callback(null)
           }

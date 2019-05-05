@@ -22,7 +22,7 @@
   "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
   "dependencies": {
     "@maxmind/geoip2-node": "^0.4.0",
-    "@sec-block/secjs-blockchain": "^1.0.163",
+    "@sec-block/secjs-blockchain": "^1.0.164",
     "@sec-block/secjs-datahandler": "^1.1.52",
     "@sec-block/secjs-devp2p": "^1.0.27",
     "@sec-block/secjs-pow": "^1.0.14",
