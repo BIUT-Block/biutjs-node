@@ -174,11 +174,12 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End STATUS =====`))
   }
 
-  NEW_BLOCK_HASHES (payload, requests) {
+  NEW_BLOCK_HASHES (_payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK_HASHES =====`))
     if (!this.forkVerified) return
 
     // new block hash received from a remote node
+    let payload = Buffer.from(_payload)
     let blockHash = payload.toString('hex')
     debug(`New Block Hash from Remote: ${blockHash}`)
 
@@ -203,8 +204,9 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End NEW_BLOCK_HASHES End =====`))
   }
 
-  GET_BLOCK_HEADERS (payload, requests) {
+  GET_BLOCK_HEADERS (_payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_HEADERS =====`))
+    let payload = Buffer.from(_payload)
     if (!this.forkVerified) {
       // check genesis block
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload))
@@ -240,8 +242,13 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_BLOCK_HEADERS =====`))
   }
 
-  BLOCK_HEADERS (payload, requests) {
+  BLOCK_HEADERS (_payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
+    let payload = []
+    _payload.forEach((item) => {
+      payload.push(Buffer.from(item))
+    })
+
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
     debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
@@ -327,8 +334,9 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End BLOCK_HEADERS =====`))
   }
 
-  GET_BLOCK_BODIES (payload, requests) {
+  GET_BLOCK_BODIES (_payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_BODIES =====`))
+    let payload = Buffer.from(_payload)
 
     let blockHash = payload.toString('hex')
     debug('Get Block Hash: ' + blockHash)
@@ -349,9 +357,14 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_BLOCK_BODIES =====`))
   }
 
-  BLOCK_BODIES (payload, requests) {
+  BLOCK_BODIES (_payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
+    let payload = []
+    payload[0] = Buffer.from(_payload[0])
+    _payload[1].forEach((item) => {
+      payload[1].push(Buffer.from(item))
+    })
 
     for (let [index, block] of requests.bodies.entries()) {
       debug(`BLOCK_BODIES: block in requests.bodies: ${JSON.stringify(block.getHeader())}`)
@@ -393,9 +406,19 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End BLOCK_BODIES =====`))
   }
 
-  NEW_BLOCK (payload, requests) {
+  NEW_BLOCK (_payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+
+    let payload = []
+    payload[0] = Buffer.from(_payload[0])
+    payload[2] = Buffer.from(_payload[2])
+    _payload[1].forEach((block, i) => {
+      payload[1][i] = []
+      block.forEach((item) => {
+        payload[1][i].push(Buffer.from(item))
+      })
+    })
 
     let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
     let remoteAddress = payload[2].toString('hex')
@@ -468,14 +491,14 @@ class NetworkEvent {
     })
   }
 
-  TX (payload, requests) {
+  TX (_payload, requests) {
     debug(chalk.bold.yellow(`===== TX =====`))
     if (!this.forkVerified) return
+    let payload = Buffer.from(_payload)
 
-    for (let txBuffer of payload) {
-      let TokenTx = new SECTransaction.SECTokenTx(txBuffer)
-      if (this._isValidTx(TokenTx)) this._onNewTx(TokenTx)
-    }
+    let TokenTx = new SECTransaction.SECTokenTx(payload)
+    if (this._isValidTx(TokenTx)) this._onNewTx(TokenTx)
+
     debug(chalk.bold.yellow(`===== End TX =====`))
   }
 
@@ -490,8 +513,9 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
   }
 
-  NODE_DATA (payload, requests) {
+  NODE_DATA (_payload, requests) {
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
+    let payload = Buffer.from(_payload)
     let remoteHashList = JSON.parse(payload.toString())
     let remoteHeight = remoteHashList[remoteHashList.length - 1].Number
     let remoteLastHash = remoteHashList[remoteHashList.length - 1].Hash

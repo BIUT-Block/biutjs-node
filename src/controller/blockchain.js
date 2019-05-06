@@ -66,7 +66,7 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new Token Tx to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), [tx.getTxBuffer()]])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), tx.getTxBuffer()])
         }
       } catch (err) {
         console.error(`Error in sendNewTokenTx function: ${err}`)
