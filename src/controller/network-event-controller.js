@@ -362,6 +362,7 @@ class NetworkEvent {
     if (!this.forkVerified) return
     let payload = []
     payload[0] = Buffer.from(_payload[0])
+    payload[1] = []
     _payload[1].forEach((item) => {
       payload[1].push(Buffer.from(item))
     })
@@ -412,9 +413,10 @@ class NetworkEvent {
 
     let payload = []
     payload[0] = Buffer.from(_payload[0])
+    payload[1] = []
     payload[2] = Buffer.from(_payload[2])
     _payload[1].forEach((block, i) => {
-      payload[1][i] = []
+      payload[1].push([])
       block.forEach((item) => {
         payload[1][i].push(Buffer.from(item))
       })
@@ -448,8 +450,8 @@ class NetworkEvent {
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
           if (_err) callback(_err)
           else {
-            console.log(chalk.green(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-            debug(`Sync New Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+            console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+            debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
             if (this.ChainName === 'SEN') {
               this.Consensus.resetPOW()
             }
@@ -494,7 +496,10 @@ class NetworkEvent {
   TX (_payload, requests) {
     debug(chalk.bold.yellow(`===== TX =====`))
     if (!this.forkVerified) return
-    let payload = Buffer.from(_payload)
+    let payload = []
+    _payload.forEach((item) => {
+      payload.push(Buffer.from(item))
+    })
 
     let TokenTx = new SECTransaction.SECTokenTx(payload)
     if (this._isValidTx(TokenTx)) this._onNewTx(TokenTx)
