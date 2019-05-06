@@ -174,12 +174,11 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End STATUS =====`))
   }
 
-  NEW_BLOCK_HASHES (_payload, requests) {
+  NEW_BLOCK_HASHES (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK_HASHES =====`))
     if (!this.forkVerified) return
 
     // new block hash received from a remote node
-    let payload = Buffer.from(_payload)
     let blockHash = payload.toString('hex')
     debug(`New Block Hash from Remote: ${blockHash}`)
 
@@ -204,9 +203,8 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End NEW_BLOCK_HASHES End =====`))
   }
 
-  GET_BLOCK_HEADERS (_payload, requests) {
+  GET_BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_HEADERS =====`))
-    let payload = Buffer.from(_payload)
     if (!this.forkVerified) {
       // check genesis block
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload))
@@ -242,23 +240,21 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_BLOCK_HEADERS =====`))
   }
 
-  BLOCK_HEADERS (_payload, requests) {
+  BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
-    let payload = []
-    _payload.forEach((item) => {
-      payload.push(Buffer.from(item))
-    })
 
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
-    debug(`Received block header: ${JSON.stringify(block.getHeader())}`)
+    let blockHash = block.getHeaderHash()
+    let blockHeader = JSON.parse(JSON.stringify(block.getHeader()))
+    debug(`Received block header: ${JSON.stringify(blockHeader)}`)
 
     if (!this.forkVerified) {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
         if (err) console.error(`Error in BLOCK_HEADERS state, getGenesisBlock: ${err}`)
-        else if (block.getHeaderHash() === geneBlock.Hash) {
+        else if (blockHash === geneBlock.Hash) {
           debug(`Chain Name: ${this.ChainName}`)
-          debug(`${block.getHeaderHash()} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
+          debug(`${blockHash} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
           debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
           this.forkVerified = true
           clearTimeout(this.forkDrop)
@@ -268,16 +264,16 @@ class NetworkEvent {
           this._startSyncNodesIP()
         } else {
           debug(`Chain Name: ${this.ChainName}`)
-          debug(`${block.getHeaderHash()} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
+          debug(`${blockHash} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
           debug(`${this.addr} is NOT on the same side of the ${this.CHECK_BLOCK_TITLE}`)
-          debug(`Expected Hash: ${geneBlock.Hash}, Remote Hash: ${block.getHeaderHash()}`)
+          debug(`Expected Hash: ${geneBlock.Hash}, Remote Hash: ${blockHash}`)
         }
       })
     } else {
-      if (requests.headers.indexOf(block.getHeaderHash()) > -1) {
+      if (requests.headers.indexOf(blockHash) > -1) {
         // remove it from requests.headers
-        requests.headers.splice(requests.headers.indexOf(block.getHeaderHash()), 1)
-        let header = block.getHeader()
+        requests.headers.splice(requests.headers.indexOf(blockHash), 1)
+        let header = blockHeader
 
         // verify beneficiary group id and block number
         if (!this._isValidBlock(header)) {
@@ -300,9 +296,10 @@ class NetworkEvent {
             // case 1: parent hash successfully verified
             if (lastBlock.Hash === header.ParentHash) {
               debug(`parent hash successfully verified`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [this.ChainIDBuff, Buffer.from(block.getHeaderHash(), 'hex')])
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [this.ChainIDBuff, Buffer.from(blockHash, 'hex')])
+              block = new SECBlockChain.SECTokenBlock().setHeader(blockHeader)
               requests.bodies.push(block)
-              debug(`BLOCK_HEADERS2: ${JSON.stringify(header)}`)
+              debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeaderHash())}`)
             } else {
               debug('parent hash verification failed')
               let localHeight = this.BlockChain.chain.getCurrentHeight()
@@ -328,15 +325,14 @@ class NetworkEvent {
           }
         })
       } else {
-        debug(`Received block header hash ${block.getHeaderHash()} is not in requests.headers: ${requests.headers}`)
+        debug(`Received block header hash ${blockHash} is not in requests.headers: ${requests.headers}`)
       }
     }
     debug(chalk.bold.yellow(`===== End BLOCK_HEADERS =====`))
   }
 
-  GET_BLOCK_BODIES (_payload, requests) {
+  GET_BLOCK_BODIES (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_BLOCK_BODIES =====`))
-    let payload = Buffer.from(_payload)
 
     let blockHash = payload.toString('hex')
     debug('Get Block Hash: ' + blockHash)
@@ -357,21 +353,15 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_BLOCK_BODIES =====`))
   }
 
-  BLOCK_BODIES (_payload, requests) {
+  BLOCK_BODIES (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
-    let payload = []
-    payload[0] = Buffer.from(_payload[0])
-    payload[1] = []
-    _payload[1].forEach((item) => {
-      payload[1].push(Buffer.from(item))
-    })
 
     for (let [index, block] of requests.bodies.entries()) {
-      debug(`BLOCK_BODIES: block in requests.bodies: ${JSON.stringify(block.getHeader())}`)
+      debug(`BLOCK_BODIES: block in requests.bodies: ${JSON.stringify(blockHeader)}`)
 
       // find the corresponding block stored in requests.bodies
-      if (block.getHeader().Number !== SECDEVP2P._util.buffer2int(payload[0])) {
+      if (blockHeader.Number !== SECDEVP2P._util.buffer2int(payload[0])) {
         debug(`block number in requests.bodies is unequal to the block number received from remote node`)
         break
       }
@@ -407,20 +397,9 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End BLOCK_BODIES =====`))
   }
 
-  NEW_BLOCK (_payload, requests) {
+  NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
-
-    let payload = []
-    payload[0] = Buffer.from(_payload[0])
-    payload[1] = []
-    payload[2] = Buffer.from(_payload[2])
-    _payload[1].forEach((block, i) => {
-      payload[1].push([])
-      block.forEach((item) => {
-        payload[1][i].push(Buffer.from(item))
-      })
-    })
 
     let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
     let remoteAddress = payload[2].toString('hex')
@@ -443,8 +422,8 @@ class NetworkEvent {
     // remove all the blocks which have a larger block number than the first block to be syncronized
     this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
       if (err) console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
-      async.eachSeries(payload[1], (_payload, callback) => {
-        let newTokenBlock = new SECBlockChain.SECTokenBlock(_payload)
+      async.eachSeries(payload[1], (payload, callback) => {
+        let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
         let block = Object.assign({}, newTokenBlock.getBlock())
         debug(`Syncronizing block ${block.Number}`)
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
@@ -493,13 +472,9 @@ class NetworkEvent {
     })
   }
 
-  TX (_payload, requests) {
+  TX (payload, requests) {
     debug(chalk.bold.yellow(`===== TX =====`))
     if (!this.forkVerified) return
-    let payload = []
-    _payload.forEach((item) => {
-      payload.push(Buffer.from(item))
-    })
 
     let TokenTx = new SECTransaction.SECTokenTx(payload)
     if (this._isValidTx(TokenTx)) this._onNewTx(TokenTx)
@@ -518,9 +493,8 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
   }
 
-  NODE_DATA (_payload, requests) {
+  NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
-    let payload = Buffer.from(_payload)
     let remoteHashList = JSON.parse(payload.toString())
     let remoteHeight = remoteHashList[remoteHashList.length - 1].Number
     let remoteLastHash = remoteHashList[remoteHashList.length - 1].Hash
