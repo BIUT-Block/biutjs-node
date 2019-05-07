@@ -247,7 +247,7 @@ class NetworkEvent {
     block.setHeader(payload)
     let blockHash = block.getHeaderHash()
     let blockHeader = JSON.parse(JSON.stringify(block.getHeader()))
-    debug(`Received block header: ${JSON.stringify(blockHeader)}`)
+    debug(`Received ${this.ChainName} block header: ${JSON.stringify(blockHeader)}`)
 
     if (!this.forkVerified) {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
@@ -273,15 +273,14 @@ class NetworkEvent {
       if (requests.headers.indexOf(blockHash) > -1) {
         // remove it from requests.headers
         requests.headers.splice(requests.headers.indexOf(blockHash), 1)
-        let header = blockHeader
 
         // verify beneficiary group id and block number
-        if (!this._isValidBlock(header)) {
+        if (!this._isValidBlock(blockHeader)) {
           return
         }
 
         // verify parent block hash
-        this.BlockChain.chain.getBlock(header.Number - 1, (err, lastBlock) => {
+        this.BlockChain.chain.getBlock(blockHeader.Number - 1, (err, lastBlock) => {
           if (err) {
             // possible reason: block does not exist because received block number is larger than local chain length at least by 2
             debug(`error occurs when verify parent hash: ${err}`)
@@ -294,19 +293,18 @@ class NetworkEvent {
             })
           } else {
             // case 1: parent hash successfully verified
-            if (lastBlock.Hash === header.ParentHash) {
+            if (lastBlock.Hash === blockHeader.ParentHash) {
               debug(`parent hash successfully verified`)
               this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES, [this.ChainIDBuff, Buffer.from(blockHash, 'hex')])
-              block = new SECBlockChain.SECTokenBlock().setHeader(blockHeader)
-              requests.bodies.push(block)
-              debug(`BLOCK_HEADERS2: ${JSON.stringify(block.getHeaderHash())}`)
+              requests.bodies.push(blockHeader)
+              debug(`BLOCK_HEADERS2: ${JSON.stringify(blockHeader)}`)
             } else {
               debug('parent hash verification failed')
               let localHeight = this.BlockChain.chain.getCurrentHeight()
-              if (header.Number === localHeight) {
+              if (blockHeader.Number === localHeight) {
                 // case 2: parent hash verification failed, local node has a forked chain and the chain has the same length as remote node chain
                 debug('do nothing if two blockchains with the same length are forked')
-              } else if (header.Number > localHeight) {
+              } else if (blockHeader.Number > localHeight) {
                 // case 3: parent hash verification failed, remote node chain is longer than local chain
                 debug(`remote node has more blocks than local`)
                 this.BlockChain.chain.getHashList((err, hashList) => {
@@ -357,7 +355,9 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
 
-    for (let [index, block] of requests.bodies.entries()) {
+    for (let [index, blockHeader] of requests.bodies.entries()) {
+      let block = new SECBlockChain.SECTokenBlock()
+      block.setHeader(blockHeader)
       debug(`BLOCK_BODIES: block in requests.bodies: ${JSON.stringify(blockHeader)}`)
 
       // find the corresponding block stored in requests.bodies
