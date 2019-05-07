@@ -1,6 +1,6 @@
 const ms = require('ms')
 const chalk = require('chalk')
-const Big = require('big.js')
+const Big = require('bignumber.js')
 const async = require('async')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:blockchain')
@@ -14,6 +14,8 @@ const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 
 const DEC_NUM = 8
+Big.config({ ROUNDING_MODE: 0 })
+Big.set({ ROUNDING_MODE: Big.ROUND_DOWN })
 
 class BlockChain {
   constructor (config) {
