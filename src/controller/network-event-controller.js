@@ -1,6 +1,7 @@
 const chalk = require('chalk')
 const ms = require('ms')
 const async = require('async')
+const cloneDeep = require('clone-deep')
 const LRUCache = require('lru-cache')
 const SECConfig = require('../../config/default.json')
 const createDebugLogger = require('debug')
@@ -105,62 +106,62 @@ class NetworkEvent {
       } else {
         requests.msgTypes[code] = 1
       }
-      payload = payload[1]
+      let _payload = cloneDeep(payload[1])
       debug(chalk.bold.greenBright(`==================== On Message from ${this.ChainName} ${this.addr} ====================`))
       // debug('Requests: ')
       // debug(requests)
       // debug('Code: ' + code)
       switch (code) {
         case SECDEVP2P.SEC.MESSAGE_CODES.STATUS:
-          this.STATUS(payload, requests)
+          this.STATUS(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES:
-          this.NEW_BLOCK_HASHES(payload, requests)
+          this.NEW_BLOCK_HASHES(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_HEADERS:
-          this.GET_BLOCK_HEADERS(payload, requests)
+          this.GET_BLOCK_HEADERS(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_HEADERS:
-          this.BLOCK_HEADERS(payload, requests)
+          this.BLOCK_HEADERS(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.GET_BLOCK_BODIES:
-          this.GET_BLOCK_BODIES(payload, requests)
+          this.GET_BLOCK_BODIES(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.BLOCK_BODIES:
-          this.BLOCK_BODIES(payload, requests)
+          this.BLOCK_BODIES(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK:
-          this.NEW_BLOCK(payload, requests)
+          this.NEW_BLOCK(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.TX:
-          this.TX(payload, requests)
+          this.TX(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA:
-          this.GET_NODE_DATA(payload, requests)
+          this.GET_NODE_DATA(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA:
-          this.NODE_DATA(payload, requests)
+          this.NODE_DATA(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.GET_RECEIPTS:
-          this.GET_RECEIPTS(payload, requests)
+          this.GET_RECEIPTS(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.RECEIPTS:
-          this.RECEIPTS(payload, requests)
+          this.RECEIPTS(_payload, requests)
           break
 
         case SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC:
-          this.NODES_IP_SYNC(payload, requests)
+          this.NODES_IP_SYNC(_payload, requests)
           break
       }
       debug(chalk.bold.greenBright(`==================== End On Message from ${this.ChainName} ${this.addr} ====================\n\n`))
