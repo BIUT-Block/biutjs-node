@@ -28,7 +28,7 @@
     "@sec-block/secjs-pow": "^1.0.14",
     "@sec-block/secjs-randomdatagenerator": "^1.0.50",
     "@sec-block/secjs-transactionpool": "^1.0.10",
-    "@sec-block/secjs-tx": "^0.1.37",
+    "@sec-block/secjs-tx": "^0.1.38",
     "@sec-block/secjs-util": "^1.1.22",
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.2",
