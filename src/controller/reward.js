@@ -3,6 +3,7 @@ const SECUtils = require('@sec-block/secjs-util')
 const SECTransaction = require('@sec-block/secjs-tx')
 
 const MAX_MORTGAGE = 100000
+const MIN_MORTGAGE = 0.24
 const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
 const INIT_TX_AMOUNT = 100000
@@ -86,15 +87,18 @@ class SENReward {
       return outAdj * this.periodList[currentPeriodId][1]
     }
   }
-
   _getReward (addr, tokenName, callback) {
-    let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
+    // TODO: only for short time, later must be corrected
+    let rewardFactor = 41.6667
+    // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
+        } else if (balance < MIN_MORTGAGE) {
+          balance = MIN_MORTGAGE
         }
         let reward = balance * rewardFactor / 100000
         callback(null, reward)
@@ -131,7 +135,7 @@ class SENReward {
   // ------------------------------------------------------------------------------------------------ //
   // ----------------------------------  SEC blockchain Functions  ---------------------------------- //
   // ------------------------------------------------------------------------------------------------ //
-  getTxFeeTx (block) {
+  getSecTxFeeTx (block) {
     let txFee = 0
     block.Transactions.forEach((tx) => {
       txFee = txFee + parseFloat(tx.TxFee)
@@ -149,6 +153,32 @@ class SENReward {
       TxFee: '0',
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEC blockchain transactions service charge`
+    }
+    let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
+    return txFeeTxObject
+  }
+
+  // ------------------------------------------------------------------------------------------------ //
+  // ----------------------------------  SEN blockchain Functions  ---------------------------------- //
+  // ------------------------------------------------------------------------------------------------ //
+  getSenTxFeeTx (txArray, beneficiary) {
+    let txFee = 0
+    txArray.forEach((tx) => {
+      txFee = txFee + parseFloat(tx.TxFee)
+    })
+    let txFeeTx = {
+      Version: '0.1',
+      TxReceiptStatus: 'success',
+      TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: beneficiary,
+      Value: txFee.toString(),
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      TxFee: '0',
+      Nonce: this.chain.chain.getCurrentHeight().toString(),
+      InputData: `SEN blockchain transactions service charge`
     }
     let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
     return txFeeTxObject

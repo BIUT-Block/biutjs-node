@@ -1,6 +1,6 @@
 const ms = require('ms')
 const chalk = require('chalk')
-const Big = require('big.js')
+const Big = require('bignumber.js')
 const async = require('async')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:blockchain')
@@ -15,6 +15,8 @@ const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
 const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
+Big.config({ ROUNDING_MODE: 0 })
+Big.set({ ROUNDING_MODE: Big.ROUND_DOWN })
 
 class BlockChain {
   constructor (config) {
@@ -67,7 +69,7 @@ class BlockChain {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
           debug('Send new Token Tx to Peer: ' + MainUtils.getPeerAddr(peer))
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), [tx.getTxBuffer()]])
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), tx.getTxBuffer()])
         }
       } catch (err) {
         console.log(err.stack)
@@ -81,7 +83,7 @@ class BlockChain {
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
-          debug('Send new token block to Peer: ' + MainUtils.getPeerAddr(peer))
+          debug(`Send new ${this.chainName} block to Peer: ${MainUtils.getPeerAddr(peer)}`)
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
@@ -125,42 +127,45 @@ class BlockChain {
               return callback(err)
             }
           }
-          this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
-            if (err) callback(err)
-            else {
-              if (!_result) {
-                console.log('\n******************** FeeTx test ********************')
-                let _tx = tokenTx.getTx()
-                console.log(chalk.yellow('Origin Tx: '))
-                console.log(_tx)
-                this.pool.addTxIntoPool(_tx)
-                if (_tx.TxFee !== '0') {
-                  let __tx = JSON.parse(JSON.stringify(_tx))
-                  __tx.TxTo = '0000000000000000000000000000000000000000'
-                  __tx.Value = tx.TxFee
-                  __tx.TxFee = '0'
-                  __tx.TxHeight = ''
-                  __tx.InputData = 'Handling fee transaction'
-                  let feeTx = new SECTransaction.SECTokenTx(__tx)
-                  console.log(chalk.yellow('Fee Tx: '))
-                  console.log(feeTx.getTx())
-                  if (this.chainName === 'SEC') {
-                    this.senChain.pool.addTxIntoPool(feeTx.getTx())
-                    this.senChain.sendNewTokenTx(feeTx)
-                  } else if (this.chainName === 'SEN') {
-                    this.pool.addTxIntoPool(feeTx.getTx())
-                    this.sendNewTokenTx(feeTx)
-                  }
+        }
+        this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
+          if (err) callback(err)
+          else {
+            if (!_result) {
+              console.log('\n******************** FeeTx test ********************')
+              let _tx = tokenTx.getTx()
+              console.log(chalk.yellow('Origin Tx: '))
+              console.log(_tx)
+              this.pool.addTxIntoPool(_tx)
+              this.sendNewTokenTx(tokenTx)
+              if (_tx.TxFee !== '0') {
+                let __tx = JSON.parse(JSON.stringify(_tx))
+                __tx.TxTo = '0000000000000000000000000000000000000000'
+                __tx.Value = tx.TxFee
+                __tx.TxFee = '0'
+                __tx.TxHeight = ''
+                __tx.InputData = 'Handling fee transaction'
+                let feeTx = new SECTransaction.SECTokenTx(__tx)
+                console.log(chalk.yellow('Fee Tx: '))
+                console.log(feeTx.getTx())
+                if (this.chainName === 'SEC') {
+                  this.senChain.pool.addTxIntoPool(feeTx.getTx())
+                  this.senChain.sendNewTokenTx(feeTx)
+                } else if (this.chainName === 'SEN') {
+                  this.pool.addTxIntoPool(feeTx.getTx())
+                  this.sendNewTokenTx(feeTx)
                 }
                 console.log('******************** FeeTx test End ********************\n')
                 debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
                 this.sendNewTokenTx(tokenTx)
               }
-              callback(null)
+              console.log('******************** FeeTx test End ********************\n')
+              debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
             }
-          })
-        }
-    })
+            callback(null)
+          }
+        })
+        })
   })
   }
 
