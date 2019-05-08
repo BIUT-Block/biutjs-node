@@ -380,7 +380,7 @@ class NetworkEvent {
         break
       }
 
-      let secblock = block.getBlock()
+      let secblock = cloneDeep(block.getBlock())
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
       this.BlockChain.chain.putBlockToDB(secblock, (err) => {
@@ -537,7 +537,7 @@ class NetworkEvent {
           let forkPosition = 0
           for (let i = remoteHeight - 1; i >= 1; i--) {
             if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
-              forkPosition = remoteHashList[i].Number + 1
+              forkPosition = remoteHashList[i].Number
               debug('Fork Position: ' + forkPosition)
               break
             }
