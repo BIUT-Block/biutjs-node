@@ -2,9 +2,9 @@ const vm = require('vm')
 
 class SECRunContract{
 
-    constructor(SECTx, SECTokenBlockChain){
+    constructor(SECTx, SENTokenBlockChain){
         this.SECTx = SECTx
-        this.SECTokenBlockChain = SECTokenBlockChain
+        this.SENTokenBlockChain = SENTokenBlockChain
         this.response = {
             status: 0,
             message: ''
@@ -12,7 +12,7 @@ class SECRunContract{
     }
 
     run(callback){
-        this.SECTokenBlockChain.chainDB.findTxForUser(this.SECTx.TxTo, (err, txArray)=>{
+        this.SENTokenBlockChain.chainDB.findTxForUser(this.SECTx.TxTo, (err, txArray)=>{
             if (err) {
                 this.response.status = 0
                 this.response.message = 'Failed to Fetch Contract on Chain. Please Confirm.'

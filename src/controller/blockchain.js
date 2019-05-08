@@ -12,6 +12,7 @@ const SECBlockChain = require('@sec-block/secjs-blockchain')
 const SECTransaction = require('@sec-block/secjs-tx')
 const SECTransactionPool = require('@sec-block/secjs-transactionpool')
 const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
+const SECUtils = require('@sec-block/secjs-util')
 
 const DEC_NUM = 8
 
@@ -109,58 +110,56 @@ class BlockChain {
     }
 
     let tokenTx = new SECTransaction.SECTokenTx(tx)
-    this.SECTokenChain.getTokenName(tx.TxTo, (err, tokenName) => {
+    this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
       if (err) return callback(err)
-      let tokenTx = new SECTransaction.SECTokenTx(tx)
-
-    // check balance
-    this.checkBalance(tx, tokenName, (err, result) => {
-      if (err) callback(err)
-      else if (!result) {
-        return callback(new Error(`Balance not enough`))
-      } else {
-        // verify tx signature
-        if (!freeChargeFlag) {
-          if (!tokenTx.verifySignature()) {
-            let err = new Error('Failed to verify transaction signature')
-            return callback(err)
-          }
-        }
-        this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
-          if (err) callback(err)
-          else {
-            if (!_result) {
-              console.log('\n******************** FeeTx test ********************')
-              let _tx = tokenTx.getTx()
-              console.log(chalk.yellow('Origin Tx: '))
-              console.log(_tx)
-              this.pool.addTxIntoPool(_tx)
-              if (_tx.TxFee !== '0') {
-                let __tx = JSON.parse(JSON.stringify(_tx))
-                __tx.TxTo = '0000000000000000000000000000000000000000'
-                __tx.Value = tx.TxFee
-                __tx.TxFee = '0'
-                __tx.TxHeight = ''
-                __tx.InputData = 'Handling fee transaction'
-                let feeTx = new SECTransaction.SECTokenTx(__tx)
-                console.log(chalk.yellow('Fee Tx: '))
-                console.log(feeTx.getTx())
-                if (this.chainName === 'SEC') {
-                  this.senChain.pool.addTxIntoPool(feeTx.getTx())
-                  this.senChain.sendNewTokenTx(feeTx)
-                } else if (this.chainName === 'SEN') {
-                  this.pool.addTxIntoPool(feeTx.getTx())
-                  this.sendNewTokenTx(feeTx)
-                }
-              }
-              console.log('******************** FeeTx test End ********************\n')
-              debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
-              this.sendNewTokenTx(tokenTx)
+      // check balance
+      this.checkBalance(tx, tokenName, (err, result) => {
+        if (err) callback(err)
+        else if (!result) {
+          return callback(new Error(`Balance not enough`))
+        } else {
+          // verify tx signature
+          if (!freeChargeFlag) {
+            if (!tokenTx.verifySignature()) {
+              let err = new Error('Failed to verify transaction signature')
+              return callback(err)
             }
-            callback(null)
           }
-        })
-      }
+          this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
+            if (err) callback(err)
+            else {
+              if (!_result) {
+                console.log('\n******************** FeeTx test ********************')
+                let _tx = tokenTx.getTx()
+                console.log(chalk.yellow('Origin Tx: '))
+                console.log(_tx)
+                this.pool.addTxIntoPool(_tx)
+                if (_tx.TxFee !== '0') {
+                  let __tx = JSON.parse(JSON.stringify(_tx))
+                  __tx.TxTo = '0000000000000000000000000000000000000000'
+                  __tx.Value = tx.TxFee
+                  __tx.TxFee = '0'
+                  __tx.TxHeight = ''
+                  __tx.InputData = 'Handling fee transaction'
+                  let feeTx = new SECTransaction.SECTokenTx(__tx)
+                  console.log(chalk.yellow('Fee Tx: '))
+                  console.log(feeTx.getTx())
+                  if (this.chainName === 'SEC') {
+                    this.senChain.pool.addTxIntoPool(feeTx.getTx())
+                    this.senChain.sendNewTokenTx(feeTx)
+                  } else if (this.chainName === 'SEN') {
+                    this.pool.addTxIntoPool(feeTx.getTx())
+                    this.sendNewTokenTx(feeTx)
+                  }
+                }
+                console.log('******************** FeeTx test End ********************\n')
+                debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
+                this.sendNewTokenTx(tokenTx)
+              }
+              callback(null)
+            }
+          })
+        }
     })
   })
   }
@@ -174,21 +173,42 @@ class BlockChain {
   getBalance (userAddress, tokenName, callback) {
     this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) {
-        console.log('ming', userAddress, tokenName, callback)
         callback(err)
       }
       else {
-        let balance = value[tokenName]
-        balance = new Big(balance)
-        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-        txArray.forEach((tx) => {
-          balance = balance.minus(tx.Value)
-        })
-
-        balance = balance.toFixed(DEC_NUM)
-        balance = parseFloat(balance).toString()
-
-        callback(null, balance)
+        if(tokenName === 'All') {
+          let allBalanceJson = Object.assign({}, value)
+          Object.keys(value).forEach((tmpTokenName, index) => {
+            this.chain.getContractAddress(tmpTokenName, (err, contractAddr) => {
+              let balance = allBalanceJson[tmpTokenName]
+              balance = new Big(balance)
+              if(err) callback(err, null)
+              let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
+              txArray.forEach((tx) => {
+                balance = balance.minus(tx.Value)
+              })
+      
+              balance = balance.toFixed(DEC_NUM)
+              allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
+              
+              callback(null, allBalanceJson)
+            })
+          })
+        } else {
+          this.chain.getContractAddress(tokenName, (err, contractAddr) => {
+            if(err) callback(err, null)
+            let balance = value[tokenName]
+            balance = new Big(balance)
+            let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
+            txArray.forEach((tx) => {
+              balance = balance.minus(tx.Value)
+            })
+            balance = balance.toFixed(DEC_NUM)
+            balance = parseFloat(balance).toString()
+    
+            callback(null, balance)
+          })
+        }
       }
     })
   }
@@ -209,7 +229,7 @@ class BlockChain {
     })
   }
 
-  checkBalance (userAddress, tokenName, callback) {
+  checkBalance (tx, tokenName, callback) {
     // pow reward tx
     if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -220,13 +240,13 @@ class BlockChain {
     }
 
     if (this.chainName === 'SEC') {
-      this.getBalance(tx.TxFrom, 'SEC', (err, balance) => {
+      this.getBalance(tx.TxFrom, tokenName, (err, balance) => {
         if (err) {
           callback(err, null)
         } else {
           let result = false
           if (parseFloat(balance) >= parseFloat(tx.Value)) {
-            this.senChain.getBalance(tx.TxFrom, (err, _balance) => {
+            this.senChain.getBalance(tx.TxFrom, tokenName, (err, _balance) => {
               if (err) {
                 callback(err, null)
               } else {
@@ -258,7 +278,7 @@ class BlockChain {
     }
   }
 
-  isPositiveBalance (addr, callback) {
+  isPositiveBalance (addr, tokenName, callback) {
     // pow reward tx
     if (addr === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -268,7 +288,7 @@ class BlockChain {
       return callback(null, true)
     }
 
-    this.getBalance(userAddress, tokenName, (err, balance) => {
+    this.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
       } else {
@@ -300,18 +320,20 @@ class BlockChain {
       if (typeof tx !== 'object') {
         tx = JSON.parse(tx)
       }
-
-      this.isPositiveBalance(tx.TxFrom, (err, balResult) => {
-        if (err) return callback(err)
-        this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {
-          if (_err) return callback(_err)
-          else {
-            if (exiResult || !balResult) {
-              indexArray.push(index)
+      this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
+        if(err) return callback(err)
+        this.isPositiveBalance(tx.TxFrom, tokenName, (err, balResult) => {
+          if (err) return callback(err)
+          this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {
+            if (_err) return callback(_err)
+            else {
+              if (exiResult || !balResult) {
+                indexArray.push(index)
+              }
+              index++
+              callback()
             }
-            index++
-            callback()
-          }
+          })
         })
       })
     }, (err) => {

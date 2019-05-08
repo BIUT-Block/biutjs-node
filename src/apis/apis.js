@@ -118,7 +118,7 @@ class APIs {
    * @return {None}
    */
   getBalance (userAddress, tokenName, callback) {
-    this.blockChain.getBalance(userAddress, tokenName, callback)
+    this.chain.getBalance(userAddress, tokenName, callback)
   }
 
   getNonce (userAddress, callback) {
@@ -179,15 +179,15 @@ class APIs {
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   getTokenName(addr, callback) {
-    this.blockChain.SECTokenChain.getTokenName(addr, callback)
+    this.chain.chain.getTokenName(addr, callback)
   }
 
   getContractAddress(tokenname, callback){
-    this.blockChain.SECTokenChain.getContractAddress(tokenname, callback)
+    this.chain.chain.getContractAddress(tokenname, callback)
   }
 
   addTokenNameMap(tokenname, addr, callback) {
-    this.blockChain.SECTokenChain.add(tokenname, addr, callback)
+    this.chain.chain.add(tokenname, addr, callback)
   }
   
 }

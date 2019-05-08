@@ -83,7 +83,6 @@ class Consensus {
 
         let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
         let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
-
         if (result.result && groupId === BeneGroupId) {
           let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
           // append the pow reward tx
@@ -99,13 +98,13 @@ class Consensus {
               } else {
                 let runcontractPromise = function(tx){
                   return new Promise((resolve, reject) => {
-                    let secRunContract = new SECRunContract(tx, this.BlockChain.SECTokenChain)
+                    let secRunContract = new SECRunContract(tx, this.BlockChain.chain)
                     secRunContract.run((err, contractResult)=>{
                       if (err) {
                         reject(err)
                       }
                       if ('transferResult' in contractResult){
-                        this.BlockChain.SECTokenChain.accTree.getNonce(tx.TxTo, (err, nonce) => {
+                        this.BlockChain.chain.accTree.getNonce(tx.TxTo, (err, nonce) => {
                           if (err) {
                             reject(err)
                           }
