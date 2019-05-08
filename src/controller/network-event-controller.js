@@ -381,17 +381,17 @@ class NetworkEvent {
       }
 
       let secblock = cloneDeep(block.getBlock())
+      let _secblock = new SECBlockChain.SECTokenBlock(secblock)
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.chain.putBlockToDB(secblock, (err) => {
+      this.BlockChain.chain.putBlockToDB(_secblock.getBlock(), (err) => {
         if (err) console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
-          let newSECTokenBlock = new SECBlockChain.SECTokenBlock(secblock)
           if (this.ChainName === 'SEN') {
             this.Consensus.resetPOW()
           }
-          this._onNewBlock(newSECTokenBlock)
+          this._onNewBlock(_secblock)
         }
       })
     }
