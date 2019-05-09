@@ -181,23 +181,23 @@ class Consensus {
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
   generateSecBlock (beneficiary, callback) {
     let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
-    if (txsInPoll.length !== 0) {
-      // generate sec block
-      let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
-      this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-        if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`), null)
-        newBlock.Number = lastBlock.Number + 1
-        newBlock.ParentHash = lastBlock.Hash
-        newBlock.TimeStamp = this.secCircle.getLocalHostTime()
-        newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
-        newBlock.Difficulty = ''
-        newBlock.MixHash = ''
-        newBlock.Nonce = ''
-        newBlock.Beneficiary = beneficiary
+    this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+      if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, checkTxArray: ${err}`), null)
+      // assign txHeight
+      if (txsInPoll.length !== 0) {
+        // generate sec block
+        let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
+        this.BlockChain.chain.getLastBlock((err, lastBlock) => {
+          if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`), null)
+          newBlock.Number = lastBlock.Number + 1
+          newBlock.ParentHash = lastBlock.Hash
+          newBlock.TimeStamp = this.secCircle.getLocalHostTime()
+          newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
+          newBlock.Difficulty = ''
+          newBlock.MixHash = ''
+          newBlock.Nonce = ''
+          newBlock.Beneficiary = beneficiary
 
-        this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-          if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, checkTxArray: ${err}`), null)
-          // assign txHeight
           let txHeight = 0
           txArray.forEach((tx) => {
             tx.TxReceiptStatus = 'success'
@@ -219,11 +219,11 @@ class Consensus {
             callback(null, txFeeTx.getTx())
           })
         })
-      })
-    } else {
-      callback(null, null)
-      // do nothing if tx pool is empty
-    }
+      } else {
+        callback(null, null)
+        // do nothing if tx pool is empty
+      }
+    })
   }
 
   run () {
