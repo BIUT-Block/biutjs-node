@@ -1,5 +1,5 @@
-const secTransaction = require('@sec-block/secjs-tx')
-const secUtils = require('@sec-block/secjs-util')
+const secTransaction = require('@biut-block/biutjs-tx')
+const secUtils = require('@biut-block/biutjs-util')
 const nodeData = require('../node/node-data')
 const getSize = require('get-folder-size')
 

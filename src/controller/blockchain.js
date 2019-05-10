@@ -7,11 +7,11 @@ const debug = createDebugLogger('core:blockchain')
 
 const Consensus = require('./consensus')
 const MainUtils = require('../utils/utils')
-const SECDEVP2P = require('@sec-block/secjs-devp2p')
-const SECBlockChain = require('@sec-block/secjs-blockchain')
-const SECTransaction = require('@sec-block/secjs-tx')
-const SECTransactionPool = require('@sec-block/secjs-transactionpool')
-const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
+const SECDEVP2P = require('@biut-block/biutjs-devp2p')
+const SECBlockChain = require('@biut-block/biutjs-blockchain')
+const SECTransaction = require('@biut-block/biutjs-tx')
+const SECTransactionPool = require('@biut-block/biutjs-transactionpool')
+const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 
 const DEC_NUM = 8
 Big.config({ ROUNDING_MODE: 0 })

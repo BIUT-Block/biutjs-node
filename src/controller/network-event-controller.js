@@ -8,9 +8,9 @@ const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:network:token')
 
 // -------------------------------  SEC LIBRARY  -------------------------------
-const SECDEVP2P = require('@sec-block/secjs-devp2p')
-const SECBlockChain = require('@sec-block/secjs-blockchain')
-const SECTransaction = require('@sec-block/secjs-tx')
+const SECDEVP2P = require('@biut-block/biutjs-devp2p')
+const SECBlockChain = require('@biut-block/biutjs-blockchain')
+const SECTransaction = require('@biut-block/biutjs-tx')
 
 const MainUtils = require('../utils/utils')
 const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })

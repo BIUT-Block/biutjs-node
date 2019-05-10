@@ -1,4 +1,4 @@
-const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
+const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
 
 class SECVerify {
   constructor (Blockchain) {

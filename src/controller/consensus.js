@@ -3,9 +3,9 @@ const cp = require('child_process')
 const path = require('path')
 const SECConfig = require('../../config/default.json')
 
-const SECBlockChain = require('@sec-block/secjs-blockchain')
-// const SECTransaction = require('@sec-block/secjs-tx')
-const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
+const SECBlockChain = require('@biut-block/biutjs-blockchain')
+// const SECTransaction = require('@biut-block/biutjs-tx')
+const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 const SECCircle = require('./circle')
 const SECReward = require('./reward')
 

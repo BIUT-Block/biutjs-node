@@ -6,7 +6,7 @@ const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:center-controller')
 
 // -------------------------------  SEC LIBRARY  -------------------------------
-const SECDEVP2P = require('@sec-block/secjs-devp2p')
+const SECDEVP2P = require('@biut-block/biutjs-devp2p')
 const NetworkEvent = require('./network-event-controller')
 const BlockChain = require('./blockchain')
 const NodesIPSync = require('../utils/nodes-ip-sync')

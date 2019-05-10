@@ -1,6 +1,6 @@
 const async = require('async')
-const SECUtils = require('@sec-block/secjs-util')
-const SECTransaction = require('@sec-block/secjs-tx')
+const SECUtils = require('@biut-block/biutjs-util')
+const SECTransaction = require('@biut-block/biutjs-tx')
 
 const MAX_MORTGAGE = 100000
 const MIN_MORTGAGE = 0.24
