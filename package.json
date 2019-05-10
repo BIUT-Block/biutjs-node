@@ -1,7 +1,7 @@
 {
-  "name": "@sec-block/secjs-node",
-  "version": "1.2.66",
-  "description": "sec blockchain node",
+  "name": "@biut-block/biutjs-node",
+  "version": "1.0.0",
+  "description": "biut blockchain node",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -12,24 +12,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/MongoX-SEC/secjs-node.git"
+    "url": "git+ssh://git@gitlab.com/MongoX-BIUT/biutjs-node.git"
   },
   "author": "Weihan",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitlab.com/MongoX-SEC/secjs-node/issues"
+    "url": "https://gitlab.com/MongoX-BIUT/biutjs-node/issues"
   },
-  "homepage": "https://gitlab.com/MongoX-SEC/secjs-node#README",
+  "homepage": "https://gitlab.com/MongoX-BIUT/biutjs-node#README",
   "dependencies": {
     "@maxmind/geoip2-node": "^0.4.0",
-    "@sec-block/secjs-blockchain": "^1.0.165",
-    "@sec-block/secjs-datahandler": "^1.1.53",
-    "@sec-block/secjs-devp2p": "^1.0.28",
-    "@sec-block/secjs-pow": "^1.0.14",
-    "@sec-block/secjs-randomdatagenerator": "^1.0.50",
-    "@sec-block/secjs-transactionpool": "^1.0.10",
-    "@sec-block/secjs-tx": "^0.1.38",
-    "@sec-block/secjs-util": "^1.1.22",
+    "@biut-block/biutjs-blockchain": "^1.0.0",
+    "@biut-block/biutjs-datahandler": "^1.0.0",
+    "@biut-block/biutjs-devp2p": "^1.0.0",
+    "@biut-block/biutjs-pow": "^1.0.0",
+    "@biut-block/biutjs-randomdatagenerator": "^1.0.0",
+    "@biut-block/biutjs-transactionpool": "^1.0.0",
+    "@biut-block/biutjs-tx": "^0.1.0",
+    "@biut-block/biutjs-util": "^1.0.0",
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.2",
     "clone-deep": "^4.0.1",
