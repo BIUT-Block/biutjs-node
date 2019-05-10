@@ -2,15 +2,12 @@ const chalk = require('chalk')
 const ms = require('ms')
 const assert = require('assert')
 const SECConfig = require('../../config/default.json')
-const _ = require('lodash')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:center-controller')
 
 // -------------------------------  SEC LIBRARY  -------------------------------
 const SECDEVP2P = require('@sec-block/secjs-devp2p')
-const NetworkEventToken = require('./network-event-controller-token')
-const NetworkEventTx = require('./network-event-controller-tx')
-const Consensus = require('./consensus')
+const NetworkEvent = require('./network-event-controller')
 const BlockChain = require('./blockchain')
 const NodesIPSync = require('../utils/nodes-ip-sync')
 const Utils = require('../utils/utils')
@@ -45,8 +42,6 @@ class CenterController {
     })
     this.config = config
 
-    this.BlockChain = new BlockChain(config)
-
     // -------------------------  NODES SYNC UTIL  ------------------------
     this.nodesIPSync = new NodesIPSync()
 
@@ -56,6 +51,20 @@ class CenterController {
       address: null,
       timer: null
     }
+    this.NetworkEventContainer = {}
+
+    this.config.syncInfo = this.syncInfo
+    config.chainName = 'SEC'
+    config.chainID = '010001'
+    config.dbconfig.DBPath = config.dbconfig.SecDBPath
+    this.secChain = new BlockChain(config)
+
+    config.chainName = 'SEN'
+    config.chainID = '010002'
+    config.dbconfig.DBPath = config.dbconfig.SenDBPath
+    config.secChain = this.secChain
+    this.senChain = new BlockChain(config)
+    this.secChain.setSenChain(this.senChain)
 
     this.runningFlag = false
     if (process.env.network && this.runningFlag === false) {
@@ -108,25 +117,29 @@ class CenterController {
       const sec = peer.getProtocols()[0]
       debug(chalk.cyan(`RLP | peer:added Event | Add peer: ${addr} ${clientId} (sec${sec.getVersion()}) (total: ${this.rlp.getPeers().length})`))
 
-      // -------------------------------  TOKEN BLOCK CHAIN  -------------------------------
-      let networkEvent = new NetworkEventToken({ ID: addr, BlockChain: this.BlockChain, Consensus: this.tokenConsensus, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
-      networkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer.push(networkEvent)
+      // -------------------------------  SEC BLOCK CHAIN  -------------------------------
+      // Add new config param ChainID, the first 01 means token chain, last 0001 means this chain is the first token chain
+      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010001', ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      secNetworkEvent.PeerCommunication(peer, addr, sec)
+      this.NetworkEventContainer['SEC'] = secNetworkEvent
 
-      // -------------------------------  TX BLOCK CHAINS  -------------------------------
-      for (let txChainID in this.TransactionDbDict) {
-        networkEvent = new NetworkEventTx({ ID: txChainID, BlockChain: this.BlockChain, Consensus: this.txConsensusDict[txChainID], NDP: this.ndp })
-        networkEvent.PeerCommunication(peer, addr, sec)
-        this.NetworkEventContainer.push(networkEvent)
-      }
+      // -------------------------------  SEN BLOCK CHAIN  -------------------------------
+      // Add new config param ChainID, the first 01 means token chain, last 0002 means this chain is the second token chain
+      setTimeout(() => {
+        let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+        senNetworkEvent.PeerCommunication(peer, addr, sec)
+        this.NetworkEventContainer['SEN'] = senNetworkEvent
+      }, 10000)
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {
       const who = disconnectWe ? 'Disconnect' : 'Peer disconnect'
       const total = this.rlp.getPeers().length
       // remove useless NetworkEvent Instance
-      _.remove(this.NetworkEventContainer, networkEvent => {
-        return networkEvent.getInstanceID() === Utils.getPeerAddr(peer)
+      Object.keys(this.NetworkEventContainer).forEach((chainName) => {
+        if (this.NetworkEventContainer[chainName].getInstanceID() === Utils.getPeerAddr(peer)) {
+          delete this.NetworkEventContainer[chainName]
+        }
       })
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
     })
@@ -148,42 +161,31 @@ class CenterController {
     this.rlp.listen(SECConfig.SECBlock.devp2pConfig.rlp.endpoint.tcpPort, SECConfig.SECBlock.devp2pConfig.rlp.endpoint.address)
   }
 
-  _runConsensus () {
-    this.tokenConsensus.run()
-    for (let txChainID in this.txConsensusDict) {
-      this.txConsensusDict[txChainID].run()
-    }
-  }
-
   initNetwork () {
     // -------------------------  IMPORTANT INSTANT  -------------------------
     this.runningFlag = true
     this.config.rlp = this.rlp
     // start BlockChain service first and then init NDP and RLP
-    this.BlockChain.init(this.rlp, () => {
-      debug('BlockChain init finish')
-      this._initNDP()
-      this._initRLP()
-      this._refreshDHTConnections()
-      this.run()
+    this.secChain.init(this.rlp, () => {
+      debug('secChain init finish')
+      this.senChain.init(this.rlp, () => {
+        debug('senChain init finish')
+        this._initNDP()
+        this._initRLP()
+        this._refreshDHTConnections()
+        this.secChain.run()
+        this.senChain.run()
+        this.run()
+      })
     })
-    this.config.syncInfo = this.syncInfo
-    this.BlockChain.run()
-    this.config.BlockChain = this.BlockChain
-    this.NetworkEventContainer = []
-
-    this.config.isTokenChain = true
-    this.tokenConsensus = new Consensus(this.config)
-    this.txConsensusDict = {}
-    this.config.isTokenChain = false
-    for (let txChainID in this.TransactionDbDict) {
-      this.config.ID = txChainID
-      this.txConsensusDict[txChainID] = new Consensus(this.config)
-    }
   }
 
-  getBlockchain () {
-    return this.BlockChain
+  getSecChain () {
+    return this.secChain
+  }
+
+  getSenChain () {
+    return this.senChain
   }
 
   run () {
@@ -195,17 +197,14 @@ class CenterController {
       const openSlots = this.rlp._getOpenSlots()
       const queueLength = this.rlp._peersQueue.length
       const queueLength2 = this.rlp._peersQueue.filter((o) => o.ts <= Date.now()).length
-      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}, Current Token Block Height: ${this.BlockChain.SECTokenChain.getCurrentHeight()}`))
+      console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
+      console.log(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))
       rlpPeers.forEach((peer, index) => {
         debug(chalk.yellow(`    Peer ${index + 1} : ${Utils.getPeerAddr(peer)}) in RLP`))
       })
       debug(`Peer nodes' IP addresses: ${rlpPeers}`)
-      debug(chalk.blue('Current Token Transaction Poll Hash Array:'))
-      debug(this.BlockChain.tokenPool.getTxHashArrayFromPool())
-      for (let txChainID in this.txConsensusDict) {
-        debug(chalk.blue(`Current Tx Transaction Poll(ID: ${txChainID}) Hash Array:`))
-        debug(this.BlockChain.TxPoolDict[txChainID].getTxHashArrayFromPool())
-      }
+      debug(chalk.blue(`Current SEC Tx Poll Hash Array: ${this.secChain.pool.getTxHashArrayFromPool()}`))
+      debug(chalk.blue(`Current SEN Tx Poll Hash Array: ${this.senChain.pool.getTxHashArrayFromPool()}`))
       // for refresh NodesTable
       let _peers = []
       peers.forEach(peer => {
@@ -218,7 +217,6 @@ class CenterController {
       })
       this.nodesIPSync.updateNodesTable(_peers)
     }, ms('30s'))
-    this._runConsensus()
   }
 
   _refreshDHTConnections () {

@@ -6,19 +6,20 @@ const getSize = require('get-folder-size')
 class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
-    this.blockChain = this.CenterController.getBlockchain()
-    this.SECTokenDB = this.blockChain.SECTokenChain.chainDB
-    this.dbconfig = config.dbconfig
+    this.dbconfig = config.Dbconfig
 
-    this.SECTxDBDict = {}
-    for (let txChainID in this.blockChain.SECTxChainDict) {
-      this.SECTxDBDict[txChainID] = this.blockChain.SECTxChainDict[txChainID].chainDB
+    if (config.ChainName === 'SEC') {
+      this.chain = this.CenterController.getSecChain()
+      this.chainDB = this.chain.chain.chainDB
+    } else {
+      this.chain = this.CenterController.getSenChain()
+      this.chainDB = this.chain.chain.chainDB
     }
   }
 
-  // ----------------------------  TOKEN CHAIN  ---------------------------
+  // ----------------------------  SEC CHAIN  ---------------------------
   getTokenBlock (hash, callback) {
-    this.SECTokenDB.getTokenBlockFromDB(hash, (err, data) => {
+    this.chainDB.getTokenBlockFromDB(hash, (err, data) => {
       if (err) {
         callback(err, null)
       } else {
@@ -28,15 +29,15 @@ class APIs {
   }
 
   getTokenBlockchain (minHeight, maxHeight, callback) {
-    this.SECTokenDB.getTokenChain(minHeight, maxHeight, callback)
+    this.chainDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
   getWholeTokenBlockchain (callback) {
-    this.SECTokenDB.getTokenBlockChainDB(callback)
+    this.chainDB.getTokenBlockChainDB(callback)
   }
 
-  getTokenTx (txHash, callback) {
-    this.blockChain.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
+  getTokenTx (TxHash, callback) {
+    this.chainDB.getTokenBlockChainDB((err, wholechain) => {
       if (err) {
         console.error(`Error: Can not find transaction with hash ${txHash} from database`)
       }
@@ -45,24 +46,22 @@ class APIs {
   }
 
   getTokenTxForUser (userAddress, callback) {
-    this.SECTokenDB.findTxForUser(userAddress, callback)
+    this.chainDB.findTxForUser(userAddress, callback)
   }
 
   getTokenTxInPool (txHash, callback) {
-    let tokenPool = this.blockChain.tokenPool
-    let transaction = tokenPool.getAllTxFromPool().filter(tx => {
+    let transaction = this.chain.pool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
     })
     callback(transaction[0])
   }
 
   getTokenTxInPoolByAddress (userAddress) {
-    let tokenPool = this.blockChain.tokenPool
-    return tokenPool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+    return this.chain.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
   }
 
   writeBlock (block, callback) {
-    this.blockChain.SECTokenChain.writeBlock(block, callback)
+    this.chain.chain.writeBlock(block, callback)
   }
 
   syncFromIp (ip, callback) {
@@ -78,52 +77,12 @@ class APIs {
     }
   }
 
-  // -------------------------  TRANSACTION CHAIN  ------------------------
-  getTransactionBlock (ID, hash, callback) {
-    this.SECTxDbDict[ID].getTxBlockFromDB(hash, (err, data) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        callback(null, data[0])
-      }
-    })
+  getTxAmount (callback) {
+    this.chain.chain.txDB.getTxAmount(callback)
   }
 
-  getTransactionBlockchain (ID, minHeight, maxHeight, callback) {
-    this.SECTxDbDict[ID].getTxChain(minHeight, maxHeight, callback)
-  }
-
-  getWholeTransactionBlockchain (ID, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB(callback)
-  }
-
-  getTxforUser (ID, userAddress, callback) {
-    this.SECTxDbDict[ID].findTxForUser(userAddress, callback)
-  }
-
-  getTransactionTx (ID, txHash, callback) {
-    this.SECTxDbDict[ID].getTxBlockChainDB((err, wholechain) => {
-      if (err) {
-        console.error(`Error: Can not Token Transaction from database`)
-      }
-      wholechain.forEach(block => {
-        let transaction = block.Transactions.filter(tx => {
-          return tx.TxHash === txHash
-        })
-        if (transaction.length) {
-          callback(transaction[0])
-        }
-      })
-    })
-  }
-
-  getTransactionTxInPool (ID, txHash) {
-    let txPoolDict = this.blockChain.TxPoolDict
-    return txPoolDict[ID].getAllTxFromPool().filter(tx => { return tx.TxHash === txHash })
-  }
-
-  getAccTreeAccInfo (accAddr, callback) {
-    this.blockChain.SECTokenChain.getFromAccTree(accAddr, callback)
+  getTotalRewards (callback) {
+    this.chain.chain.chainDB.getTotalRewards(callback)
   }
 
   // ---------------------------  secjs libs  --------------------------
@@ -141,21 +100,25 @@ class APIs {
 
   // -------------------------  Other functions  ------------------------
 
+  getAccTreeAccInfo (accAddr, callback) {
+    this.chain.chain.getFromAccTree(accAddr, callback)
+  }
+
   /**
    * Calculate user account balance
    * @param  {String} userAddress - user account address
    * @return {None}
    */
   getBalance (userAddress, callback) {
-    this.blockChain.getBalance(userAddress, callback)
+    this.chain.getBalance(userAddress, callback)
   }
 
   getNonce (userAddress, callback) {
-    this.blockChain.getNonce(userAddress, callback)
+    this.chain.getNonce(userAddress, callback)
   }
 
   getTokenChainSize (callback) {
-    getSize(this.dbconfig.DBPath + 'tokenBlockChain', (err, size) => {
+    getSize(this.dbconfig.SecDBPath + 'tokenBlockChain', (err, size) => {
       if (err) {
         callback(err, null)
       } else {
@@ -165,21 +128,23 @@ class APIs {
   }
 
   enablePOW () {
-    this.CenterController.tokenConsensus.powEnableFlag = true
+    this.CenterController.senChain.consensus.powEnableFlag = true
   }
 
   disablePOW () {
-    this.CenterController.tokenConsensus.resetPOW()
-    this.CenterController.tokenConsensus.powEnableFlag = false
+    this.CenterController.senChain.consensus.resetPOW()
+    this.CenterController.senChain.consensus.powEnableFlag = false
   }
 
   startNetworkEvent (callback) {
     if (this.CenterController.runningFlag) {
-      callback('network event is already running')
+      let msg = 'network event is already running'
+      callback(msg)
     } else {
       try {
         this.CenterController.initNetwork()
-        callback(true)
+        let flag = true
+        callback(flag)
       } catch (err) {
         callback(err)
       }
@@ -192,7 +157,7 @@ class APIs {
   }
 
   clearDB (callback) {
-    this.SECTokenDB.clearDB(callback)
+    this.chainDB.clearDB(callback)
   }
 
   getNodesTable () {
@@ -200,7 +165,7 @@ class APIs {
   }
 
   getTokenChainHeight () {
-    return this.blockChain.SECTokenChain.getCurrentHeight()
+    return this.chain.chain.getCurrentHeight()
   }
 }
 
