@@ -36,8 +36,8 @@ class APIs {
     this.chainDB.getTokenBlockChainDB(callback)
   }
 
-  getTokenTx (TxHash, callback) {
-    this.chainDB.getTokenBlockChainDB((err, wholechain) => {
+  getTokenTx (txHash, callback) {
+    this.blockChain.SECTokenChain.txDB.getTx(txHash, (err, txData) => {
       if (err) {
         console.error(`Error: Can not find transaction with hash ${txHash} from database`)
       }
