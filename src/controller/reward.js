@@ -45,7 +45,7 @@ class SENReward {
   _getPeriodTxsInfo (sTimeStamp, eTimestamp, callback) {
     let txAmount = 0
     let rewardAmount = 0
-    this.chain.SECTokenChain.chainDB.createReadStream().on('data', function (data) {
+    this.chain.chain.chainDB.createReadStream().on('data', function (data) {
       if (data.key.length !== 64) {
         data.value = JSON.parse(data.value)
         // if the block is generated within the period
