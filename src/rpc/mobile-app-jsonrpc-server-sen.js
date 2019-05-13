@@ -56,14 +56,14 @@ let server = jayson.server({
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
       callback(null, response)
     } else {
-      core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
         if (err) {
           response.status = '0'
           response.message = `Failed to get user transactions, error info: ${err}`
           response.resultInChain = []
           response.resultInPool = []
         } else {
-          let txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
+          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
           txArray = txArray.sort((a, b) => {
             return b.TimeStamp - a.TimeStamp
           })
