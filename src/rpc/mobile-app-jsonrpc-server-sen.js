@@ -50,27 +50,38 @@ let server = jayson.server({
   sec_getTransactions: function (args, callback) {
     let response = {}
     let accAddr = args[0] // address
-    core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
-      if (err) {
-        response.status = '0'
-        response.message = `Failed to get user transactions, error info: ${err}`
-        response.resultInChain = []
-        response.resultInPool = []
-      } else {
-        let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
-        txArray = txArray.sort((a, b) => {
-          return b.TimeStamp - a.TimeStamp
-        })
-        txArraryInPool = txArraryInPool.sort((a, b) => {
-          return b.TimeStamp - a.TimeStamp
-        })
-        response.status = '1'
-        response.message = 'OK'
-        response.resultInChain = txArray
-        response.resultInPool = txArraryInPool
-      }
+
+    // verify accAddr
+    if (accAddr[0] === '0' && accAddr[1] === 'x') {
+      accAddr = accAddr.substr(2)
+    }
+    if (accAddr.length !== 40) {
+      response.status = '0'
+      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
       callback(null, response)
-    })
+    } else {
+      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+        if (err) {
+          response.status = '0'
+          response.message = `Failed to get user transactions, error info: ${err}`
+          response.resultInChain = []
+          response.resultInPool = []
+        } else {
+          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+          txArray = txArray.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          txArraryInPool = txArraryInPool.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          response.status = '1'
+          response.message = 'OK'
+          response.resultInChain = txArray
+          response.resultInPool = txArraryInPool
+        }
+        callback(null, response)
+      })
+    }
   },
 
   /**
