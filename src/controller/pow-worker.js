@@ -1,7 +1,7 @@
 const chalk = require('chalk')
 const SECConfig = require('../../config/default.json')
 
-const SECPow = require('@sec-block/secjs-pow')
+const SECPow = require('@biut-block/biutjs-pow')
 let secPow = {}
 
 process.on('message', blockForPOW => {

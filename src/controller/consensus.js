@@ -2,11 +2,11 @@ const chalk = require('chalk')
 const cp = require('child_process')
 const path = require('path')
 const SECConfig = require('../../config/default.json')
-const SECUtils = require('@sec-block/secjs-util')
+const SECUtils = require('@biut-block/biutjs-util')
 const SECRunContract = require('./run-contract')
-const SECBlockChain = require('@sec-block/secjs-blockchain')
-// const SECTransaction = require('@sec-block/secjs-tx')
-const SECRandomData = require('@sec-block/secjs-randomdatagenerator')
+const SECBlockChain = require('@biut-block/biutjs-blockchain')
+// const SECTransaction = require('@biut-block/biutjs-tx')
+const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 const SECCircle = require('./circle')
 const SECReward = require('./reward')
 
@@ -101,105 +101,105 @@ class Consensus {
               }
               txsInPoll.unshift(_rewardTx)
 
-            this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-              if (err) {
-                return this.resetPOW()
-              } else {
-                let runcontractPromise = function(tx){
-                  return new Promise((resolve, reject) => {
-                    let secRunContract = new SECRunContract(tx, this.BlockChain.chain)
-                    secRunContract.run((err, contractResult)=>{
-                      if (err) {
-                        reject(err)
-                      }
-                      if ('transferResult' in contractResult){
-                        this.BlockChain.chain.accTree.getNonce(tx.TxTo, (err, nonce) => {
-                          if (err) {
-                            reject(err)
-                          }
-                          else {
-                            nonce = parseInt(nonce)
-                            nonce = nonce + txArray.length
-                            nonce = nonce.toString()
-                            let tokenTx = {
-                              Version: '0.1',
-                              TxReceiptStatus: 'success',
-                              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-                              TxFrom: tx.TxTo,
-                              TxTo: contractResult.transferResult.Address,
-                              Value: contractResult.transferResult.Amount.toString(),
-                              GasLimit: '0',
-                              GasUsedByTxn: '0',
-                              GasPrice: '0',
-                              Nonce: nonce,
-                              InputData: `Smart Contract Transaction`
+              this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+                if (err) {
+                  return this.resetPOW()
+                } else {
+                  let runcontractPromise = function(tx){
+                    return new Promise((resolve, reject) => {
+                      let secRunContract = new SECRunContract(tx, this.BlockChain.chain)
+                      secRunContract.run((err, contractResult)=>{
+                        if (err) {
+                          reject(err)
+                        }
+                        if ('transferResult' in contractResult){
+                          this.BlockChain.chain.accTree.getNonce(tx.TxTo, (err, nonce) => {
+                            if (err) {
+                              reject(err)
                             }
-                            let txHashBuffer = [
-                              Buffer.from(tokenTx.Version),
-                              SECUtils.intToBuffer(tokenTx.TimeStamp),
-                              Buffer.from(tokenTx.TxFrom, 'hex'),
-                              Buffer.from(tokenTx.TxTo, 'hex'),
-                              Buffer.from(tokenTx.Value),
-                              Buffer.from(tokenTx.GasLimit),
-                              Buffer.from(tokenTx.GasUsedByTxn),
-                              Buffer.from(tokenTx.GasPrice),
-                              Buffer.from(tokenTx.Nonce),
-                              Buffer.from(tokenTx.InputData)
-                            ]
-                        
-                            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-                            resolve(tokenTx)
-                          }
-                        })
-                      } else if('otherResult' in contractResult){
-                        //reject(contractResult.otherResult)
-                        resolve()
-                      } else {
-                        //reject(contractResult)
-                        resolve()
-                      }
-                    })
-                  })  
-                }.bind(this)
-      
-                let txHeight = 0
-                let contractTransactions = []
-                txArray.forEach((tx) => {
-                  tx.TxReceiptStatus = 'success'
-                  tx.TxHeight = txHeight
-                  txHeight = txHeight + 1
-                  if (SECUtils.isContractAddr(tx.TxTo)){
-                    contractTransactions.push(runcontractPromise(tx))
-                  }
-                })
-      
-                Promise.all(contractTransactions).then((contractTransactions) => {
-                  contractTransactions = contractTransactions.filter(tx => (tx!=null))
-                  newBlock.Transactions = txArray.concat(contractTransactions)
-                  // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-                  try {
-                    let senBlock = new SECBlockChain.SECTokenBlock(newBlock)
-                    this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                      if (err) console.log(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                      else {
-                        console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                        console.log(chalk.green(`New generated block hash is: ${senBlock.getHeaderHash()}`))
-                        this.BlockChain.sendNewBlockHash(senBlock)
-                        this.BlockChain.pool.clear()
-                        this.resetPOW()
-                      }
-                    })
-                  } catch (err) {
-                    console.log(`Error:`, err.stack)
-                    this.resetPOW()
-                  }
-                }).catch((err) => {
-                  console.log(err.stack)
-                })
-              }
+                            else {
+                              nonce = parseInt(nonce)
+                              nonce = nonce + txArray.length
+                              nonce = nonce.toString()
+                              let tokenTx = {
+                                Version: '0.1',
+                                TxReceiptStatus: 'success',
+                                TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+                                TxFrom: tx.TxTo,
+                                TxTo: contractResult.transferResult.Address,
+                                Value: contractResult.transferResult.Amount.toString(),
+                                GasLimit: '0',
+                                GasUsedByTxn: '0',
+                                GasPrice: '0',
+                                Nonce: nonce,
+                                InputData: `Smart Contract Transaction`
+                              }
+                              let txHashBuffer = [
+                                Buffer.from(tokenTx.Version),
+                                SECUtils.intToBuffer(tokenTx.TimeStamp),
+                                Buffer.from(tokenTx.TxFrom, 'hex'),
+                                Buffer.from(tokenTx.TxTo, 'hex'),
+                                Buffer.from(tokenTx.Value),
+                                Buffer.from(tokenTx.GasLimit),
+                                Buffer.from(tokenTx.GasUsedByTxn),
+                                Buffer.from(tokenTx.GasPrice),
+                                Buffer.from(tokenTx.Nonce),
+                                Buffer.from(tokenTx.InputData)
+                              ]
+                          
+                              tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+                              resolve(tokenTx)
+                            }
+                          })
+                        } else if('otherResult' in contractResult){
+                          //reject(contractResult.otherResult)
+                          resolve()
+                        } else {
+                          //reject(contractResult)
+                          resolve()
+                        }
+                      })
+                    })  
+                  }.bind(this)
+        
+                  let txHeight = 0
+                  let contractTransactions = []
+                  txArray.forEach((tx) => {
+                    tx.TxReceiptStatus = 'success'
+                    tx.TxHeight = txHeight
+                    txHeight = txHeight + 1
+                    if (SECUtils.isContractAddr(tx.TxTo)){
+                      contractTransactions.push(runcontractPromise(tx))
+                    }
+                  })
+        
+                  Promise.all(contractTransactions).then((contractTransactions) => {
+                    contractTransactions = contractTransactions.filter(tx => (tx!=null))
+                    newBlock.Transactions = txArray.concat(contractTransactions)
+                    // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+                    try {
+                      let senBlock = new SECBlockChain.SECTokenBlock(newBlock)
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                        if (err) console.log(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                        else {
+                          console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                          console.log(chalk.green(`New generated block hash is: ${senBlock.getHeaderHash()}`))
+                          this.BlockChain.sendNewBlockHash(senBlock)
+                          this.BlockChain.pool.clear()
+                          this.resetPOW()
+                        }
+                      })
+                    } catch (err) {
+                      console.log(`Error:`, err.stack)
+                      this.resetPOW()
+                    }
+                  }).catch((err) => {
+                    console.log(err.stack)
+                  })
+                }
+              })
             })
           })
-        })
         } else {
           this.resetPOW()
         }
