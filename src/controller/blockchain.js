@@ -54,7 +54,7 @@ class BlockChain {
     if (process.env.tx) {
       this.Timer = setInterval(() => {
         this.generateTx()
-      }, ms('10s'))
+      }, ms('200s'))
     }
     this.consensus.run()
   }
