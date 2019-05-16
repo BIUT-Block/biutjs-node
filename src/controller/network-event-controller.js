@@ -601,7 +601,10 @@ class NetworkEvent {
 
   _onNewTx (tx) {
     if (this.syncInfo.flag) {
-      debug('Do not receive new transactions when current node is synchronising new blocks')
+      // Do not receive new transactions when current node is synchronising new blocks
+      setTimeout(() => {
+        this._onNewTx(tx)
+      }, ms('1s'))
       return
     }
 
