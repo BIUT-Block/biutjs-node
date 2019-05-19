@@ -600,6 +600,14 @@ class NetworkEvent {
   }
 
   _onNewTx (tx) {
+    if (this.syncInfo.flag) {
+      // Do not receive new transactions when current node is synchronising new blocks
+      setTimeout(() => {
+        this._onNewTx(tx)
+      }, ms('1s'))
+      return
+    }
+    
     const txHashHex = tx.getTxHash()
     if (txCache.has(txHashHex)) return
     txCache.set(txHashHex, true)
