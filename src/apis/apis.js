@@ -46,7 +46,7 @@ class APIs {
   }
 
   getTokenTxForUser (userAddress, callback) {
-    this.chainDB.findTxForUser(userAddress, callback)
+    this.chain.chain.getTxForUser(userAddress, callback)
   }
 
   getTokenTxInPool (txHash, callback) {
