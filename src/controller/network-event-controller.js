@@ -388,10 +388,11 @@ class NetworkEvent {
         if (err) console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
+          _secblock = new SECBlockChain.SECTokenBlock(secblock)
+          this._onNewBlock(_secblock)
           if (this.ChainName === 'SEN') {
             this.Consensus.resetPOW()
           }
-          this._onNewBlock(_secblock)
         }
       })
     }
