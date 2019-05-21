@@ -388,10 +388,11 @@ class NetworkEvent {
         if (err) console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
+          _secblock = new SECBlockChain.SECTokenBlock(secblock)
+          this._onNewBlock(_secblock)
           if (this.ChainName === 'SEN') {
             this.Consensus.resetPOW()
           }
-          this._onNewBlock(_secblock)
         }
       })
     }
@@ -600,35 +601,37 @@ class NetworkEvent {
   }
 
   _onNewTx (tx) {
+    let _tx = cloneDeep(tx)
     if (this.syncInfo.flag) {
       // Do not receive new transactions when current node is synchronising new blocks
       setTimeout(() => {
-        this._onNewTx(tx)
+        this._onNewTx(_tx)
       }, ms('1s'))
       return
     }
     
-    const txHashHex = tx.getTxHash()
+    const txHashHex = _tx.getTxHash()
     if (txCache.has(txHashHex)) return
     txCache.set(txHashHex, true)
 
-    this.BlockChain.isTokenTxExist(tx.getTxHash(), (err, result) => {
+    this.BlockChain.isTokenTxExist(_tx.getTxHash(), (err, result) => {
       if (err) console.error(`Error in _onNewTx function: ${err}`)
       else if (!result) {
-        this.BlockChain.pool.addTxIntoPool(tx.getTx())
+        this.BlockChain.pool.addTxIntoPool(_tx.getTx())
       }
     })
 
-    this.BlockChain.sendNewTokenTx(tx, this.peer)
-    console.log(`New Token Tx: ${tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
+    this.BlockChain.sendNewTokenTx(_tx, this.peer)
+    console.log(`New Token Tx: ${_tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
   }
 
-  _onNewBlock (newSECTokenBlock) {
-    this.BlockChain.sendNewBlockHash(newSECTokenBlock, this.peer)
+  _onNewBlock (newBlock) {
+    let _newBlock = cloneDeep(newBlock)
+    this.BlockChain.sendNewBlockHash(_newBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
-    console.log(`New ${this.ChainName} block ${newSECTokenBlock.getBlock().Number}: ${newSECTokenBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
+    console.log(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.BlockChain.pool.updateByBlock(newSECTokenBlock.getBlock())
+    this.BlockChain.pool.updateByBlock(_newBlock.getBlock())
   }
 
   _isValidBlock (blockHeader) {
