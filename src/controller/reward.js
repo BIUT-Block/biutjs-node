@@ -1,4 +1,5 @@
 const async = require('async')
+const cloneDeep = require('clone-deep')
 const SECUtils = require('@biut-block/biutjs-util')
 const SECTransaction = require('@biut-block/biutjs-tx')
 
@@ -127,7 +128,7 @@ class SENReward {
           Nonce: this.chain.chain.getCurrentHeight().toString(),
           InputData: `Mining reward`
         }
-        rewardTx = new SECTransaction.SECTokenTx(rewardTx).getTx()
+        rewardTx = cloneDeep(new SECTransaction.SECTokenTx(rewardTx).getTx())
         callback(null, rewardTx)
       }
     })
@@ -155,7 +156,7 @@ class SENReward {
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEC blockchain transactions service charge`
     }
-    let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
+    let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
     return txFeeTxObject
   }
 
@@ -181,7 +182,7 @@ class SENReward {
       Nonce: this.chain.chain.getCurrentHeight().toString(),
       InputData: `SEN blockchain transactions service charge`
     }
-    let txFeeTxObject = new SECTransaction.SECTokenTx(txFeeTx)
+    let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
     return txFeeTxObject
   }
 }
