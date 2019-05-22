@@ -7,6 +7,7 @@ class DBBackupHandler {
   constructor(path) {
     this.backupResult = ''
     this.dbPath = path
+    this.result = ''
   }
 
   backupChainData(fnAfterBackup) {
@@ -69,14 +70,16 @@ class DBBackupHandler {
   }
 }
 
+module.exports = DBBackupHandler
+
 /** start program to backup */
-let backupTime = 6000
-let backupTool = new DBBackupHandler('data/*')
-setInterval(() => {
-  backupTool.backupChainData(() => {
-    console.log('Backup !!')
-  })
-}, backupTime)
+// let backupTime = 6000
+// let backupTool = new DBBackupHandler('data/*')
+// setInterval(() => {
+//   backupTool.backupChainData(() => {
+//     console.log('Backup !!')
+//   })
+// }, backupTime)
 
 /** start program to cleanup */
 
