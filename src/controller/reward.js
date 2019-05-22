@@ -154,7 +154,7 @@ class SENReward {
       GasPrice: '0',
       TxFee: '0',
       Nonce: this.chain.chain.getCurrentHeight().toString(),
-      InputData: `SEC blockchain transactions service charge`
+      InputData: `BIUT blockchain transactions service charge`
     }
     let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
     return txFeeTxObject
@@ -180,7 +180,7 @@ class SENReward {
       GasPrice: '0',
       TxFee: '0',
       Nonce: this.chain.chain.getCurrentHeight().toString(),
-      InputData: `SEN blockchain transactions service charge`
+      InputData: `BIU blockchain transactions service charge`
     }
     let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
     return txFeeTxObject
