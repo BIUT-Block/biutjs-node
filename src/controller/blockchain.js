@@ -50,7 +50,8 @@ class BlockChain {
   }
 
   run () {
-    if (process.env.tx) {
+    // main network is not enabled to randomly generate transactions
+    if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
         this.generateTx()
       }, ms('200s'))
