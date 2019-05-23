@@ -8,6 +8,7 @@ class DBBackupHandler {
     this.backupResult = ''
     this.dbPath = path
     this.result = ''
+    this.today = new Date()
   }
 
   backupChainData(fnAfterBackup) {
@@ -60,8 +61,7 @@ class DBBackupHandler {
   }
 
   _getOutDateTimestamp () {
-    var today = new Date()
-    return new Date(today.getTime() - (6 * 24 * 60 * 60 * 1000)).getTime()
+    return new Date(this.today.getTime() - (7 * 24 * 60 * 60 * 1000)).getTime()
   }
 
   _writeLog (text) {
