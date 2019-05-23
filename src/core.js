@@ -13,9 +13,12 @@ class Core {
     SenDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SenPath,
     cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path
   }) {
-    if (process.env.secTest) {
+    if (process.env.netType === 'test') {
       dbconfig.SecDBPath = dbconfig.SecDBPath + 'test/'
       dbconfig.SenDBPath = dbconfig.SenDBPath + 'test/'
+    } else if (process.env.netType === 'develop') {
+      dbconfig.SecDBPath = dbconfig.SecDBPath + 'develop/'
+      dbconfig.SenDBPath = dbconfig.SenDBPath + 'develop/'
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
