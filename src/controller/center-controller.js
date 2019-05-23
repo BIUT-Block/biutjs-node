@@ -16,9 +16,12 @@ class CenterController {
   constructor (config) {
     // -----------------------------  NODE CONFIG  -----------------------------
     this.NodePort = SECConfig.SECBlock.devp2pConfig.Port
-    this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.bootstrapNodes
-    if (process.env.secTest) {
-      this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.testBootstrapNodes
+    if (process.env.netType === 'main') {
+      this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.mainNetworkNodes
+    } else if (process.env.netType === 'test') {
+      this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.testNetworkNodes
+    } else if (process.env.netType === 'develop') {
+      this.bootstrapNodes = SECConfig.SECBlock.devp2pConfig.developNetworkNodes
     }
 
     // -------------------------  NODE DISCOVERY PROTOCOL  -------------------------

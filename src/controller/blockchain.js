@@ -3,6 +3,7 @@ const chalk = require('chalk')
 const Big = require('bignumber.js')
 const async = require('async')
 const createDebugLogger = require('debug')
+const cloneDeep = require('clone-deep')
 const debug = createDebugLogger('core:blockchain')
 
 const Consensus = require('./consensus')
@@ -51,7 +52,7 @@ class BlockChain {
   }
 
   run () {
-    if (process.env.tx) {
+    if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
         this.generateTx()
       }, ms('200s'))
@@ -63,8 +64,9 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx (tx, excludePeer = { _socket: {} }) {
+  sendNewTokenTx (_tx, excludePeer = { _socket: {} }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
+    let tx = cloneDeep(_tx)
     this.rlp.getPeers().forEach(peer => {
       try {
         if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
@@ -94,7 +96,7 @@ class BlockChain {
 
   generateTx () {
     const tx = SECRandomData.generateTokenTransaction()
-    const tokenTx = new SECTransaction.SECTokenTx(tx)
+    const tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
     this.pool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
   }
@@ -110,7 +112,7 @@ class BlockChain {
       freeChargeFlag = true
       // return callback(new Error('Invalid TxFrom address'))
     }
-    let tokenTx = new SECTransaction.SECTokenTx(tx)
+    let tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
       // check balance
     this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
       if(err) return callback(err)
@@ -145,7 +147,7 @@ class BlockChain {
                   __tx.TxFee = '0'
                   __tx.TxHeight = ''
                   __tx.InputData = 'Handling fee transaction'
-                  let feeTx = new SECTransaction.SECTokenTx(__tx)
+                  let feeTx = cloneDeep(new SECTransaction.SECTokenTx(__tx))
                   console.log(chalk.yellow('Fee Tx: '))
                   console.log(feeTx.getTx())
                   if (this.chainName === 'SEC') {

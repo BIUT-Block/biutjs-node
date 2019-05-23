@@ -5,7 +5,7 @@ const cloneDeep = require('clone-deep')
 const LRUCache = require('lru-cache')
 const SECConfig = require('../../config/default.json')
 const createDebugLogger = require('debug')
-const debug = createDebugLogger('core:network:token')
+const debug = createDebugLogger('core:network')
 
 // -------------------------------  SEC LIBRARY  -------------------------------
 const SECDEVP2P = require('@biut-block/biutjs-devp2p')
@@ -380,16 +380,16 @@ class NetworkEvent {
         break
       }
 
-      let secblock = cloneDeep(block.getBlock())
-      let _secblock = new SECBlockChain.SECTokenBlock(secblock)
+      let secblock = cloneDeep(new SECBlockChain.SECTokenBlock(block.getBlock()))
+      let _secblock = cloneDeep(secblock.getBlock())
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.chain.putBlockToDB(_secblock.getBlock(), (err) => {
+      this.BlockChain.chain.putBlockToDB(_secblock, (err) => {
         if (err) console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
         else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
-          _secblock = new SECBlockChain.SECTokenBlock(secblock)
-          this._onNewBlock(_secblock)
+          secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
+          this._onNewBlock(secblock)
           if (this.ChainName === 'SEN') {
             this.Consensus.resetPOW()
           }
@@ -426,7 +426,7 @@ class NetworkEvent {
       if (err) console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
       async.eachSeries(payload[1], (payload, callback) => {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
-        let block = Object.assign({}, newTokenBlock.getBlock())
+        let block = cloneDeep(newTokenBlock.getBlock())
         debug(`Syncronizing block ${block.Number}`)
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
           if (_err) callback(_err)
@@ -478,8 +478,8 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== TX =====`))
     if (!this.forkVerified) return
 
-    let TokenTx = new SECTransaction.SECTokenTx(payload)
-    if (this._isValidTx(TokenTx)) this._onNewTx(TokenTx)
+    let tokenTx = cloneDeep(new SECTransaction.SECTokenTx(payload))
+    if (this._isValidTx(tokenTx)) this._onNewTx(tokenTx)
 
     debug(chalk.bold.yellow(`===== End TX =====`))
   }
