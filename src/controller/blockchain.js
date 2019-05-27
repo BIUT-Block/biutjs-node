@@ -222,7 +222,7 @@ class BlockChain {
           callback(err, null)
         } else {
           let result = false
-          if (parseFloat(balance) >= parseFloat(tx.Value)) {
+          if ((parseFloat(balance) >= parseFloat(tx.Value)) && (parseFloat(balance) >= 0)) {
             this.senChain.getBalance(tx.TxFrom, (err, _balance) => {
               if (err) {
                 callback(err, null)
