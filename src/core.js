@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const args = require('minimist')(process.argv.slice(2))
 
 const APIs = require('./apis/apis')
 const Account = require('./account/account')
@@ -22,8 +23,8 @@ class Core {
       dbconfig.SenDBPath = dbconfig.SenDBPath + 'develop/'
     }
 
-    if (process.argv['--addr'] !== undefined) {
-      dbconfig.address = process.argv['--addr']
+    if (args['addr'] !== undefined) {
+      dbconfig.address = args['addr']
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
