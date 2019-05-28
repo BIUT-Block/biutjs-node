@@ -1,9 +1,13 @@
 const SECUtils = require('@biut-block/biutjs-util')
 
 class Account {
-  constructor () {
-    let userInfo = SECUtils.generateSecKeys()
-    this.Address = userInfo.secAddress
+  constructor (privateKey = '') {
+    if (privateKey === '') {
+      let userInfo = SECUtils.generateSecKeys()
+      this.setAddress(userInfo.secAddress)
+    } else {
+      this.setAddress(privateKey)
+    }
   }
 
   getAddress () {

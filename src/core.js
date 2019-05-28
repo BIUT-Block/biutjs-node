@@ -11,7 +11,8 @@ class Core {
     DBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path,
     SecDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SecPath,
     SenDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SenPath,
-    cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path
+    cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
+    privateKey: ''
   }) {
     if (process.env.netType === 'test') {
       dbconfig.SecDBPath = dbconfig.SecDBPath + 'test/'
@@ -19,6 +20,10 @@ class Core {
     } else if (process.env.netType === 'develop') {
       dbconfig.SecDBPath = dbconfig.SecDBPath + 'develop/'
       dbconfig.SenDBPath = dbconfig.SenDBPath + 'develop/'
+    }
+
+    if (process.argv['--privateKey'] !== undefined) {
+      dbconfig.privateKey = process.argv['--privateKey']
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
