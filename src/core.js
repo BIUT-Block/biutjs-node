@@ -12,7 +12,7 @@ class Core {
     SecDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SecPath,
     SenDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.dbConfig.SenPath,
     cacheDBPath: process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
-    privateKey: ''
+    address: ''
   }) {
     if (process.env.netType === 'test') {
       dbconfig.SecDBPath = dbconfig.SecDBPath + 'test/'
@@ -22,12 +22,12 @@ class Core {
       dbconfig.SenDBPath = dbconfig.SenDBPath + 'develop/'
     }
 
-    if (process.argv['--privateKey'] !== undefined) {
-      dbconfig.privateKey = process.argv['--privateKey']
+    if (process.argv['--addr'] !== undefined) {
+      dbconfig.address = process.argv['--addr']
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
-    this.Account = new Account()
+    this.Account = new Account(dbconfig.address)
     this.CenterController = new CenterController({
       PRIVATE_KEY: crypto.randomBytes(32),
       SECAccount: this.Account,
