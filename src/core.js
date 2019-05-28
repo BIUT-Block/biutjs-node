@@ -1,3 +1,5 @@
+const fs = require('fs')
+const path = require('path')
 const crypto = require('crypto')
 const args = require('minimist')(process.argv.slice(2))
 
@@ -25,6 +27,10 @@ class Core {
 
     if (args['addr'] !== undefined) {
       dbconfig.address = args['addr']
+    }
+    let addrFilePath = path.join(process.cwd(), '/address')
+    if (fs.existsSync(addrFilePath)) {
+      dbconfig.address = fs.readFileSync(addrFilePath, 'utf8')
     }
 
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
