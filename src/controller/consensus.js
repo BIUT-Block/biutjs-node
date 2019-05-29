@@ -90,65 +90,57 @@ class Consensus {
             let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
             let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
-            // cannot create new block if account balance is less than minimum mortgage amount
-            this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
-              if (err) return this.resetPOW()
-              else if (balance < this.reward.MIN_MORTGAGE) {
-                console.log(`balance is less than this.reward.MIN_MORTGAGE`)
-                return this.resetPOW()
-              } else {
-                if (result.result && groupId === BeneGroupId) {
-                  let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
-                  // append the pow reward tx
-                  this.secReward.getRewardTx((err, rewardTx) => {
+            if (result.result && groupId === BeneGroupId) {
+              let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
+              // append the pow reward tx
+              this.secReward.getRewardTx((err, rewardTx) => {
+                if (err) return this.resetPOW()
+                if (rewardTx === null) return this.resetPOW()
+                let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
+                this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
+                  if (err) return this.resetPOW()
+
+                  let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
+                  let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
+                  if (senTxFeeTx !== null) {
+                    senTxFeeTx = senTxFeeTx.getTx()
+                    txsInPoll.unshift(senTxFeeTx)
+                  }
+                  if (_secTxFeeTx !== null) {
+                    txsInPoll.unshift(_secTxFeeTx)
+                  }
+                  txsInPoll.unshift(_rewardTx)
+
+                  this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
                     if (err) return this.resetPOW()
-                    let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
-                    this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
-                      if (err) return this.resetPOW()
+                    // assign txHeight
+                    let txHeight = 0
+                    txArray.forEach((tx) => {
+                      tx.TxReceiptStatus = 'success'
+                      tx.TxHeight = txHeight
+                      txHeight = txHeight + 1
+                    })
 
-                      let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
-                      let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
-                      if (senTxFeeTx !== null) {
-                        senTxFeeTx = senTxFeeTx.getTx()
-                        txsInPoll.unshift(senTxFeeTx)
+                    newBlock.Transactions = txArray
+                    // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+                    let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                    this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                      if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                      else {
+                        console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                        console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
+                        senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                        this.BlockChain.sendNewBlockHash(senBlock)
+                        this.BlockChain.pool.clear()
+                        this.resetPOW()
                       }
-                      if (_secTxFeeTx !== null) {
-                        txsInPoll.unshift(_secTxFeeTx)
-                      }
-                      txsInPoll.unshift(_rewardTx)
-
-                      this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-                        if (err) return this.resetPOW()
-                        // assign txHeight
-                        let txHeight = 0
-                        txArray.forEach((tx) => {
-                          tx.TxReceiptStatus = 'success'
-                          tx.TxHeight = txHeight
-                          txHeight = txHeight + 1
-                        })
-
-                        newBlock.Transactions = txArray
-                        // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-                        let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                        this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                          if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                          else {
-                            console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                            console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
-                            senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                            this.BlockChain.sendNewBlockHash(senBlock)
-                            this.BlockChain.pool.clear()
-                            this.resetPOW()
-                          }
-                        })
-                      })
                     })
                   })
-                } else {
-                  this.resetPOW()
-                }
-              }
-            })
+                })
+              })
+            } else {
+              this.resetPOW()
+            }
           } else {
             this.resetPOW()
           }

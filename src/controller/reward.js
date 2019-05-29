@@ -129,7 +129,12 @@ class SENReward {
           InputData: `Mining reward`
         }
         rewardTx = cloneDeep(new SECTransaction.SECTokenTx(rewardTx).getTx())
-        callback(null, rewardTx)
+
+        if (reward <= 0) {
+          return callback(null, null)
+        } else {
+          return callback(null, rewardTx)
+        }
       }
     })
   }
