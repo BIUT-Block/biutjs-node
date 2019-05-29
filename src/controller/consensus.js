@@ -170,6 +170,7 @@ class Consensus {
           this.secCircle.resetCircle((err) => {
             if (err) console.log(err)
           })
+          let accAddress = this.BlockChain.SECAccount.getAddress()
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
 
