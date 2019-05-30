@@ -91,7 +91,7 @@ class SENReward {
 
   _getReward (addr, callback) {
     // TODO: only for short time, later must be corrected
-    let rewardFactor = 41.6667 / 60
+    let rewardFactor = 41.66666666 / 6
     // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, (err, balance) => {
       if (err) {
