@@ -4,7 +4,7 @@ const SECUtils = require('@biut-block/biutjs-util')
 const SECTransaction = require('@biut-block/biutjs-tx')
 
 const MAX_MORTGAGE = 100000
-const MIN_MORTGAGE = 0.24
+exports.MIN_MORTGAGE = 10
 const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
 const INIT_TX_AMOUNT = 100000
@@ -91,7 +91,7 @@ class SENReward {
   
   _getReward (addr, tokenName, callback) {
     // TODO: only for short time, later must be corrected
-    let rewardFactor = 41.6667
+    let rewardFactor = 41.66666666 / 6
     // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
@@ -99,8 +99,8 @@ class SENReward {
       } else {
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
-        } else if (balance < MIN_MORTGAGE) {
-          balance = MIN_MORTGAGE
+        } else if (balance < exports.MIN_MORTGAGE) {
+          balance = 0
         }
         let reward = balance * rewardFactor / 100000
         callback(null, reward)
@@ -129,7 +129,11 @@ class SENReward {
           InputData: `Mining reward`
         }
         rewardTx = cloneDeep(new SECTransaction.SECTokenTx(rewardTx).getTx())
-        callback(null, rewardTx)
+        if (reward <= 0) {
+          return callback(null, null)
+        } else {
+          return callback(null, rewardTx)
+        }
       }
     })
   }
@@ -157,6 +161,10 @@ class SENReward {
       InputData: `BIUT blockchain transactions service charge`
     }
     let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
+
+    if (txFee <= 0) {
+      return null
+    }    
     return txFeeTxObject
   }
 
@@ -183,6 +191,9 @@ class SENReward {
       InputData: `BIU blockchain transactions service charge`
     }
     let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
+    if (txFee <= 0) {
+      return null
+    }    
     return txFeeTxObject
   }
 }

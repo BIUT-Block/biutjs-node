@@ -128,50 +128,6 @@ let server = jayson.server({
     callback(null, response)
   },
 
-  /**
-  * free charging function, for testing purpose
-  */
-  sec_freeCharge: function (args, callback) {
-    const userInfo = {
-      secAddress: '0000000000000000000000000000000000000001'
-    }
-
-    let response = {}
-    core.secAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
-      if (err) {
-        response.status = '0'
-        response.info = `Unexpected error occurs, error info: ${err}`
-      } else {
-        let tokenTx = {
-          Nonce: nonce,
-          TxReceiptStatus: 'pending',
-          TimeStamp: new Date().getTime(),
-          TxFrom: userInfo.secAddress,
-          TxTo: args[0].to,
-          Value: args[0].value,
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          InputData: 'Mobile APP JSONRPC API Function Test',
-          Signature: {}
-        }
-
-        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
-          if (err) {
-            response.status = '0'
-            response.info = `Error occurs, error info ${err}`
-          } else {
-            response.status = '1'
-            response.info = 'OK'
-            response.TxHash = tokenTx.TxHash
-          }
-        })
-      }
-      callback(null, response)
-    })
-  },
-
   sec_getNodeInfo: function (args, callback) {
     let response = {}
     core.secAPIs.getNodeIpv4((ipv4) => {
@@ -281,14 +237,6 @@ let server = jayson.server({
     })
   },
 
-  sec_setAddress: function (args, callback) {
-    let response = {}
-    core.secAPIs.setAddress(args[0])
-    response.status = '1'
-    response.message = 'OK'
-    callback(null, response)
-  },
-
   sec_debug_getAccTreeAccInfo: function (args, callback) {
     let response = {}
     core.secAPIs.getAccTreeAccInfo(args[0], (err, info) => {
@@ -304,39 +252,97 @@ let server = jayson.server({
     })
   },
 
-  _setBlock: function (args, callback) {
+  sec_setAddress: function (args, callback) {
     let response = {}
-    core.secAPIs.writeBlock(args[0], (err) => {
-      if (err) {
-        response.status = '0'
-        response.message = 'Failed, reason: ' + err
-      } else {
-        response.status = '1'
-        response.message = 'OK'
-      }
-      callback(null, response)
-    })
+    core.secAPIs.setAddress(args[0])
+    response.status = '1'
+    response.message = 'OK'
+    callback(null, response)
   },
 
-  _syncFromIp: function (args, callback) {
+  /**
+  * free charging function, for testing purpose
+  */
+  sec_freeCharge: function (args, callback) {
+    const userInfo = {
+      secAddress: '0000000000000000000000000000000000000001'
+    }
+
     let response = {}
-    if (args[0].ip === null) {
+    if (process.env.netType === 'main' || process.env.netType === undefined) {
       response.status = '0'
-      response.message = 'Needs a valid ip address'
-      callback(response)
+      response.info = 'Main network does not support free charging'
+      return callback(null, response)
     } else {
-      core.secAPIs.syncFromIp(args[0].ip, (err) => {
+      core.secAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
         if (err) {
           response.status = '0'
-          response.message = 'Failed, reason: ' + err
+          response.info = `Unexpected error occurs, error info: ${err}`
         } else {
-          response.status = '1'
-          response.message = 'OK'
+          let tokenTx = {
+            Nonce: nonce,
+            TxReceiptStatus: 'pending',
+            TimeStamp: new Date().getTime(),
+            TxFrom: userInfo.secAddress,
+            TxTo: args[0].to,
+            Value: args[0].value,
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            InputData: 'Mobile APP JSONRPC API Function Test',
+            Signature: {}
+          }
+
+          tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+          core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
+            if (err) {
+              response.status = '0'
+              response.info = `Error occurs, error info ${err}`
+            } else {
+              response.status = '1'
+              response.info = 'OK'
+              response.TxHash = tokenTx.TxHash
+            }
+          })
         }
         callback(null, response)
       })
     }
   }
+
+  // _setBlock: function (args, callback) {
+  //   let response = {}
+  //   core.secAPIs.writeBlock(args[0], (err) => {
+  //     if (err) {
+  //       response.status = '0'
+  //       response.message = 'Failed, reason: ' + err
+  //     } else {
+  //       response.status = '1'
+  //       response.message = 'OK'
+  //     }
+  //     callback(null, response)
+  //   })
+  // },
+
+  // _syncFromIp: function (args, callback) {
+  //   let response = {}
+  //   if (args[0].ip === null) {
+  //     response.status = '0'
+  //     response.message = 'Needs a valid ip address'
+  //     callback(response)
+  //   } else {
+  //     core.secAPIs.syncFromIp(args[0].ip, (err) => {
+  //       if (err) {
+  //         response.status = '0'
+  //         response.message = 'Failed, reason: ' + err
+  //       } else {
+  //         response.status = '1'
+  //         response.message = 'OK'
+  //       }
+  //       callback(null, response)
+  //     })
+  //   }
+  // }
 })
 
 exports.runRpc = function (_core) {
