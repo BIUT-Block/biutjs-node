@@ -20,7 +20,7 @@ let server = jayson.server({
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
-      core.secAPIs.getBalance(accAddr, (err, balance) => {
+      core.secAPIs.getBalance(accAddr, 'SEC', (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`

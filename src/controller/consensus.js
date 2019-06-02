@@ -47,7 +47,7 @@ class Consensus {
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
-    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
+    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), this.chainName, (err, balance) => {
       if (err) console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
       else if (balance < this.reward.MIN_MORTGAGE) {
         return this.resetPOW()
