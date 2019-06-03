@@ -2,6 +2,7 @@ const chalk = require('chalk')
 const cp = require('child_process')
 const path = require('path')
 const cloneDeep = require('clone-deep')
+const SECPow = require('@biut-block/biutjs-pow')
 const SECConfig = require('../../config/default.json')
 
 const SECBlockChain = require('@biut-block/biutjs-blockchain')
@@ -22,6 +23,10 @@ class Consensus {
 
     // ---------------------------------------  block chain  ---------------------------------------
     this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
+    this.secPow = new SECPow({
+      cacheDBPath: this.cacheDBPath || process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
+      expectedDifficulty: SECConfig.SECBlock.powConfig.expectedDifficulty
+    })
     this.isPowRunning = false
 
     // create an secCircle object
@@ -66,7 +71,8 @@ class Consensus {
                   lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
                   lastPowCalcTime: lastPowCalcTime,
                   Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
-                  cacheDBPath: this.cacheDBPath
+                  cacheDBPath: this.cacheDBPath,
+                  secPow: this.secPow
                 }
                 console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
                 this.powWorker.send(blockForPOW)
