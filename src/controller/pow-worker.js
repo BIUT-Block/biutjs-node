@@ -5,10 +5,12 @@ const SECPow = require('@biut-block/biutjs-pow')
 let secPow = {}
 
 process.on('message', blockForPOW => {
+  let randomInt = Math.floor(Math.random() * Math.floor(20))
   secPow = new SECPow({
-    cacheDBPath: blockForPOW.cacheDBPath || process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path,
+    cacheDBPath: blockForPOW.cacheDBPath + randomInt.toString() || process.cwd() + SECConfig.SECBlock.dbConfig.Path + SECConfig.SECBlock.powConfig.path + randomInt.toString(),
     expectedDifficulty: SECConfig.SECBlock.powConfig.expectedDifficulty
   })
+
   blockForPOW.Header = Buffer.from(blockForPOW.Header)
   blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
   console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
