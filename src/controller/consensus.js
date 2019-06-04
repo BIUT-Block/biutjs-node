@@ -22,8 +22,10 @@ class Consensus {
     this.powEnableFlag = false
 
     // ---------------------------------------  block chain  ---------------------------------------
-    this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
-    this.isPowRunning = false
+    if (this.chainName === 'SEN') {    
+      this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
+      this.isPowRunning = false
+    }
 
     // create an secCircle object
     let configGroup = SECConfig.SECBlock.groupConfig
@@ -135,7 +137,8 @@ class Consensus {
                         try {
                           let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                           this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                            if (err) {console.log(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)}
+                            if (err) {
+                              console.log(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)}
                             else {
                               console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                               console.log(chalk.green(`New generated block hash is: ${senBlock.getHeaderHash()}`))
