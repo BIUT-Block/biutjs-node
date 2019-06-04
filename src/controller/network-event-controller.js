@@ -511,63 +511,16 @@ class NetworkEvent {
       else if (localHeight > remoteHeight) {
         // Local chain is longer than remote chain
         debug('Local Token Blockchain Length longer than remote Node')
-        let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
-        if (blockPosition.length > 0) {
-          // No fork found, send 'SYNC_CHUNK' blocks to remote node
-          debug('No Fork found!')
-          this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
-            if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
-            else {
-              let blockBuffer = newBlocks.map(_block => {
-                return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
-              })
-
-              let sentMsg = [
-                SECDEVP2P._util.int2buffer(localHeight), // local chain height
-                blockBuffer,
-                Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
-              ]
-              debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
-            }
-          })
+        let errPos = this._checkHashList(hashList)
+        if (errPos !== -1) {
+          // TODO: local hash list incomplete
         } else {
-          debug('Fork found!')
-
-          // check remote hash list
-          let errorPos = this._checkRemoteHashList(remoteHashList)
-          if (errorPos === -1) {
-            // find fork position
-            let forkPosition = 0
-            for (let i = remoteHeight - 1; i >= 1; i--) {
-              if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
-                forkPosition = remoteHashList[i].Number
-                debug('Fork Position: ' + forkPosition)
-                break
-              }
-            }
-
-            // send 'SYNC_CHUNK' blocks to remote node
-            this.BlockChain.chain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
-              if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB2: ${err}`)
-              else {
-                let blockBuffer = newBlocks.map(_block => {
-                  return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
-                })
-
-                let sentMsg = [
-                  SECDEVP2P._util.int2buffer(localHeight), // local chain height
-                  blockBuffer,
-                  Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
-                ]
-                debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
-              }
-            })
-          } else {
-            // if remote hash list is wrong, then force sync remote node
-            this.BlockChain.chain.getBlocksFromDB(errorPos, errorPos + SYNC_CHUNK - 1, (err, newBlocks) => {
-              if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
+          let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
+          if (blockPosition.length > 0) {
+            // No fork found, send 'SYNC_CHUNK' blocks to remote node
+            debug('No Fork found!')
+            this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
+              if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
               else {
                 let blockBuffer = newBlocks.map(_block => {
                   return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
@@ -582,6 +535,58 @@ class NetworkEvent {
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
               }
             })
+          } else {
+            debug('Fork found!')
+
+            // check remote hash list
+            let _errPos = this._checkHashList(remoteHashList)
+            if (_errPos === -1) {
+              // find fork position
+              let forkPosition = 0
+              for (let i = remoteHeight - 1; i >= 1; i--) {
+                if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
+                  forkPosition = remoteHashList[i].Number
+                  debug('Fork Position: ' + forkPosition)
+                  break
+                }
+              }
+
+              // send 'SYNC_CHUNK' blocks to remote node
+              this.BlockChain.chain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
+                if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB2: ${err}`)
+                else {
+                  let blockBuffer = newBlocks.map(_block => {
+                    return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+                  })
+
+                  let sentMsg = [
+                    SECDEVP2P._util.int2buffer(localHeight), // local chain height
+                    blockBuffer,
+                    Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
+                  ]
+                  debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
+                }
+              })
+            } else {
+              // if remote hash list is wrong, then force sync remote node
+              this.BlockChain.chain.getBlocksFromDB(_errPos, _errPos + SYNC_CHUNK - 1, (err, newBlocks) => {
+                if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
+                else {
+                  let blockBuffer = newBlocks.map(_block => {
+                    return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
+                  })
+
+                  let sentMsg = [
+                    SECDEVP2P._util.int2buffer(localHeight), // local chain height
+                    blockBuffer,
+                    Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
+                  ]
+                  debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
+                }
+              })
+            }
           }
         }
       } else {
@@ -679,11 +684,15 @@ class NetworkEvent {
     return true
   }
 
-  _checkRemoteHashList (hashList) {
+  _checkHashList (hashList) {
     let height = hashList[hashList.length - 1].Number
-    for (let i = 0; i < height - 1; i++) {
-      if (hashList[i] === undefined) {
-        return i
+    if (height !== undefined) {
+      for (let i = 0; i < height - 1; i++) {
+        let hash = hashList[i].Hash
+        let number = hashList[i].Number
+        if (hashList[i] === undefined || hash === undefined || number === undefined) {
+          return i
+        }
       }
     }
     return -1
