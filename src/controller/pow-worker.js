@@ -12,7 +12,11 @@ process.on('message', blockForPOW => {
   })
 
   blockForPOW.Header = Buffer.from(blockForPOW.Header)
-  blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
+  if (process.env.netType === 'test') {
+    blockForPOW.Difficulty = 4
+  } else {
+    blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
+  }
   console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
   secPow.mineLight(blockForPOW, blockForPOW.Difficulty, (nonce, result) => {
     console.timeEnd(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
