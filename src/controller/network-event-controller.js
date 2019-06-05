@@ -543,6 +543,12 @@ class NetworkEvent {
               // find fork position
               let forkPosition = 0
               for (let i = remoteHeight; i >= 1; i--) {
+                if (remoteHashList[i] === undefined) {
+                  console.log(remoteHashList)
+                }
+                if (hashList === undefined) {
+                  console.log('hashList is undefined')
+                }
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
                   forkPosition = remoteHashList[i].Number
                   debug('Fork Position: ' + forkPosition)
@@ -700,6 +706,7 @@ class NetworkEvent {
       }
       return -1
     } catch (e) {
+      console.log(`_checkHashList error: ${JSON.stringify(e)}`)
       return -1
     }
   }
