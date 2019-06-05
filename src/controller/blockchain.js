@@ -45,9 +45,9 @@ class BlockChain {
   init (rlp, callback) {
     this.rlp = rlp
 
-    this.chain.init(() => {
+    this.chain.init((err) => {
       debug(chalk.blue('Blockchain init success'))
-      callback()
+      callback(err)
     })
   }
 
@@ -134,10 +134,10 @@ class BlockChain {
             }
             else {
               if (!_result) {
-                console.log('\n******************** FeeTx test ********************')
+                // console.log('\n******************** FeeTx test ********************')
                 let _tx = tokenTx.getTx()
-                console.log(chalk.yellow('Origin Tx: '))
-                console.log(_tx)
+                // console.log(chalk.yellow('Origin Tx: '))
+                // console.log(_tx)
                 this.pool.addTxIntoPool(_tx)
                 this.sendNewTokenTx(tokenTx)
                 if (_tx.TxFee !== '0') {
@@ -148,8 +148,8 @@ class BlockChain {
                   __tx.TxHeight = ''
                   __tx.InputData = 'Handling fee transaction'
                   let feeTx = cloneDeep(new SECTransaction.SECTokenTx(__tx))
-                  console.log(chalk.yellow('Fee Tx: '))
-                  console.log(feeTx.getTx())
+                  // console.log(chalk.yellow('Fee Tx: '))
+                  // console.log(feeTx.getTx())
                   if (this.chainName === 'SEC') {
                     this.senChain.pool.addTxIntoPool(feeTx.getTx())
                     this.senChain.sendNewTokenTx(feeTx)
@@ -157,11 +157,11 @@ class BlockChain {
                     this.pool.addTxIntoPool(feeTx.getTx())
                     this.sendNewTokenTx(feeTx)
                   }
-                  console.log('******************** FeeTx test End ********************\n')
+                  // console.log('******************** FeeTx test End ********************\n')
                   debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
                   this.sendNewTokenTx(tokenTx)
                 }
-                console.log('******************** FeeTx test End ********************\n')
+                // console.log('******************** FeeTx test End ********************\n')
                 debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
               }
               callback(null)
