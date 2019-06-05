@@ -513,6 +513,7 @@ class NetworkEvent {
         debug('Local Token Blockchain Length longer than remote Node')
         let errPos = this._checkHashList(hashList)
         if (errPos !== -1) {
+          console.error(`Local hashList invalid: ${hashList}`)
           // TODO: local hash list incomplete
         } else {
           let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
@@ -543,7 +544,7 @@ class NetworkEvent {
             if (_errPos === -1) {
               // find fork position
               let forkPosition = 0
-              for (let i = remoteHeight - 1; i >= 1; i--) {
+              for (let i = remoteHeight; i >= 1; i--) {
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
                   forkPosition = remoteHashList[i].Number
                   debug('Fork Position: ' + forkPosition)
@@ -685,17 +686,24 @@ class NetworkEvent {
   }
 
   _checkHashList (hashList) {
-    let height = hashList[hashList.length - 1].Number
-    if (height !== undefined) {
-      for (let i = 0; i < height - 1; i++) {
-        let hash = hashList[i].Hash
-        let number = hashList[i].Number
-        if (hashList[i] === undefined || hash === undefined || number === undefined) {
-          return i
+    try {
+      let height = hashList[hashList.length - 1].Number
+      if (height !== undefined) {
+        for (let i = 0; i < height; i++) {
+          if (hashList[i] === undefined) {
+            return i
+          }
+          let hash = hashList[i].Hash
+          let number = hashList[i].Number
+          if (hash === undefined || number === undefined) {
+            return i
+          }
         }
       }
+      return -1
+    } catch (e) {
+      return -1
     }
-    return -1
   }
 
   // TODO: must be reimplement

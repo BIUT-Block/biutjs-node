@@ -168,9 +168,11 @@ class CenterController {
     this.runningFlag = true
     this.config.rlp = this.rlp
     // start BlockChain service first and then init NDP and RLP
-    this.secChain.init(this.rlp, () => {
+    this.secChain.init(this.rlp, (err) => {
+      if (err) return console.error(err)
       debug('secChain init finish')
-      this.senChain.init(this.rlp, () => {
+      this.senChain.init(this.rlp, (err) => {
+        if (err) return console.error(err)
         debug('senChain init finish')
         this._initNDP()
         this._initRLP()
