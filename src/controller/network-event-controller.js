@@ -444,32 +444,30 @@ class NetworkEvent {
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
         if (err) console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-        else {
-          this.BlockChain.checkTxArray(txArray, (_err, _txArray) => {
-            if (_err) console.error(`Error in NEW_BLOCK state, eachSeries else: ${_err}`)
-            else {
-              // add the removed txs into pool
-              _txArray.forEach((tx) => {
-                this.BlockChain.pool.addTxIntoPool(tx)
-              })
+        this.BlockChain.checkTxArray(txArray, (_err, _txArray) => {
+          if (_err) console.error(`Error in NEW_BLOCK state, eachSeries else: ${_err}`)
+          else {
+            // add the removed txs into pool
+            _txArray.forEach((tx) => {
+              this.BlockChain.pool.addTxIntoPool(tx)
+            })
 
-              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-                // synchronizing finished
-                this.syncInfo.flag = false
-                this.syncInfo.address = null
-                clearTimeout(this.syncInfo)
-              } else {
-                // continue synchronizing
-                this.BlockChain.chain.getHashList((__err, hashList) => {
-                  if (__err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${__err}`)
-                  else {
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
-                  }
-                })
-              }
+            if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err) {
+              // synchronizing finished
+              this.syncInfo.flag = false
+              this.syncInfo.address = null
+              clearTimeout(this.syncInfo)
+            } else {
+              // continue synchronizing
+              this.BlockChain.chain.getHashList((__err, hashList) => {
+                if (__err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${__err}`)
+                else {
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                }
+              })
             }
-          })
-        }
+          }
+        })
       })
     })
   }
