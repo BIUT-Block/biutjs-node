@@ -1,6 +1,6 @@
 {
   "name": "@biut-block/biutjs-node",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "description": "biut blockchain node",
   "main": "index.js",
   "directories": {
@@ -21,7 +21,7 @@
   },
   "homepage": "https://gitlab.com/MongoX-BIUT/biutjs-node#README",
   "dependencies": {
-    "@biut-block/biutjs-blockchain": "^1.0.15",
+    "@biut-block/biutjs-blockchain": "^1.0.17",
     "@biut-block/biutjs-datahandler": "^1.0.7",
     "@biut-block/biutjs-devp2p": "^1.0.0",
     "@biut-block/biutjs-pow": "^1.0.1",
