@@ -14,6 +14,7 @@ class SECJSTimeCircle {
    * @param {string} config.ntpTryOut try out time for udp transport
    */
   constructor (config) {
+    this.config = config.config
     this.timeServer = config.timeServer
     this.circleStartTime = config.circleStartTime
     this.periodTime = config.periodTime
@@ -39,8 +40,9 @@ class SECJSTimeCircle {
     let localHostTime = 0
     try {
       localHostTime = new Date().getTime()
-    } catch (e) {
-      console.log('ERROR：' + e)
+    } catch (err) {
+      this.config.logger.error('ERROR：' + err)
+      console.error('ERROR：' + err)
     }
     return localHostTime
   }
@@ -90,6 +92,7 @@ class SECJSTimeCircle {
    */
   getHostGroupId (address) {
     if (typeof address !== 'string') {
+      this.config.logger.error('Error: Invalid input type, should be string')
       console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = this.getCurrentPeriodNumber()
@@ -107,6 +110,7 @@ class SECJSTimeCircle {
    */
   getTimestampGroupId (address, timestamp) {
     if (typeof address !== 'string') {
+      this.config.logger.error('Error: Invalid input type, should be string')
       console.error('Error: Invalid input type, should be string')
     }
     let periodNumber = Math.floor((timestamp - this.circleStartTime) / this.periodTime)

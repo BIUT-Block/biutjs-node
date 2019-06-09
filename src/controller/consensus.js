@@ -13,6 +13,7 @@ const SENReward = require('./reward')
 class Consensus {
   constructor (config) {
     // -------------------------------  Init class global variables  -------------------------------
+    this.config = config
     this.rlp = config.rlp
     this.BlockChain = config.self
     this.cacheDBPath = config.dbconfig.cacheDBPath
@@ -31,6 +32,7 @@ class Consensus {
     let configCircle = SECConfig.SECBlock.circleConfig
     configCircle.minGroup = configGroup.minGroupId
     configCircle.maxGroup = configGroup.maxGroupId
+    configCircle.logger = config.logger
     this.secCircle = new SECCircle(configCircle)
 
     // init variables
@@ -49,20 +51,26 @@ class Consensus {
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
     this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
-      if (err) console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
-      else if (balance < this.reward.MIN_MORTGAGE) {
+      if (err) {
+        this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+        console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+      } else if (balance < this.reward.MIN_MORTGAGE) {
         return this.resetPOW()
       } else {
         let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
 
         this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-          if (err) console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
-          else {
+          if (err) {
+            this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+            console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+          } else {
             newBlock.Number = lastBlock.Number + 1
             newBlock.ParentHash = lastBlock.Hash
             this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
-              if (err) console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
-              else {
+              if (err) {
+                this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+                console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+              } else {
                 let blockForPOW = {
                   Number: newBlock.Number,
                   lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
@@ -70,6 +78,7 @@ class Consensus {
                   Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
                   cacheDBPath: this.cacheDBPath
                 }
+                this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
                 console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
                 this.powWorker.send(blockForPOW)
               }
@@ -127,9 +136,13 @@ class Consensus {
                     // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
                     let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                     this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                      if (err) console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                      else {
+                      if (err) {
+                        this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                        console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                      } else {
+                        this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                         console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                        this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
                         console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
                         senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                         this.BlockChain.sendNewBlockHash(senBlock)
@@ -153,6 +166,7 @@ class Consensus {
 
   resetPOW () {
     if (process.env.pow || this.powEnableFlag) {
+      this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
       console.log(chalk.magenta('Reset POW'))
       this.powWorker.kill()
       this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
@@ -170,7 +184,10 @@ class Consensus {
         let isNextPeriod = this.secCircle.isNextPeriod()
         if (isNextPeriod) {
           this.secCircle.resetCircle((err) => {
-            if (err) console.log(err)
+            if (err) {
+              this.config.dbconfig.logger.error(err)
+              console.error(err)
+            }
           })
           let accAddress = this.BlockChain.SECAccount.getAddress()
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
@@ -190,6 +207,7 @@ class Consensus {
   }
 
   resetCircle () {
+    this.config.dbconfig.logger.info(chalk.magenta('Reset Circle'))
     console.log(chalk.magenta('Reset Circle'))
     clearInterval(this.circleInterval)
   }
@@ -225,7 +243,9 @@ class Consensus {
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
+            this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             console.log(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
+            this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
             console.log(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
             secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
             this.BlockChain.sendNewBlockHash(secBlock)
@@ -255,6 +275,7 @@ class Consensus {
         this.runCircle()
       }, 2000)
     } else {
+      this.config.dbconfig.logger.info('Invalid chain name, no corresponding consensus method found')
       console.log('Invalid chain name, no corresponding consensus method found')
     }
   }

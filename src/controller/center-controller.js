@@ -79,7 +79,10 @@ class CenterController {
 
     this.ndp.on('close', () => debug(chalk.green('NDP | NDP Server closed')))
 
-    this.ndp.on('error', err => console.error(chalk.red(`NDP | NDP error: ${err.stack || err}`)))
+    this.ndp.on('error', err => {
+      this.config.dbconfig.logger.error(`NDP | NDP error: ${err.stack || err}`)
+      console.error(chalk.red(`NDP | NDP error: ${err.stack || err}`))
+    })
 
     this.ndp.on('peer:added', peer => {
       const info = `(${peer.id.toString('hex')}, ${peer.address}:${peer.udpPort}:${peer.tcpPort})`
@@ -108,7 +111,10 @@ class CenterController {
       }
     })
     for (let bootnode of BOOTNODES) {
-      this.ndp.bootstrap(bootnode).catch(err => console.error(chalk.bold.red(err.stack || err)))
+      this.ndp.bootstrap(bootnode).catch(err => {
+        this.config.dbconfig.logger.error(`${err.stack || err}`)
+        console.error(chalk.bold.red(err.stack || err))
+      })
     }
   }
 
@@ -121,14 +127,14 @@ class CenterController {
 
       // -------------------------------  SEC BLOCK CHAIN  -------------------------------
       // Add new config param ChainID, the first 01 means token chain, last 0001 means this chain is the first token chain
-      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010001', ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+      let secNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010001', ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo, logger: this.config.dbconfig.logger })
       secNetworkEvent.PeerCommunication(peer, addr, sec)
       this.NetworkEventContainer['SEC'] = secNetworkEvent
 
       // -------------------------------  SEN BLOCK CHAIN  -------------------------------
       // Add new config param ChainID, the first 01 means token chain, last 0002 means this chain is the second token chain
       setTimeout(() => {
-        let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo })
+        let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo, logger: this.config.dbconfig.logger })
         senNetworkEvent.PeerCommunication(peer, addr, sec)
         this.NetworkEventContainer['SEN'] = senNetworkEvent
       }, 10000)
@@ -143,6 +149,7 @@ class CenterController {
           delete this.NetworkEventContainer[chainName]
         }
       })
+      this.config.dbconfig.logger.info(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
     })
 
@@ -151,13 +158,18 @@ class CenterController {
       if (err instanceof assert.AssertionError) {
         const peerId = peer.getId()
         if (peerId !== null) this.ndp.banPeer(peerId, ms('5m'))
+        this.config.dbconfig.logger.error(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
         console.error(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
         return
       }
+      this.config.dbconfig.logger.error(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
       console.error(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
     })
 
-    this.rlp.on('error', err => console.error(chalk.red(`RLP | RLP error: ${err.stack || err}`)))
+    this.rlp.on('error', err => {
+      this.config.dbconfig.logger.error(chalk.red(`RLP | RLP error: ${err.stack || err}`))
+      console.error(chalk.red(`RLP | RLP error: ${err.stack || err}`))
+    })
 
     // Start RLP service and listen port 13331
     this.rlp.listen(SECConfig.SECBlock.devp2pConfig.rlp.endpoint.tcpPort, SECConfig.SECBlock.devp2pConfig.rlp.endpoint.address)
@@ -169,10 +181,16 @@ class CenterController {
     this.config.rlp = this.rlp
     // start BlockChain service first and then init NDP and RLP
     this.secChain.init(this.rlp, (err) => {
-      if (err) return console.error(err)
+      if (err) {
+        this.config.dbconfig.logger.error(err)
+        return console.error(err)
+      }
       debug('secChain init finish')
       this.senChain.init(this.rlp, (err) => {
-        if (err) return console.error(err)
+        if (err) {
+          this.config.dbconfig.logger.error(err)
+          return console.error(err)
+        }
         debug('senChain init finish')
         this._initNDP()
         this._initRLP()
@@ -201,7 +219,9 @@ class CenterController {
       const openSlots = this.rlp._getOpenSlots()
       const queueLength = this.rlp._peersQueue.length
       const queueLength2 = this.rlp._peersQueue.filter((o) => o.ts <= Date.now()).length
+      this.config.dbconfig.logger.info(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
       console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
+      this.config.dbconfig.logger.info(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))
       console.log(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))
       rlpPeers.forEach((peer, index) => {
         debug(chalk.yellow(`    Peer ${index + 1} : ${Utils.getPeerAddr(peer)}) in RLP`))
@@ -234,8 +254,10 @@ class CenterController {
       })
       peers.forEach(peer => {
         this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
+          this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
           console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
         }).catch((err) => {
+          this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })

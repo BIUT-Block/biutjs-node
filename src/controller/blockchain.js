@@ -74,6 +74,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.TX, [Buffer.from(this.chainID), tx.getTxBuffer()])
         }
       } catch (err) {
+        this.config.dbconfig.logger.error(`Error in sendNewTokenTx function: ${err}`)
         console.error(`Error in sendNewTokenTx function: ${err}`)
       }
     })
@@ -89,6 +90,7 @@ class BlockChain {
           peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK_HASHES, [Buffer.from(this.chainID), Buffer.from(blockHeaderHash, 'hex')])
         }
       } catch (err) {
+        this.config.dbconfig.logger.error(`Error in sendNewBlockHash function: ${err}`)
         console.error(`Error in sendNewBlockHash function: ${err}`)
       }
     })
@@ -132,10 +134,7 @@ class BlockChain {
           if (err) callback(err)
           else {
             if (!_result) {
-              // console.log('\n******************** FeeTx test ********************')
               let _tx = tokenTx.getTx()
-              // console.log(chalk.yellow('Origin Tx: '))
-              // console.log(_tx)
               this.pool.addTxIntoPool(_tx)
               this.sendNewTokenTx(tokenTx)
               if (_tx.TxFee !== '0') {
@@ -146,8 +145,6 @@ class BlockChain {
                 __tx.TxHeight = ''
                 __tx.InputData = 'Handling fee transaction'
                 let feeTx = cloneDeep(new SECTransaction.SECTokenTx(__tx))
-                // console.log(chalk.yellow('Fee Tx: '))
-                // console.log(feeTx.getTx())
                 if (this.chainName === 'SEC') {
                   this.senChain.pool.addTxIntoPool(feeTx.getTx())
                   this.senChain.sendNewTokenTx(feeTx)
@@ -156,7 +153,6 @@ class BlockChain {
                   this.sendNewTokenTx(feeTx)
                 }
               }
-              // console.log('******************** FeeTx test End ********************\n')
               debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
             }
             callback(null)
