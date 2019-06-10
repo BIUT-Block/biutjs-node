@@ -16,7 +16,7 @@ const MainUtils = require('../utils/utils')
 const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
-const SYNC_CHUNK = 20 // each sync package contains 20 blocks
+const SYNC_CHUNK = 100 // each sync package contains 100 blocks
 
 class NetworkEvent {
   constructor (config) {
