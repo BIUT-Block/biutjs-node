@@ -182,7 +182,15 @@ class NetworkEvent {
 
   NEW_BLOCK_HASHES (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK_HASHES =====`))
-    if (!this.forkVerified) return
+    if (!this.forkVerified) {
+      console.log('exit because fork is not verified')
+      return
+    }
+
+    if (this.syncInfo.flag) {
+      console.log('exit because blockchain is syncing')
+      return
+    }
 
     // new block hash received from a remote node
     let blockHash = payload.toString('hex')
@@ -434,6 +442,7 @@ class NetworkEvent {
       this.syncInfo.flag = true
       this.syncInfo.address = remoteAddress
     }
+    clearTimeout(this.syncInfo.timer)
     this.syncInfo.timer = setTimeout(() => {
       this.syncInfo.flag = false
       this.syncInfo.address = null
