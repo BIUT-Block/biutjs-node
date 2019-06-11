@@ -181,7 +181,8 @@ class BlockChain {
       else {
         if(tokenName === 'All') {
           let allBalanceJson = Object.assign({}, value)
-          Object.keys(value).forEach((tmpTokenName, index) => {
+          let tokenNameArr = Object.keys(value)
+          tokenNameArr.forEach((tmpTokenName, index) => {
             this.chain.getContractAddress(tmpTokenName, (err, contractAddr) => {
               let balance = allBalanceJson[tmpTokenName]
               balance = new Big(balance)
@@ -193,8 +194,9 @@ class BlockChain {
       
               balance = balance.toFixed(DEC_NUM)
               allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
-              
-              callback(null, allBalanceJson)
+              if(index === tokenNameArr.length - 1){
+                callback(null, allBalanceJson)
+              }
             })
           })
         } else {
