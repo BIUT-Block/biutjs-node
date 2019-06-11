@@ -6,7 +6,7 @@ const getSize = require('get-folder-size')
 class APIs {
   constructor (config) {
     this.CenterController = config.CenterController
-    this.dbconfig = config.Dbconfig
+    this.config = config.config
 
     if (config.ChainName === 'SEC') {
       this.chain = this.CenterController.getSecChain()
@@ -39,7 +39,7 @@ class APIs {
   getTokenTx (txHash, callback) {
     this.chain.chain.txDB.getTx(txHash, (err, txData) => {
       if (err) {
-        console.error(`Error: Can not find transaction with hash ${txHash} from database`)
+        this.config.logger.error(`Error: Can not find transaction with hash ${txHash} from database`)
       }
       callback(txData)
     })
@@ -118,7 +118,7 @@ class APIs {
   }
 
   getTokenChainSize (callback) {
-    getSize(this.dbconfig.SecDBPath + 'tokenBlockChain', (err, size) => {
+    getSize(this.config.SecDBPath + 'tokenBlockChain', (err, size) => {
       if (err) {
         callback(err, null)
       } else {

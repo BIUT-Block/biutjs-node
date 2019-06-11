@@ -16,10 +16,11 @@ const MainUtils = require('../utils/utils')
 const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
-const SYNC_CHUNK = 20 // each sync package contains 20 blocks
+const SYNC_CHUNK = 100 // each sync package contains 100 blocks
 
 class NetworkEvent {
   constructor (config) {
+    this.logger = config.logger
     this.BlockChain = config.BlockChain
     this.Consensus = config.BlockChain.consensus
     this.NDP = config.NDP
@@ -58,11 +59,15 @@ class NetworkEvent {
       msgTypes: {}
     }
     this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
-      if (err) console.error(`Error in network.js, PeerCommunication function, getGenesisBlock: ${err}`)
-      else {
+      if (err) {
+        this.logger.error(`Error in network.js, PeerCommunication function, getGenesisBlock: ${err}`)
+        console.error(`Error in network.js, PeerCommunication function, getGenesisBlock: ${err}`)
+      } else {
         this.BlockChain.chain.getLastBlock((err, lastBlock) => {
-          if (err) console.error(`Error in network.js, PeerCommunication function, getLastBlock: ${err}`)
-          else {
+          if (err) {
+            this.logger.error(`Error in network.js, PeerCommunication function, getLastBlock: ${err}`)
+            console.error(`Error in network.js, PeerCommunication function, getLastBlock: ${err}`)
+          } else {
             let status = {
               chainID: Buffer.from(this.ChainID),
               networkId: this.NETWORK_ID,
@@ -177,15 +182,25 @@ class NetworkEvent {
 
   NEW_BLOCK_HASHES (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK_HASHES =====`))
-    if (!this.forkVerified) return
+    if (!this.forkVerified) {
+      console.log('exit because fork is not verified')
+      return
+    }
+
+    if (this.syncInfo.flag) {
+      console.log('exit because blockchain is syncing')
+      return
+    }
 
     // new block hash received from a remote node
     let blockHash = payload.toString('hex')
     debug(`New Block Hash from Remote: ${blockHash}`)
 
     this.BlockChain.chain.getHashList((err, hashList) => {
-      if (err) console.error(`Error in NEW_BLOCK_HASHES state, getHashList: ${err}`)
-      else if (blockHash in hashList) {
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK_HASHES state, getHashList: ${err}`)
+        console.error(`Error in NEW_BLOCK_HASHES state, getHashList: ${err}`)
+      } else if (blockHash in hashList) {
         // skip if the block is already in the database
       } else if (blocksCache.has(blockHash)) {
         // skip if the hash is already in the block cache
@@ -211,8 +226,10 @@ class NetworkEvent {
       debug('REMOTE CHECK_BLOCK_NR: ' + SECDEVP2P._util.buffer2int(payload))
       if (SECDEVP2P._util.buffer2int(payload) === this.CHECK_BLOCK_NR) {
         this.BlockChain.chain.getBlock(this.CHECK_BLOCK_NR - 1, (err, block) => {
-          if (err) console.error(`Error in GET_BLOCK_HEADERS state, getBlock: ${err}`)
-          else {
+          if (err) {
+            this.logger.error(`Error in GET_BLOCK_HEADERS state, getBlock: ${err}`)
+            console.error(`Error in GET_BLOCK_HEADERS state, getBlock: ${err}`)
+          } else {
             let checkBlock = new SECBlockChain.SECTokenBlock(block)
 
             debug('SEC Send Message: BLOCK_HEADERS genesis block')
@@ -224,8 +241,10 @@ class NetworkEvent {
       let blockHash = payload.toString('hex')
       debug('Get Block Hash: ' + blockHash)
       this.BlockChain.chain.getBlocksWithHash(blockHash, (err, blockArray) => {
-        if (err) console.error(`Error in GET_BLOCK_HEADERS state, getBlocksWithHash: ${err}`)
-        else {
+        if (err) {
+          this.logger.error(`Error in GET_BLOCK_HEADERS state, getBlocksWithHash: ${err}`)
+          console.error(`Error in GET_BLOCK_HEADERS state, getBlocksWithHash: ${err}`)
+        } else {
           if (blockArray.length > 0) {
             let localBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
 
@@ -252,8 +271,10 @@ class NetworkEvent {
 
     if (!this.forkVerified) {
       this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
-        if (err) console.error(`Error in BLOCK_HEADERS state, getGenesisBlock: ${err}`)
-        else if (blockHash === geneBlock.Hash) {
+        if (err) {
+          this.logger.error(`Error in BLOCK_HEADERS state, getGenesisBlock: ${err}`)
+          console.error(`Error in BLOCK_HEADERS state, getGenesisBlock: ${err}`)
+        } else if (blockHash === geneBlock.Hash) {
           debug(`Chain Name: ${this.ChainName}`)
           debug(`${blockHash} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
           debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
@@ -286,8 +307,10 @@ class NetworkEvent {
             // possible reason: block does not exist because received block number is larger than local chain length at least by 2
             debug(`error occurs when verify parent hash: ${err}`)
             this.BlockChain.chain.getHashList((err, hashList) => {
-              if (err) console.error(`Error in BLOCK_HEADERS state, getHashList1: ${err}`)
-              else {
+              if (err) {
+                this.logger.error(`Error in BLOCK_HEADERS state, getHashList1: ${err}`)
+                console.error(`Error in BLOCK_HEADERS state, getHashList1: ${err}`)
+              } else {
                 debug(`getBlock() function error condition: hash list is ${hashList}`)
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
               }
@@ -309,8 +332,10 @@ class NetworkEvent {
                 // case 3: parent hash verification failed, remote node chain is longer than local chain
                 debug(`remote node has more blocks than local`)
                 this.BlockChain.chain.getHashList((err, hashList) => {
-                  if (err) console.error(`Error in BLOCK_HEADERS state, getHashList2: ${err}`)
-                  else {
+                  if (err) {
+                    this.logger.error(`Error in BLOCK_HEADERS state, getHashList2: ${err}`)
+                    console.error(`Error in BLOCK_HEADERS state, getHashList2: ${err}`)
+                  } else {
                     debug(`Parent hash verification failed, remote node has longer chain than local, hash list: ${hashList}`)
                     this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
                   }
@@ -336,8 +361,10 @@ class NetworkEvent {
     let blockHash = payload.toString('hex')
     debug('Get Block Hash: ' + blockHash)
     this.BlockChain.chain.getBlocksWithHash(blockHash, (err, blockArray) => {
-      if (err) console.error(`Error in GET_BLOCK_BODIES state, getBlocksWithHash: ${err}`)
-      else {
+      if (err) {
+        this.logger.error(`Error in GET_BLOCK_BODIES state, getBlocksWithHash: ${err}`)
+        console.error(`Error in GET_BLOCK_BODIES state, getBlocksWithHash: ${err}`)
+      } else {
         let bodies = []
         if (blockArray.length > 0) {
           let localTokenBlock = new SECBlockChain.SECTokenBlock(blockArray[0])
@@ -385,8 +412,10 @@ class NetworkEvent {
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
       this.BlockChain.chain.putBlockToDB(_secblock, (err) => {
-        if (err) console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
-        else {
+        if (err) {
+          this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+          console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+        } else {
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
           secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
           this._onNewBlock(secblock)
@@ -413,6 +442,7 @@ class NetworkEvent {
       this.syncInfo.flag = true
       this.syncInfo.address = remoteAddress
     }
+    clearTimeout(this.syncInfo.timer)
     this.syncInfo.timer = setTimeout(() => {
       this.syncInfo.flag = false
       this.syncInfo.address = null
@@ -423,7 +453,10 @@ class NetworkEvent {
 
     // remove all the blocks which have a larger block number than the first block to be syncronized
     this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
-      if (err) console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+        console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+      }
       async.eachSeries(payload[1], (payload, callback) => {
         let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
         let block = cloneDeep(newTokenBlock.getBlock())
@@ -431,6 +464,7 @@ class NetworkEvent {
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
           if (_err) callback(_err)
           else {
+            this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))            
             console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
             if (this.ChainName === 'SEN') {
@@ -443,10 +477,15 @@ class NetworkEvent {
         })
         // TODO: put removed block-transactions back to transaction pool
       }, (err) => {
-        if (err) console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-        this.BlockChain.checkTxArray(txArray, (_err, _txArray) => {
-          if (_err) console.error(`Error in NEW_BLOCK state, eachSeries else: ${_err}`)
-          else {
+        if (err) {
+          this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+          console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+        }
+        this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+          if (err) {
+            this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+            console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+          } else {
             // add the removed txs into pool
             _txArray.forEach((tx) => {
               this.BlockChain.pool.addTxIntoPool(tx)
@@ -459,9 +498,11 @@ class NetworkEvent {
               clearTimeout(this.syncInfo)
             } else {
               // continue synchronizing
-              this.BlockChain.chain.getHashList((__err, hashList) => {
-                if (__err) console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${__err}`)
-                else {
+              this.BlockChain.chain.getHashList((err, hashList) => {
+                if (err) {
+                  this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                  console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                } else {
                   this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
                 }
               })
@@ -485,8 +526,10 @@ class NetworkEvent {
   GET_NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== GET_NODE_DATA =====`))
     this.BlockChain.chain.getHashList((err, hashList) => {
-      if (err) console.error(`Error in GET_NODE_DATA state, getHashList: ${err}`)
-      else {
+      if (err) {
+        this.logger.error(`Error in GET_NODE_DATA state, getHashList: ${err}`)
+        console.error(`Error in GET_NODE_DATA state, getHashList: ${err}`)
+      } else {
         this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
       }
     })
@@ -505,8 +548,10 @@ class NetworkEvent {
     debug('remote Lasthash: ' + remoteLastHash)
 
     this.BlockChain.chain.getHashList((err, hashList) => {
-      if (err) console.error(`Error in NODE_DATA state, getHashList: ${err}`)
-      else if (localHeight > remoteHeight) {
+      if (err) {
+        this.logger.error(`Error in NODE_DATA state, getHashList: ${err}`)
+        console.error(`Error in NODE_DATA state, getHashList: ${err}`)
+      } else if (localHeight > remoteHeight) {
         // Local chain is longer than remote chain
         debug('Local Token Blockchain Length longer than remote Node')
         let errPos = this._checkHashList(hashList)
@@ -519,8 +564,10 @@ class NetworkEvent {
             // No fork found, send 'SYNC_CHUNK' blocks to remote node
             debug('No Fork found!')
             this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
-              if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
-              else {
+              if (err) {
+                this.logger.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
+                console.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
+              } else {
                 let blockBuffer = newBlocks.map(_block => {
                   return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
                 })
@@ -543,6 +590,14 @@ class NetworkEvent {
               // find fork position
               let forkPosition = 0
               for (let i = remoteHeight; i >= 1; i--) {
+                if (remoteHashList[i] === undefined) {
+                  this.logger.info(remoteHashList)
+                  console.log(remoteHashList)
+                }
+                if (hashList === undefined) {
+                  this.logger.info('hashList is undefined')
+                  console.log('hashList is undefined')
+                }                
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
                   forkPosition = remoteHashList[i].Number
                   debug('Fork Position: ' + forkPosition)
@@ -552,8 +607,10 @@ class NetworkEvent {
 
               // send 'SYNC_CHUNK' blocks to remote node
               this.BlockChain.chain.getBlocksFromDB(forkPosition, forkPosition + SYNC_CHUNK, (err, newBlocks) => {
-                if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB2: ${err}`)
-                else {
+                if (err) {
+                  this.logger.error(`Error in NODE_DATA state, getBlocksFromDB2: ${err}`)
+                  console.error(`Error in NODE_DATA state, getBlocksFromDB2: ${err}`)
+                } else {
                   let blockBuffer = newBlocks.map(_block => {
                     return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
                   })
@@ -570,8 +627,10 @@ class NetworkEvent {
             } else {
               // if remote hash list is wrong, then force sync remote node
               this.BlockChain.chain.getBlocksFromDB(_errPos, _errPos + SYNC_CHUNK - 1, (err, newBlocks) => {
-                if (err) console.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
-                else {
+                if (err) {
+                  this.logger.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
+                  console.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
+                } else {
                   let blockBuffer = newBlocks.map(_block => {
                     return new SECBlockChain.SECTokenBlock(_block).getBlockBuffer()
                   })
@@ -641,13 +700,16 @@ class NetworkEvent {
     txCache.set(txHashHex, true)
 
     this.BlockChain.isTokenTxExist(_tx.getTxHash(), (err, result) => {
-      if (err) console.error(`Error in _onNewTx function: ${err}`)
-      else if (!result) {
+      if (err) {
+        this.logger.error(`Error in _onNewTx function: ${err}`)
+        console.error(`Error in _onNewTx function: ${err}`)
+      } else if (!result) {
         this.BlockChain.pool.addTxIntoPool(_tx.getTx())
       }
     })
 
     this.BlockChain.sendNewTokenTx(_tx, this.peer)
+    this.logger.info(`New Token Tx: ${_tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     console.log(`New Token Tx: ${_tx.getTx().TxHash} (from ${MainUtils.getPeerAddr(this.peer)})`)
   }
 
@@ -655,6 +717,7 @@ class NetworkEvent {
     let _newBlock = cloneDeep(newBlock)
     this.BlockChain.sendNewBlockHash(_newBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
+    this.logger.info(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)    
     console.log(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
     this.BlockChain.pool.updateByBlock(_newBlock.getBlock())
@@ -700,6 +763,8 @@ class NetworkEvent {
       }
       return -1
     } catch (e) {
+      this.logger.info(`_checkHashList error: ${JSON.stringify(e)}`)
+      console.log(`_checkHashList error: ${JSON.stringify(e)}`)
       return -1
     }
   }
