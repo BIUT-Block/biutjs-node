@@ -323,6 +323,20 @@ let server = jayson.server({
         callback(null, response)
       })
     }
+  },
+
+  sec_rebuildAccTree: function (args, callback) {
+    let response = {}
+    core.secAPIs.rebuildAccTree((err) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Failed to rebuild account tree db, reason: ${err}`
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+      }
+      callback(null, response)
+    })
   }
 
   // _setBlock: function (args, callback) {

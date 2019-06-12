@@ -11,9 +11,13 @@ class APIs {
     if (config.ChainName === 'SEC') {
       this.chain = this.CenterController.getSecChain()
       this.chainDB = this.chain.chain.chainDB
+      this.txDB = this.chain.chain.txDB
+      this.accTree = this.chain.chain.accTree
     } else {
       this.chain = this.CenterController.getSenChain()
       this.chainDB = this.chain.chain.chainDB
+      this.txDB = this.chain.chain.txDB
+      this.accTree = this.chain.chain.accTree
     }
   }
 
@@ -37,7 +41,7 @@ class APIs {
   }
 
   getTokenTx (txHash, callback) {
-    this.chain.chain.txDB.getTx(txHash, (err, txData) => {
+    this.txDB.getTx(txHash, (err, txData) => {
       if (err) {
         this.config.logger.error(`Error: Can not find transaction with hash ${txHash} from database`)
         console.error(`Error: Can not find transaction with hash ${txHash} from database`)
@@ -79,11 +83,11 @@ class APIs {
   }
 
   getTxAmount (callback) {
-    this.chain.chain.txDB.getTxAmount(callback)
+    this.txDB.getTxAmount(callback)
   }
 
   getTotalRewards (callback) {
-    this.chain.chain.chainDB.getTotalRewards(callback)
+    this.chainDB.getTotalRewards(callback)
   }
 
   // ---------------------------  secjs libs  --------------------------
@@ -158,7 +162,26 @@ class APIs {
   }
 
   clearDB (callback) {
-    this.chainDB.clearDB(callback)
+    this.chainDB.clearDB((err) => {
+      if (err) return callback(err)
+      else {
+        this.txDB.clearDB((err) => {
+          if (err) return callback(err)
+          else {
+            this.accTree.clearDB((err) => {
+              if (err) return callback(err)
+              else {
+                callback()
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+  rebuildAccTree (callback) {
+    this.chain.chain.rebuildAccTree(callback)
   }
 
   getNodesTable () {
