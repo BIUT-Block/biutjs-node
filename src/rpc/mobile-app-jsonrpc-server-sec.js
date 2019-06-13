@@ -3,6 +3,7 @@ const jayson = require('jayson')
 
 let core = {}
 
+
 /**
   * create a server at localhost:3002
   */
