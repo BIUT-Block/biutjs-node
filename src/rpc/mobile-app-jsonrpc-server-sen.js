@@ -327,7 +327,7 @@ let server = jayson.server({
 
   sec_rebuildAccTree: function (args, callback) {
     let response = {}
-    core.secAPIs.rebuildAccTree((err) => {
+    core.senAPIs.rebuildAccTree((err) => {
       if (err) {
         response.status = '0'
         response.info = `Failed to rebuild account tree db, reason: ${err}`
