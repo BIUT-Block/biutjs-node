@@ -16,7 +16,7 @@ const MainUtils = require('../utils/utils')
 const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
 const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
 
-const SYNC_CHUNK = 20 // each sync package contains 100 blocks
+const SYNC_CHUNK = 20 // each sync package contains 20 blocks
 
 class NetworkEvent {
   constructor (config) {
@@ -31,7 +31,10 @@ class NetworkEvent {
     this.ChainNameBuff = Buffer.from(config.ChainName)
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
-    this.NETWORK_ID = SECConfig.SECBlock.checkConfig.NETWORK_ID
+    let netType = process.env.netType
+    this.NETWORK_ID = netType === 'main' ? 1 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 1
+    this.logger.info(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
+    console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
     this.CHECK_BLOCK_NR = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_NR
 
@@ -88,7 +91,7 @@ class NetworkEvent {
     })
 
     // ------------------------------  CHECK FORK  -----------------------------
-    this.sec.once('status', (status) => {
+    this.sec.on('status', (status) => {
       if (status.chainID.toString() !== this.ChainID) {
         debug(`Status check failed, not same chainID => remote: ${status.chainID}, local: ${this.ChainID}`)
         return
@@ -282,7 +285,9 @@ class NetworkEvent {
           debug(`${this.addr} verified to be on the same side of the ${this.CHECK_BLOCK_TITLE}`)
           this.forkVerified = true
           clearTimeout(this.forkDrop)
-          this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainIDBuff, []])
+          setTimeout(() => {
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainIDBuff, []])
+          }, 15000)
 
           this._addPeerToNDP()
           this._startSyncNodesIP()

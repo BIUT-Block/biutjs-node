@@ -74,7 +74,6 @@
       }
     },
     "checkConfig": {
-      "NETWORK_ID": 1,
       "CHECK_BLOCK_TITLE": "SEC_CHECK_BLOCK",
       "CHECK_BLOCK_NR": 1
     },
