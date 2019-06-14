@@ -9,7 +9,7 @@
       "Port": 13331,
       "mainNetworkNodes": [
         {
-          "ip": "3.113.31.121",
+          "ip": "3.112.124.196",
           "port": "13331"
         },
         {
@@ -74,7 +74,6 @@
       }
     },
     "checkConfig": {
-      "NETWORK_ID": 1,
       "CHECK_BLOCK_TITLE": "SEC_CHECK_BLOCK",
       "CHECK_BLOCK_NR": 1
     },

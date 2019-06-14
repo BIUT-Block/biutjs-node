@@ -158,12 +158,12 @@ class CenterController {
       if (err instanceof assert.AssertionError) {
         const peerId = peer.getId()
         if (peerId !== null) this.ndp.banPeer(peerId, ms('5m'))
-        this.config.dbconfig.logger.error(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
-        console.log(chalk.red(`RPL | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
+        this.config.dbconfig.logger.error(chalk.red(`RLP | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
+        console.error(chalk.red(`RLP | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
         return
       }
-      this.config.dbconfig.logger.error(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
-      console.log(chalk.red(`RPL | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
+      this.config.dbconfig.logger.error(chalk.red(`RLP | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
+      console.error(chalk.red(`RLP | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
     })
 
     this.rlp.on('error', err => {
