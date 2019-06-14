@@ -29,6 +29,7 @@ class Core {
       config.SenDBPath = config.SenDBPath + 'develop/'
     }
 
+    // ----------------------  SETUP MINING ADDRESS  ----------------------
     if (args['addr'] !== undefined) {
       config.address = args['addr']
     }
@@ -37,10 +38,22 @@ class Core {
       config.address = fs.readFileSync(addrFilePath, 'utf8')
     }
 
+    // --------------------  GENERATE NDP PRIVATE_KEY  --------------------
+    if (args['NDPPrivKey'] !== undefined) {
+      config.NDPPrivKey = args['NDPPrivKey']
+    }
+    let NDPPrivKeyFilePath = config.NDPPrivKeyFilePath || path.join(process.cwd(), '/ndpprivatekey')
+    if (fs.existsSync(NDPPrivKeyFilePath)) {
+      config.NDPPrivKey = fs.readFileSync(NDPPrivKeyFilePath, 'utf8')
+    } else {
+      config.NDPPrivKey = config.NDPPrivKey || crypto.randomBytes(32).toString('hex')
+      fs.writeFileSync(NDPPrivKeyFilePath, config.NDPPrivKey)
+    }
+
     // -------------------------------  OTHER SEC OBJECTS  ------------------------------- //
     this.Account = new Account(config.address)
     this.CenterController = new CenterController({
-      PRIVATE_KEY: crypto.randomBytes(32),
+      PRIVATE_KEY: Buffer.from(config.NDPPrivKey, 'hex'),
       SECAccount: this.Account,
       dbconfig: config
     })

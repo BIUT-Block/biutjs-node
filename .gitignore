@@ -5,4 +5,5 @@ src/DBbackup
 data
 backup
 address
+ndpprivatekey
 biutlogs
