@@ -57,7 +57,7 @@ class Consensus {
       } else if (balance < this.reward.MIN_MORTGAGE) {
         return this.resetPOW()
       } else {
-        let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
+        let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
 
         this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
           if (err) {
@@ -221,7 +221,7 @@ class Consensus {
       // assign txHeight
       if (txsInPoll.length !== 0) {
         // generate sec block
-        let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
+        let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
         this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
           if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`), null)
           let lastBlock = cloneDeep(_lastBlock)
