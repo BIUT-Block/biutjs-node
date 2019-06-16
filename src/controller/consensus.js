@@ -59,11 +59,12 @@ class Consensus {
       } else {
         let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
 
-        this.BlockChain.chain.getLastBlock((err, lastBlock) => {
+        this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
           if (err) {
             this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
             console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
           } else {
+            let lastBlock = cloneDeep(_lastBlock)
             newBlock.Number = lastBlock.Number + 1
             newBlock.ParentHash = lastBlock.Hash
             this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
@@ -221,8 +222,9 @@ class Consensus {
       if (txsInPoll.length !== 0) {
         // generate sec block
         let newBlock = SECRandomData.generateTokenBlock(this.BlockChain.chain)
-        this.BlockChain.chain.getLastBlock((err, lastBlock) => {
+        this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
           if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, getLastBlock: ${err}`), null)
+          let lastBlock = cloneDeep(_lastBlock)
           newBlock.Number = lastBlock.Number + 1
           newBlock.ParentHash = lastBlock.Hash
           newBlock.TimeStamp = this.secCircle.getLocalHostTime()
