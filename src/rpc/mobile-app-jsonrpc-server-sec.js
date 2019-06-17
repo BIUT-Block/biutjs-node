@@ -322,6 +322,13 @@ let server = jayson.server({
       }
       callback(null, response)
     })
+  },
+
+  sec_getSyncInfo: function (args, callback) {
+    let response = {}
+    response.status = '1'
+    response.message = core.secAPIs.getSyncInfo()
+    callback(null, response)
   }
 
   // _setBlock: function (args, callback) {
