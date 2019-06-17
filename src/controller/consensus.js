@@ -166,7 +166,7 @@ class Consensus {
   }
 
   resetPOW () {
-    if (process.env.pow || this.powEnableFlag) {
+    if ((process.env.pow || this.powEnableFlag) && this.isPowRunning) {
       this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
       console.log(chalk.magenta('Reset POW'))
       this.powWorker.kill()
