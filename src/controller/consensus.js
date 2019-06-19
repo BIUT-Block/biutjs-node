@@ -194,7 +194,7 @@ class Consensus {
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
 
-        if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId) {
+        if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId && !this.syncInfo.flag) {
           this.resetPOW()
           this.runPOW()
         } else if (this.isPowRunning) {
