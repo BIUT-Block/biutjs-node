@@ -50,127 +50,137 @@ class Consensus {
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
-    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
-      if (err) {
-        this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
-        console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
-      } else if (balance < this.reward.MIN_MORTGAGE) {
-        return this.resetPOW()
-      } else {
-        let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
+    try {
+      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
+        if (err) {
+          this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+          console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+        } else if (balance < this.reward.MIN_MORTGAGE) {
+          return this.resetPOW()
+        } else {
+          let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
 
-        this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
-          if (err) {
-            this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
-            console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
-          } else {
-            let lastBlock = cloneDeep(_lastBlock)
-            newBlock.Number = lastBlock.Number + 1
-            newBlock.ParentHash = lastBlock.Hash
-            this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
-              if (err) {
-                this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
-                console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
-              } else {
-                let blockForPOW = {
-                  Number: newBlock.Number,
-                  lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
-                  lastPowCalcTime: lastPowCalcTime,
-                  Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
-                  cacheDBPath: this.cacheDBPath
+          this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
+            if (err) {
+              this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+              console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+            } else {
+              let lastBlock = cloneDeep(_lastBlock)
+              newBlock.Number = lastBlock.Number + 1
+              newBlock.ParentHash = lastBlock.Hash
+              this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
+                if (err) {
+                  this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+                  console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+                } else {
+                  let blockForPOW = {
+                    Number: newBlock.Number,
+                    lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
+                    lastPowCalcTime: lastPowCalcTime,
+                    Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
+                    cacheDBPath: this.cacheDBPath
+                  }
+                  this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+                  console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+                  this.powWorker.send(blockForPOW)
                 }
-                this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
-                console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
-                this.powWorker.send(blockForPOW)
-              }
-            })
-          }
-        })
+              })
+            }
+          })
 
-        this.isPowRunning = true
-        this.powWorker.on('message', (result) => {
-          // verify the node is not synchronizing
-          if (!this.syncInfo.flag) {
-            // verify circle group id
-            newBlock.Difficulty = result.Difficulty.toString()
-            newBlock.MixHash = result.MixHash
-            newBlock.Nonce = result.Nonce
-            newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
-            newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
-            newBlock.TimeStamp = this.secCircle.getLocalHostTime()
+          this.isPowRunning = true
+          this.powWorker.on('message', (result) => {
+            // verify the node is not synchronizing
+            if (!this.syncInfo.flag) {
+              // verify circle group id
+              newBlock.Difficulty = result.Difficulty.toString()
+              newBlock.MixHash = result.MixHash
+              newBlock.Nonce = result.Nonce
+              newBlock.Beneficiary = this.BlockChain.SECAccount.getAddress()
+              newBlock.StateRoot = this.BlockChain.chain.accTree.getRoot()
+              newBlock.TimeStamp = this.secCircle.getLocalHostTime()
 
-            let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
-            let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
+              let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
+              let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
-            if (result.result && groupId === BeneGroupId) {
-              let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
-              // append the pow reward tx
-              this.secReward.getRewardTx((err, rewardTx) => {
-                if (err) return this.resetPOW()
-                if (rewardTx === null) return this.resetPOW()
-                let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
-                this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
+              if (result.result && groupId === BeneGroupId) {
+                let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
+                // append the pow reward tx
+                this.secReward.getRewardTx((err, rewardTx) => {
                   if (err) return this.resetPOW()
-
-                  let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
-                  let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
-                  if (senTxFeeTx !== null) {
-                    senTxFeeTx = senTxFeeTx.getTx()
-                    txsInPoll.unshift(senTxFeeTx)
-                  }
-                  if (_secTxFeeTx !== null) {
-                    txsInPoll.unshift(_secTxFeeTx)
-                  }
-                  txsInPoll.unshift(_rewardTx)
-
-                  this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+                  if (rewardTx === null) return this.resetPOW()
+                  let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
+                  this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
                     if (err) return this.resetPOW()
-                    // assign txHeight
-                    let txHeight = 0
-                    txArray.forEach((tx) => {
-                      tx.TxReceiptStatus = 'success'
-                      tx.TxHeight = txHeight
-                      txHeight = txHeight + 1
-                    })
 
-                    newBlock.Transactions = txArray
-                    // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-                    let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                    this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                      if (err) {
-                        this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                        console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                      } else {
-                        this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                        console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                        this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
-                        console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
-                        senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                        this.BlockChain.sendNewBlockHash(senBlock)
-                        this.BlockChain.pool.clear()
-                        this.resetPOW()
-                      }
+                    let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
+                    let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
+                    if (senTxFeeTx !== null) {
+                      senTxFeeTx = senTxFeeTx.getTx()
+                      txsInPoll.unshift(senTxFeeTx)
+                    }
+                    if (_secTxFeeTx !== null) {
+                      txsInPoll.unshift(_secTxFeeTx)
+                    }
+                    txsInPoll.unshift(_rewardTx)
+
+                    this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
+                      if (err) return this.resetPOW()
+                      // assign txHeight
+                      let txHeight = 0
+                      txArray.forEach((tx) => {
+                        tx.TxReceiptStatus = 'success'
+                        tx.TxHeight = txHeight
+                        txHeight = txHeight + 1
+                      })
+
+                      newBlock.Transactions = txArray
+                      // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+                      let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                        if (err) {
+                          this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                          console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                        } else {
+                          this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                          console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                          this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
+                          console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
+                          senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                          this.BlockChain.sendNewBlockHash(senBlock)
+                          this.BlockChain.pool.clear()
+                          this.resetPOW()
+                        }
+                      })
                     })
                   })
                 })
-              })
+              } else {
+                this.resetPOW()
+              }
             } else {
               this.resetPOW()
             }
-          } else {
-            this.resetPOW()
-          }
-        })
-      }
-    })
+          })
+        }
+      })
+    } catch (err) {
+      this.config.dbconfig.logger.error(err)
+      console.error(err)
+    }
   }
 
   resetPOW () {
     if ((process.env.pow || this.powEnableFlag) && this.isPowRunning) {
-      this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
-      console.log(chalk.magenta('Reset POW'))
-      this.powWorker.kill()
-      this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
+      try {
+        this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
+        console.log(chalk.magenta('Reset POW'))
+        this.powWorker.kill()
+        this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
+      } catch (err) {
+        this.config.dbconfig.logger.error(err)
+        console.error(err)
+      }
     }
   }
 
