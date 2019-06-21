@@ -466,11 +466,14 @@ class NetworkEvent {
     }, ms('15s'))
 
     let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
+    console.time('NEW_BLOCK ' + firstBlockNum)
     debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
     this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
 
+    console.time('delBlockFromHeight ' + firstBlockNum)
     // remove all the blocks which have a larger block number than the first block to be syncronized
     this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
+      console.timeEnd('delBlockFromHeight ' + firstBlockNum)
       if (err) {
         this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
         console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
@@ -480,7 +483,10 @@ class NetworkEvent {
         let block = cloneDeep(newTokenBlock.getBlock())
         this.logger.info(`Syncronizing block ${block.Number}`)
         debug(`Syncronizing block ${block.Number}`)
+        console.time('putBlockToDB ' + block.Number)
+        console.time('writeNewBlock ' + block.Number)
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
+          console.timeEnd('putBlockToDB ' + block.Number)
           if (_err) callback(_err)
           else {
             this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
@@ -490,6 +496,8 @@ class NetworkEvent {
               this.Consensus.resetPOW()
             }
             this.BlockChain.pool.updateByBlock(block)
+            console.timeEnd('writeNewBlock ' + block.Number)
+            console.log()
             callback()
           }
         })
@@ -500,7 +508,9 @@ class NetworkEvent {
           console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
           console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
         }
+        console.time('checkTxArray ' + firstBlockNum)
         this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+          console.timeEnd('checkTxArray ' + firstBlockNum)
           if (err) {
             this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
             console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
@@ -528,6 +538,7 @@ class NetworkEvent {
                 } else {
                   // TODO: hashList may has consistent problem
                   hashList = this._hashListCorrection(hashList)
+                  console.timeEnd('NEW_BLOCK ' + firstBlockNum)
                   this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
                 }
               })
