@@ -90,6 +90,10 @@ class APIs {
     this.chainDB.getTotalRewards(callback)
   }
 
+  getChainHeight () {
+    return this.chain.chain.getCurrentHeight()
+  }
+
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)
