@@ -329,6 +329,13 @@ let server = jayson.server({
     response.status = '1'
     response.message = core.secAPIs.getSyncInfo()
     callback(null, response)
+  },
+
+  sec_getRLPPeersNumber: function (args, callback) {
+    let response = {}
+    response.status = '1'
+    response.message = core.secAPIs.getRLPPeersNumber()
+    callback(null, response)
   }
 
   // _setBlock: function (args, callback) {

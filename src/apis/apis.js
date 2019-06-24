@@ -205,6 +205,10 @@ class APIs {
     response.lastBlockNumber = this.chain.chain.getCurrentHeight()
     return response
   }
+
+  getRLPPeersNumber () {
+    return this.CenterController.rlp.getPeers().length
+  }
 }
 
 module.exports = APIs
