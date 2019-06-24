@@ -261,7 +261,7 @@ class CenterController {
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
-    }, ms('30m'))
+    }, ms('10m'))
   }
 }
 
