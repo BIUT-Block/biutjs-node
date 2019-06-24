@@ -114,18 +114,18 @@ class Consensus {
                     if (err) return this.resetPOW()
 
                     let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
-                    let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
-                    if (senTxFeeTx !== null) {
-                      senTxFeeTx = senTxFeeTx.getTx()
-                      txsInPoll.unshift(senTxFeeTx)
-                    }
                     if (_secTxFeeTx !== null) {
                       txsInPoll.unshift(_secTxFeeTx)
                     }
-                    txsInPoll.unshift(_rewardTx)
 
                     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
                       if (err) return this.resetPOW()
+                      let senTxFeeTx = this.secReward.getSenTxFeeTx(txArray, newBlock.Beneficiary)
+                      if (senTxFeeTx !== null) {
+                        senTxFeeTx = senTxFeeTx.getTx()
+                        txArray.unshift(senTxFeeTx)
+                      }
+                      txArray.unshift(_rewardTx)
                       // assign txHeight
                       let txHeight = 0
                       txArray.forEach((tx) => {
