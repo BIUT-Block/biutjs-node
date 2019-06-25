@@ -90,6 +90,10 @@ class APIs {
     this.chainDB.getTotalRewards(callback)
   }
 
+  getChainHeight () {
+    return this.chain.chain.getCurrentHeight()
+  }
+
   // ---------------------------  secjs libs  --------------------------
   asyncGetUTCTimeFromServer (timeServer) {
     return secUtils.asyncGetUTCTimeFromServer(timeServer)
@@ -192,6 +196,19 @@ class APIs {
     return this.chain.chain.getCurrentHeight()
   }
   
+  getSyncInfo () {
+    let response = {
+      isSyncing: null,
+      lastBlockNumber: null
+    }
+    response.isSyncing = this.CenterController.syncInfo.flag
+    response.lastBlockNumber = this.chain.chain.getCurrentHeight()
+    return response
+  }
+
+  getRLPPeersNumber () {
+    return this.CenterController.rlp.getPeers().length
+  }  
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   getTokenName(addr, callback) {
