@@ -11,6 +11,7 @@ let server = jayson.server({
   * get account balance
   */
   sec_getBalance: function (args, callback) {
+    console.time('sen_getBalance')
     let response = {}
     // if (args[0].coinType = null) {
     // return all coins
@@ -30,12 +31,14 @@ let server = jayson.server({
           response.value = balance
           // response.value = {}
         }
+        console.timeEnd('sen_getBalance')
         callback(null, response)
       })
     } catch (err) {
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
+      console.timeEnd('sen_getBalance')
       callback(null, response)
     }
   },
@@ -44,6 +47,7 @@ let server = jayson.server({
   * get all the previous transactions for a specific address
   */
   sec_getTransactions: function (args, callback) {
+    console.time('sen_getTransactions')
     let response = {}
     let accAddr = args[0] // address
 
@@ -54,6 +58,7 @@ let server = jayson.server({
     if (accAddr.length !== 40) {
       response.status = '0'
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
+      console.timeEnd('sen_getTransactions')
       callback(null, response)
     } else {
       core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
@@ -75,6 +80,7 @@ let server = jayson.server({
           response.resultInChain = txArray
           response.resultInPool = txArraryInPool
         }
+        console.timeEnd('sen_getTransactions')
         callback(null, response)
       })
     }
@@ -84,11 +90,13 @@ let server = jayson.server({
   * request to initiate a transaction
   */
   sec_sendRawTransaction: function (args, callback) {
+    console.time('sen_sendRawTransaction')
     let response = {}
     core.senAPIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
+        console.timeEnd('sen_sendRawTransaction')
         callback(null, response)
       } else {
         let tokenTx = {
@@ -115,6 +123,7 @@ let server = jayson.server({
             response.info = 'OK'
             response.txHash = tokenTx.TxHash
           }
+          console.timeEnd('sen_sendRawTransaction')
           callback(null, response)
         })
       }
@@ -122,23 +131,28 @@ let server = jayson.server({
   },
 
   sec_getChainHeight: function (args, callback) {
+    console.time('sen_getChainHeight')
     let response = {}
     response.ChainHeight = core.senAPIs.getTokenChainHeight()
+    console.timeEnd('sen_getChainHeight')
     callback(null, response)
   },
 
   sec_getNodeInfo: function (args, callback) {
+    console.time('sen_getNodeInfo')
     let response = {}
     core.senAPIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
       response.timeZone = geoip.lookup(ipv4).timezone
+      console.timeEnd('sen_getNodeInfo')
       callback(null, response)
     })
   },
 
   sec_getTokenChainSize: function (args, callback) {
+    console.time('sen_getTokenChainSize')
     core.senAPIs.getTokenChainSize((err, size) => {
       let response = {}
       if (err) {
@@ -150,11 +164,13 @@ let server = jayson.server({
         response.info = 'OK'
         response.value = size.toString()
       }
+      console.timeEnd('sen_getTokenChainSize')
       callback(null, response)
     })
   },
 
   sec_setPOW: function (args, callback) {
+    console.time('sen_setPOW')
     let response = {}
     let command = args[0] // '0' means disable POW, '1' means enable POW
 
@@ -170,10 +186,12 @@ let server = jayson.server({
       response.status = '0'
       response.info = 'Invalid input argument'
     }
+    console.timeEnd('sen_setPOW')
     callback(null, response)
   },
 
   sec_startNetworkEvent: function (args, callback) {
+    console.time('sen_startNetworkEvent')
     let response = {}
     core.senAPIs.startNetworkEvent((result) => {
       if (result === true) {
@@ -183,11 +201,13 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${result}`
       }
+      console.timeEnd('sen_startNetworkEvent')
       callback(null, response)
     })
   },
 
   sec_getBlockByHash: function (args, callback) {
+    console.time('sen_getBlockByHash')
     let response = {}
     let blockHash = args[0]
     core.senAPIs.getTokenBlock(blockHash, (err, block) => {
@@ -200,11 +220,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
+      console.timeEnd('sen_getBlockByHash')
       callback(null, response)
     })
   },
 
   sec_getBlockByHeight: function (args, callback) {
+    console.time('sen_getBlockByHeight')
     let response = {}
     let blockHeight = args[0]
     core.senAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
@@ -217,11 +239,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
+      console.timeEnd('sen_getBlockByHeight')
       callback(null, response)
     })
   },
 
   sec_getWholeTokenBlockchain: function (args, callback) {
+    console.time('sen_getWholeTokenBlockchain')
     let response = {}
     core.senAPIs.getWholeTokenBlockchain((err, value) => {
       if (err) {
@@ -232,11 +256,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = value
       }
+      console.timeEnd('sen_getWholeTokenBlockchain')
       callback(null, response)
     })
   },
 
   sec_getTotalReward: function (args, callback) {
+    console.time('sen_getTotalReward')
     let response = {}
     core.senAPIs.getTotalRewards((err, reward) => {
       if (err) {
@@ -247,11 +273,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = reward
       }
+      console.timeEnd('sen_getTotalReward')
       callback(null, response)
     })
   },
 
   sec_debug_getAccTreeAccInfo: function (args, callback) {
+    console.time('sen_debug_getAccTreeAccInfo')
     let response = {}
     core.senAPIs.getAccTreeAccInfo(args[0], (err, info) => {
       if (err) {
@@ -262,15 +290,18 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = info
       }
+      console.timeEnd('sen_debug_getAccTreeAccInfo')
       callback(null, response)
     })
   },
 
   sec_setAddress: function (args, callback) {
+    console.time('sen_setAddress')
     let response = {}
     core.senAPIs.setAddress(args[0])
     response.status = '1'
     response.message = 'OK'
+    console.timeEnd('sen_setAddress')
     callback(null, response)
   },
 
@@ -278,6 +309,7 @@ let server = jayson.server({
   * free charging function, for testing purpose
   */
   sec_freeCharge: function (args, callback) {
+    console.time('sen_freeCharge')
     const userInfo = {
       secAddress: '0000000000000000000000000000000000000001'
     }
@@ -286,6 +318,7 @@ let server = jayson.server({
     if (process.env.netType === 'main' || process.env.netType === undefined) {
       response.status = '0'
       response.info = 'Main network does not support free charging'
+      console.timeEnd('sen_freeCharge')
       return callback(null, response)
     } else {
       core.senAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
@@ -320,12 +353,14 @@ let server = jayson.server({
             }
           })
         }
+        console.timeEnd('sen_freeCharge')
         callback(null, response)
       })
     }
   },
 
   sec_rebuildAccTree: function (args, callback) {
+    console.time('sen_rebuildAccTree')
     let response = {}
     core.senAPIs.rebuildAccTree((err) => {
       if (err) {
@@ -335,14 +370,17 @@ let server = jayson.server({
         response.status = '1'
         response.message = 'OK'
       }
+      console.timeEnd('sen_rebuildAccTree')
       callback(null, response)
     })
   },
 
   sec_getSyncInfo: function (args, callback) {
+    console.time('sen_getSyncInfo')
     let response = {}
     response.status = '1'
     response.message = core.senAPIs.getSyncInfo()
+    console.timeEnd('sen_getSyncInfo')
     callback(null, response)
   }
 

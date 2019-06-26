@@ -11,6 +11,7 @@ let server = jayson.server({
   * get account balance
   */
   sec_getBalance: function (args, callback) {
+    console.time('sec_getBalance')
     let response = {}
     // if (args[0].coinType = null) {
     // return all coins
@@ -30,12 +31,14 @@ let server = jayson.server({
           response.value = balance
           // response.value = {}
         }
+        console.timeEnd('sec_getBalance')
         callback(null, response)
       })
     } catch (err) {
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
+      console.timeEnd('sec_getBalance')
       callback(null, response)
     }
   },
@@ -44,6 +47,7 @@ let server = jayson.server({
   * get all the previous transactions for a specific address
   */
   sec_getTransactions: function (args, callback) {
+    console.time('sec_getTransactions')
     let response = {}
     let accAddr = args[0] // address
 
@@ -54,6 +58,7 @@ let server = jayson.server({
     if (accAddr.length !== 40) {
       response.status = '0'
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
+      console.timeEnd('sec_getTransactions')
       callback(null, response)
     } else {
       core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
@@ -75,6 +80,7 @@ let server = jayson.server({
           response.resultInChain = txArray
           response.resultInPool = txArraryInPool
         }
+        console.timeEnd('sec_getTransactions')
         callback(null, response)
       })
     }
@@ -84,12 +90,14 @@ let server = jayson.server({
   * request to initiate a transaction
   */
   sec_sendRawTransaction: function (args, callback) {
+    console.time('sec_sendRawTransaction')
     let response = {}
     // get nonce for signing the tx
     core.secAPIs.getNonce(args[0].from, (err, nonce) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
+        console.timeEnd('sec_sendRawTransaction')
         callback(null, response)
       } else {
         let tokenTx = {
@@ -116,6 +124,7 @@ let server = jayson.server({
             response.info = 'OK'
             response.txHash = tokenTx.TxHash
           }
+          console.timeEnd('sec_sendRawTransaction')
           callback(null, response)
         })
       }
@@ -123,23 +132,28 @@ let server = jayson.server({
   },
 
   sec_getChainHeight: function (args, callback) {
+    console.time('sec_getChainHeight')
     let response = {}
     response.ChainHeight = core.secAPIs.getTokenChainHeight()
+    console.timeEnd('sec_getChainHeight')
     callback(null, response)
   },
 
   sec_getNodeInfo: function (args, callback) {
+    console.time('sec_getNodeInfo')
     let response = {}
     core.secAPIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
       response.timeZone = geoip.lookup(ipv4).timezone
+      console.timeEnd('sec_getNodeInfo')
       callback(null, response)
     })
   },
 
   sec_getTokenChainSize: function (args, callback) {
+    console.time('sec_getTokenChainSize')
     core.secAPIs.getTokenChainSize((err, size) => {
       let response = {}
       if (err) {
@@ -151,11 +165,13 @@ let server = jayson.server({
         response.info = 'OK'
         response.value = size.toString()
       }
+      console.timeEnd('sec_getTokenChainSize')
       callback(null, response)
     })
   },
 
   sec_setPOW: function (args, callback) {
+    console.time('sec_setPOW')
     let response = {}
     let command = args[0] // '0' means disable POW, '1' means enable POW
 
@@ -171,10 +187,12 @@ let server = jayson.server({
       response.status = '0'
       response.info = 'Invalid input argument'
     }
+    console.timeEnd('sec_setPOW')
     callback(null, response)
   },
 
   sec_startNetworkEvent: function (args, callback) {
+    console.time('sec_startNetworkEvent')
     let response = {}
     core.secAPIs.startNetworkEvent((result) => {
       if (result === true) {
@@ -184,11 +202,13 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${result}`
       }
+      console.timeEnd('sec_startNetworkEvent')
       callback(null, response)
     })
   },
 
   sec_getBlockByHash: function (args, callback) {
+    console.time('sec_getBlockByHash')
     let response = {}
     let blockHash = args[0]
     core.secAPIs.getTokenBlock(blockHash, (err, block) => {
@@ -201,11 +221,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
+      console.timeEnd('sec_getBlockByHash')
       callback(null, response)
     })
   },
 
   sec_getBlockByHeight: function (args, callback) {
+    console.time('sec_getBlockByHeight')
     let response = {}
     let blockHeight = args[0]
     core.secAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
@@ -218,11 +240,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
+      console.timeEnd('sec_getBlockByHeight')
       callback(null, response)
     })
   },
 
   sec_getWholeTokenBlockchain: function (args, callback) {
+    console.time('sec_getWholeTokenBlockchain')
     let response = {}
     core.secAPIs.getWholeTokenBlockchain((err, value) => {
       if (err) {
@@ -233,11 +257,13 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = value
       }
+      console.timeEnd('sec_getWholeTokenBlockchain')
       callback(null, response)
     })
   },
 
   sec_debug_getAccTreeAccInfo: function (args, callback) {
+    console.time('sec_debug_getAccTreeAccInfo')
     let response = {}
     core.secAPIs.getAccTreeAccInfo(args[0], (err, info) => {
       if (err) {
@@ -248,15 +274,18 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = info
       }
+      console.timeEnd('sec_debug_getAccTreeAccInfo')
       callback(null, response)
     })
   },
 
   sec_setAddress: function (args, callback) {
+    console.time('sec_setAddress')
     let response = {}
     core.secAPIs.setAddress(args[0])
     response.status = '1'
     response.message = 'OK'
+    console.timeEnd('sec_setAddress')
     callback(null, response)
   },
 
@@ -264,6 +293,7 @@ let server = jayson.server({
   * free charging function, for testing purpose
   */
   sec_freeCharge: function (args, callback) {
+    console.time('sec_freeCharge')
     const userInfo = {
       secAddress: '0000000000000000000000000000000000000001'
     }
@@ -272,6 +302,7 @@ let server = jayson.server({
     if (process.env.netType === 'main' || process.env.netType === undefined) {
       response.status = '0'
       response.info = 'Main network does not support free charging'
+      console.timeEnd('sec_freeCharge')
       return callback(null, response)
     } else {
       core.secAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
@@ -305,12 +336,14 @@ let server = jayson.server({
             }
           })
         }
+        console.timeEnd('sec_freeCharge')
         callback(null, response)
       })
     }
   },
 
   sec_rebuildAccTree: function (args, callback) {
+    console.time('sec_rebuildAccTree')
     let response = {}
     core.secAPIs.rebuildAccTree((err) => {
       if (err) {
@@ -320,21 +353,26 @@ let server = jayson.server({
         response.status = '1'
         response.message = 'OK'
       }
+      console.timeEnd('sec_rebuildAccTree')
       callback(null, response)
     })
   },
 
   sec_getSyncInfo: function (args, callback) {
+    console.time('sec_getSyncInfo')
     let response = {}
     response.status = '1'
     response.message = core.secAPIs.getSyncInfo()
+    console.timeEnd('sec_getSyncInfo')
     callback(null, response)
   },
 
   sec_getRLPPeersNumber: function (args, callback) {
+    console.time('sec_getRLPPeersNumber')
     let response = {}
     response.status = '1'
     response.message = core.secAPIs.getRLPPeersNumber()
+    console.timeEnd('sec_getRLPPeersNumber')
     callback(null, response)
   }
 
