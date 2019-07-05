@@ -1,7 +1,77 @@
 const geoip = require('geoip-lite')
 const jayson = require('jayson')
-
+const SECUtil = require('@biut-block/biutjs-util')
+const CryptoJS = require('crypto-js')
 let core = {}
+
+
+function _getWalletKeys() {
+  let keys = SECUtil.generateSecKeys()
+  let privKey64 = keys.privKey
+  let privateKey = privKey64
+  let englishWords = SECUtil.entropyToMnemonic(privKey64)
+  let pubKey128 = keys.publicKey
+  let pubKey128ToString = pubKey128.toString('hex')
+  let userAddressToString = keys.secAddress
+
+  return {
+    privateKey: privateKey,
+    publicKey: pubKey128ToString,
+    englishWords: englishWords,
+    userAddress: userAddressToString
+  }
+}
+
+function _getKeysFromPrivateKey (privateKey) {
+  try {
+    let privateKeyBuffer = SECUtil.privateToBuffer(privateKey)
+    let extractAddress = SECUtil.privateToAddress(privateKeyBuffer).toString('hex')
+    let extractPublicKey = SECUtil.privateToPublic(privateKeyBuffer).toString('hex')
+    let extractPhrase = SECUtil.entropyToMnemonic(privateKeyBuffer)
+    return {
+      privateKey: privateKey,
+      publicKey: extractPublicKey,
+      englishWords: extractPhrase,
+      walletAddress: extractAddress
+    }
+  } catch (e) {
+    throw new Error(e)
+  }
+}
+
+function signTransaction(privateKey, transfer) {
+  let timeStamp = new Date().getTime()
+  let transferData = [{
+    timestamp: timeStamp,
+    from: transfer.walletAddress,
+    to: transfer.sendToAddress,
+    value: transfer.amount,
+    txFee: transfer.txFee,
+    gasLimit: '0',
+    gas: '0',
+    gasPrice: '0',
+    data: '',
+    inputData: ''
+  }]
+  const tokenTxBuffer = [
+    SECUtil.bufferToInt(transferData[0].timestamp),
+    Buffer.from(transferData[0].from, 'hex'),
+    Buffer.from(transferData[0].to, 'hex'),
+    Buffer.from(transferData[0].value),
+    Buffer.from(transferData[0].gasLimit),
+    Buffer.from(transferData[0].gas),
+    Buffer.from(transferData[0].gasPrice),
+    Buffer.from(transferData[0].inputData)
+  ]
+  let txSigHash = Buffer.from(SECUtil.rlphash(tokenTxBuffer).toString('hex'), 'hex')
+  let signature = SECUtil.ecsign(txSigHash, Buffer.from(privateKey, 'hex'))
+  transferData[0].data = {
+    v: signature.v,
+    r: signature.r.toString('hex'),
+    s: signature.s.toString('hex')
+  }
+  return transferData
+}
 
 /**
   * create a server at localhost:3002
@@ -373,6 +443,55 @@ let server = jayson.server({
     response.status = '1'
     response.message = core.secAPIs.getRLPPeersNumber()
     console.timeEnd('sec_getRLPPeersNumber')
+    callback(null, response)
+  },
+
+  sec_generateWalletKeys: function (args, callback) {
+    let companyName = args[0]
+    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      let generatedKeys = _getWalletKeys()
+      response.status = '1'
+      response.keys = generatedKeys
+      response.message = 'Generate key success'
+    }
+    callback(null, response)
+  },
+
+  sec_getKeysFromPrivate: function (args, callback) {
+    let companyName = args[0].companyName
+    let privateKey = args[0].privateKey
+    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      try {
+        let keys = _getKeysFromPrivateKey(privateKey)
+        response.status = '1'
+        response.keys = keys
+        response.message = 'Get keys successed'
+      } catch (e) {
+        response.status = '0'
+        response.message = 'Bad Request.'
+      }
+    }
+  },
+
+  sec_signedTransaction: function(args, callback) {
+    let companyName = args[0].companyName
+    let privateKey = args[0].privateKey
+    let transferData = args[0].transferData
+    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      let signedTrans = signTransaction(privateKey, transferData)
+      response.status = '1'
+      response.message = 'signed transaction success'
+      response.signedTrans = signedTrans
+    }
     callback(null, response)
   }
 
