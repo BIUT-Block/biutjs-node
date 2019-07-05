@@ -446,6 +446,19 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  /**
+   * @param {array} args
+   * @param {string} args[0] 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {json} response.keys 生成的keys
+   * @param {string} keys.privateKey 钱包的私钥
+   * @param {string} keys.publicKey 钱包的公钥
+   * @param {string} keys.englishWords 钱包助记词
+   * @param {string} keys.useraddress 钱包的地址
+   */
   sec_generateWalletKeys: function (args, callback) {
     let response = {}
     let companyName = args[0]
@@ -461,6 +474,20 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  /**
+   * @param {array} args
+   * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法.
+   * @param {string} args[0].privateKey 钱包的私钥。
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {json} response.keys 通过privateKey转换的keys
+   * @param {string} keys.privateKey 钱包的私钥
+   * @param {string} keys.publicKey 钱包的公钥
+   * @param {string} keys.englishWords 钱包助记词
+   * @param {string} keys.useraddress 钱包的地址
+   */
   sec_getKeysFromPrivate: function (args, callback) {
     let response = {}
     let companyName = args[0].companyName
@@ -482,6 +509,21 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  /**
+   * @param {array} args
+   * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
+   * @param {string} args[0].privateKey 钱包私钥
+   * @param {string} args[0].transfer 交易信息的json结构
+   * @param {string} args[0].transfer.walletAddress 发起交易的钱包地址
+   * @param {string} args[0].transfer.sendToAddress 收款方的钱包地址
+   * @param {string} args[0].transfer.amount 交易的BIUT金额
+   * @param {string} args[0].transfer.txFee 交易BIU手续费
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
+   */
   sec_signedTransaction: function(args, callback) {
     let response = {}
     let companyName = args[0].companyName
