@@ -39,7 +39,7 @@ function _getKeysFromPrivateKey (privateKey) {
   }
 }
 
-function signTransaction(privateKey, transfer) {
+function _signTransaction(privateKey, transfer) {
   let timeStamp = new Date().getTime()
   let transferData = [{
     timestamp: timeStamp,
@@ -447,8 +447,9 @@ let server = jayson.server({
   },
 
   sec_generateWalletKeys: function (args, callback) {
+    let response = {}
     let companyName = args[0]
-    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
@@ -461,9 +462,10 @@ let server = jayson.server({
   },
 
   sec_getKeysFromPrivate: function (args, callback) {
+    let response = {}
     let companyName = args[0].companyName
     let privateKey = args[0].privateKey
-    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
@@ -477,20 +479,27 @@ let server = jayson.server({
         response.message = 'Bad Request.'
       }
     }
+    callback(null, response)
   },
 
   sec_signedTransaction: function(args, callback) {
+    let response = {}
     let companyName = args[0].companyName
     let privateKey = args[0].privateKey
-    let transferData = args[0].transferData
-    if (companyName !== 'coinegg' || companyName !== 'fcoin') {
+    let transfer = args[0].transfer
+    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
-      let signedTrans = signTransaction(privateKey, transferData)
-      response.status = '1'
-      response.message = 'signed transaction success'
-      response.signedTrans = signedTrans
+      try {
+        let signedTrans = _signTransaction(privateKey, transfer)
+        response.status = '1'
+        response.message = 'signed transaction success'
+        response.signedTrans = signedTrans
+      } catch (e) {
+        response.status = '0'
+        response.message = 'Bad Request.'
+      }
     }
     callback(null, response)
   }
