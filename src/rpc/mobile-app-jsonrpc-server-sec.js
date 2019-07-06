@@ -462,7 +462,7 @@ let server = jayson.server({
   sec_generateWalletKeys: function (args, callback) {
     let response = {}
     let companyName = args[0]
-    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
@@ -492,7 +492,7 @@ let server = jayson.server({
     let response = {}
     let companyName = args[0].companyName
     let privateKey = args[0].privateKey
-    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
@@ -529,7 +529,7 @@ let server = jayson.server({
     let companyName = args[0].companyName
     let privateKey = args[0].privateKey
     let transfer = args[0].transfer
-    if (companyName !== 'coinegg' && companyName !== 'fcoin') {
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
       response.status = '0'
       response.message = 'No authorized to use the api'
     } else {
