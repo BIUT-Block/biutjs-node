@@ -16,11 +16,15 @@ const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 const SECUtils = require('@biut-block/biutjs-util')
 
 const DEC_NUM = 8
-Big.config({ ROUNDING_MODE: 0 })
-Big.set({ ROUNDING_MODE: Big.ROUND_DOWN })
+Big.config({
+  ROUNDING_MODE: 0
+})
+Big.set({
+  ROUNDING_MODE: Big.ROUND_DOWN
+})
 
 class BlockChain {
-  constructor (config) {
+  constructor(config) {
     this.config = config
     this.chainID = config.chainID
     this.chainName = config.chainName
@@ -33,16 +37,18 @@ class BlockChain {
     this.consensus = new Consensus(config)
 
     // block chain
-    this.pool = new SECTransactionPool({ poolname: 'pool' })
+    this.pool = new SECTransactionPool({
+      poolname: 'pool'
+    })
     this.chain = new SECBlockChain.SECTokenBlockChain(config)
   }
 
   // only for SEC chain
-  setSenChain (senChain) {
+  setSenChain(senChain) {
     this.senChain = senChain
   }
 
-  init (rlp, callback) {
+  init(rlp, callback) {
     this.rlp = rlp
 
     this.chain.init((err) => {
@@ -51,7 +57,7 @@ class BlockChain {
     })
   }
 
-  run () {
+  run() {
     if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
         this.generateTx()
@@ -64,7 +70,9 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx (_tx, excludePeer = { _socket: {} }) {
+  sendNewTokenTx(_tx, excludePeer = {
+    _socket: {}
+  }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
     let tx = cloneDeep(_tx)
     this.rlp.getPeers().forEach(peer => {
@@ -80,7 +88,9 @@ class BlockChain {
     })
   }
 
-  sendNewBlockHash (block, excludePeer = { _socket: {} }) {
+  sendNewBlockHash(block, excludePeer = {
+    _socket: {}
+  }) {
     debug(chalk.blue('Send Token Block Hash -> sendNewBlockHash()'))
     let blockHeaderHash = block.getHeaderHash()
     this.rlp.getPeers().forEach(peer => {
@@ -96,14 +106,32 @@ class BlockChain {
     })
   }
 
-  generateTx () {
+  sendNewTokenInfo(tokenInfoObj, excludePeer = {
+    _socket: {}
+  }) {
+    debug(chalk.blue('Send Token Block Hash -> sendNewBlockHash()'))
+    let updateTokenInfo = JSON.stringify(tokenInfoObj)
+    this.rlp.getPeers().forEach(peer => {
+      try {
+        if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
+          debug(`Send new tokenInfo to Peer: ${MainUtils.getPeerAddr(peer)}`)
+          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_TOKEN_INFO, [Buffer.from(this.chainID), Buffer.from(updateTokenInfo)])
+        }
+      } catch (err) {
+        this.config.dbconfig.logger.error(`Error in sendNewTokenInfo function: ${err}`)
+        console.error(`Error in sendNewTokenInfo function: ${err}`)
+      }
+    })
+  }
+  
+  generateTx() {
     const tx = SECRandomData.generateTokenTransaction()
     const tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
     this.pool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
   }
 
-  initiateTokenTx (tx, callback) {
+  initiateTokenTx(tx, callback) {
     let freeChargeFlag = false
     // pow reward tx
     // if (tx.TxFrom === '0000000000000000000000000000000000000000') {
@@ -115,9 +143,9 @@ class BlockChain {
       // return callback(new Error('Invalid TxFrom address'))
     }
     let tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
-      // check balance
+    // check balance
     this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
-      if(err) return callback(err)
+      if (err) return callback(err)
       this.checkBalance(tx, tokenName, (err, result) => {
         if (err) callback(err)
         else if (!result) {
@@ -133,8 +161,7 @@ class BlockChain {
           this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
             if (err) {
               callback(err)
-            }
-            else {
+            } else {
               if (!_result) {
                 let _tx = tokenTx.getTx()
                 this.pool.addTxIntoPool(_tx)
@@ -162,7 +189,7 @@ class BlockChain {
               callback(null)
             }
           })
-      }
+        }
       })
     })
   }
@@ -173,34 +200,33 @@ class BlockChain {
   /**
    * Get user account balance
    */
-  getBalance (userAddress, tokenName, callback) {
+  getBalance(userAddress, tokenName, callback) {
     this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) {
         callback(err)
-      }
-      else {
-        if(tokenName === 'All') {
+      } else {
+        if (tokenName === 'All') {
           let allBalanceJson = Object.assign({}, value)
           let tokenNameArr = Object.keys(value)
           tokenNameArr.forEach((tmpTokenName, index) => {
             this.chain.getContractAddress(tmpTokenName, (err, contractAddr) => {
               let balance = allBalanceJson[tmpTokenName]
               balance = new Big(balance)
-              if(err) callback(err, null)
+              if (err) callback(err, null)
               let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
               txArray.forEach((tx) => {
                 balance = balance.minus(tx.Value)
               })
-      
+
               balance = balance.toFixed(DEC_NUM)
               allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
-              if(index === tokenNameArr.length - 1){
+              if (index === tokenNameArr.length - 1) {
                 callback(null, allBalanceJson)
               }
             })
           })
         } else {
-          if(tokenName === 'SEC') {
+          if (this.chainName === 'SEC' && tokenName === 'SEC') {
             let balance = value[tokenName]
             balance = new Big(balance)
             let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
@@ -208,11 +234,21 @@ class BlockChain {
               balance = balance.minus(tx.Value)
             })
             balance = balance.toFixed(DEC_NUM)
-            balance = parseFloat(balance).toString()        
-            callback(null, balance)  
+            balance = parseFloat(balance).toString()
+            callback(null, balance)
+          } else if (this.chainName === 'SEN' && tokenName === 'SEN') {
+            let balance = value[tokenName]
+            balance = new Big(balance)
+            let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
+            txArray.forEach((tx) => {
+              balance = balance.minus(tx.Value)
+            })
+            balance = balance.toFixed(DEC_NUM)
+            balance = parseFloat(balance).toString()
+            callback(null, balance)
           } else {
             this.chain.getContractAddress(tokenName, (err, contractAddr) => {
-              if(err) callback(err, null)
+              if (err) callback(err, null)
               let balance = value[tokenName]
               balance = new Big(balance)
               let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
@@ -232,7 +268,7 @@ class BlockChain {
   /**
    * Get user account address
    */
-  getNonce (userAddress, callback) {
+  getNonce(userAddress, callback) {
     this.chain.accTree.getNonce(userAddress, (err, nonce) => {
       if (err) callback(err, null)
       else {
@@ -245,7 +281,7 @@ class BlockChain {
     })
   }
 
-  checkBalance (tx, tokenName, callback) {
+  checkBalance(tx, tokenName, callback) {
     // pow reward tx
     if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -293,7 +329,7 @@ class BlockChain {
     }
   }
 
-  isPositiveBalance (addr, tokenName, callback) {
+  isPositiveBalance(addr, tokenName, callback) {
     // pow reward tx
     if (addr === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -316,7 +352,7 @@ class BlockChain {
     })
   }
 
-  isTokenTxExist (txHash, callback) {
+  isTokenTxExist(txHash, callback) {
     // check if token tx already in previous blocks
     this.chain.txDB.getTx(txHash, (err, txData) => {
       if (err) callback(null, false)
@@ -326,7 +362,7 @@ class BlockChain {
     })
   }
 
-  checkTxArray (txArray, cb) {
+  checkTxArray(txArray, cb) {
     let index = 0
     let indexArray = []
     let _txArray = txArray
@@ -336,7 +372,7 @@ class BlockChain {
         tx = JSON.parse(tx)
       }
       this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
-        if(err) {
+        if (err) {
           return callback(err)
         } else {
           this.isPositiveBalance(tx.TxFrom, tokenName, (err, balResult) => {
@@ -357,8 +393,7 @@ class BlockChain {
     }, (err) => {
       if (err) {
         cb(err, null)
-      }
-      else {
+      } else {
         indexArray.reverse().forEach((i) => {
           _txArray.splice(i, 1)
         })

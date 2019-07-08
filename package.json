@@ -23,7 +23,7 @@
   "dependencies": {
     "@biut-block/biutjs-blockchain": "git+ssh://git@gitlab.com/MongoX-BIUT/biutjs-blockchain.git#SenSmartContract",
     "@biut-block/biutjs-datahandler": "git+ssh://git@gitlab.com/MongoX-BIUT/biutjs-datahandler.git#SenSmartContract",
-    "@biut-block/biutjs-devp2p": "^1.0.0",
+    "@biut-block/biutjs-devp2p": "^1.0.1",
     "@biut-block/biutjs-logger": "^1.0.5",
     "@biut-block/biutjs-pow": "^1.0.1",
     "@biut-block/biutjs-randomdatagenerator": "^1.0.0",

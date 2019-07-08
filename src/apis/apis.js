@@ -219,8 +219,8 @@ class APIs {
     this.chain.chain.getContractAddress(tokenname, callback)
   }
 
-  addTokenNameMap(tokenname, addr, callback) {
-    this.chain.chain.add(tokenname, addr, callback)
+  addTokenMap(tokenInfo, addr, callback) {
+    this.chain.chain.addTokenMap(tokenInfo, addr, callback)
   }
   
 }
