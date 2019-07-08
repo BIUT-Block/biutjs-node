@@ -243,6 +243,27 @@ class CenterController {
     }, ms('30s'))
   }
 
+  _resetNetwork () {
+    let peers = this.ndp.getPeers()
+    peers.forEach(peer => {
+      this.ndp.removePeer(peer)
+    })
+    // add bootstrap nodes
+    const BOOTNODES = this.bootstrapNodes.map(node => {
+      return {
+        address: node.ip,
+        udpPort: node.port,
+        tcpPort: node.port
+      }
+    })
+    for (let bootnode of BOOTNODES) {
+      this.ndp.bootstrap(bootnode).catch(err => {
+        this.config.dbconfig.logger.error(`${err.stack || err}`)
+        console.error(chalk.bold.red(err.stack || err))
+      })
+    }
+  }
+
   _refreshDHTConnections () {
     setInterval(() => {
       let _peers = this.ndp.getPeers()
@@ -261,7 +282,10 @@ class CenterController {
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
-    }, ms('10m'))
+      if (this.rlp.getPeers().length === 0) {
+        this._resetNetwork()
+      }
+    }, ms('5m'))
   }
 }
 
