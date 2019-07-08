@@ -1,7 +1,77 @@
 const geoip = require('geoip-lite')
 const jayson = require('jayson')
-
+const SECUtil = require('@biut-block/biutjs-util')
+const CryptoJS = require('crypto-js')
 let core = {}
+
+
+function _getWalletKeys() {
+  let keys = SECUtil.generateSecKeys()
+  let privKey64 = keys.privKey
+  let privateKey = privKey64
+  let englishWords = SECUtil.entropyToMnemonic(privKey64)
+  let pubKey128 = keys.publicKey
+  let pubKey128ToString = pubKey128.toString('hex')
+  let userAddressToString = keys.secAddress
+
+  return {
+    privateKey: privateKey,
+    publicKey: pubKey128ToString,
+    englishWords: englishWords,
+    userAddress: userAddressToString
+  }
+}
+
+function _getKeysFromPrivateKey (privateKey) {
+  try {
+    let privateKeyBuffer = SECUtil.privateToBuffer(privateKey)
+    let extractAddress = SECUtil.privateToAddress(privateKeyBuffer).toString('hex')
+    let extractPublicKey = SECUtil.privateToPublic(privateKeyBuffer).toString('hex')
+    let extractPhrase = SECUtil.entropyToMnemonic(privateKeyBuffer)
+    return {
+      privateKey: privateKey,
+      publicKey: extractPublicKey,
+      englishWords: extractPhrase,
+      walletAddress: extractAddress
+    }
+  } catch (e) {
+    throw new Error(e)
+  }
+}
+
+function _signTransaction(privateKey, transfer) {
+  let timeStamp = new Date().getTime()
+  let transferData = [{
+    timestamp: timeStamp,
+    from: transfer.walletAddress,
+    to: transfer.sendToAddress,
+    value: transfer.amount,
+    txFee: transfer.txFee,
+    gasLimit: '0',
+    gas: '0',
+    gasPrice: '0',
+    data: '',
+    inputData: ''
+  }]
+  const tokenTxBuffer = [
+    SECUtil.bufferToInt(transferData[0].timestamp),
+    Buffer.from(transferData[0].from, 'hex'),
+    Buffer.from(transferData[0].to, 'hex'),
+    Buffer.from(transferData[0].value),
+    Buffer.from(transferData[0].gasLimit),
+    Buffer.from(transferData[0].gas),
+    Buffer.from(transferData[0].gasPrice),
+    Buffer.from(transferData[0].inputData)
+  ]
+  let txSigHash = Buffer.from(SECUtil.rlphash(tokenTxBuffer).toString('hex'), 'hex')
+  let signature = SECUtil.ecsign(txSigHash, Buffer.from(privateKey, 'hex'))
+  transferData[0].data = {
+    v: signature.v,
+    r: signature.r.toString('hex'),
+    s: signature.s.toString('hex')
+  }
+  return transferData
+}
 
 /**
   * create a server at localhost:3002
@@ -373,6 +443,106 @@ let server = jayson.server({
     response.status = '1'
     response.message = core.secAPIs.getRLPPeersNumber() + 1
     console.timeEnd('sec_getRLPPeersNumber')
+    callback(null, response)
+  },
+
+  /**
+   * @param {array} args
+   * @param {string} args[0] 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {json} response.keys 生成的keys
+   * @param {string} keys.privateKey 钱包的私钥
+   * @param {string} keys.publicKey 钱包的公钥
+   * @param {string} keys.englishWords 钱包助记词
+   * @param {string} keys.useraddress 钱包的地址
+   */
+  sec_generateWalletKeys: function (args, callback) {
+    let response = {}
+    let companyName = args[0]
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      let generatedKeys = _getWalletKeys()
+      response.status = '1'
+      response.keys = generatedKeys
+      response.message = 'Generate key success'
+    }
+    callback(null, response)
+  },
+
+  /**
+   * @param {array} args
+   * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法.
+   * @param {string} args[0].privateKey 钱包的私钥。
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {json} response.keys 通过privateKey转换的keys
+   * @param {string} keys.privateKey 钱包的私钥
+   * @param {string} keys.publicKey 钱包的公钥
+   * @param {string} keys.englishWords 钱包助记词
+   * @param {string} keys.useraddress 钱包的地址
+   */
+  sec_getKeysFromPrivate: function (args, callback) {
+    let response = {}
+    let companyName = args[0].companyName
+    let privateKey = args[0].privateKey
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      try {
+        let keys = _getKeysFromPrivateKey(privateKey)
+        response.status = '1'
+        response.keys = keys
+        response.message = 'Get keys successed'
+      } catch (e) {
+        response.status = '0'
+        response.message = 'Bad Request.'
+      }
+    }
+    callback(null, response)
+  },
+
+  /**
+   * @param {array} args
+   * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
+   * @param {string} args[0].privateKey 钱包私钥
+   * @param {string} args[0].transfer 交易信息的json结构
+   * @param {string} args[0].transfer.walletAddress 发起交易的钱包地址
+   * @param {string} args[0].transfer.sendToAddress 收款方的钱包地址
+   * @param {string} args[0].transfer.amount 交易的BIUT金额
+   * @param {string} args[0].transfer.txFee 交易BIU手续费
+   * @param {function} callback(err, response) rpc回调函数
+   * @param {json} callback.response 回调函数的传入参数response
+   * @param {string} response.status '0' error; '1': 'success'
+   * @param {string} response.message response的信息
+   * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
+   */
+  sec_signedTransaction: function(args, callback) {
+    let response = {}
+    let companyName = args[0].companyName
+    let privateKey = args[0].privateKey
+    let transfer = args[0].transfer
+    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+      response.status = '0'
+      response.message = 'No authorized to use the api'
+    } else {
+      try {
+        let signedTrans = _signTransaction(privateKey, transfer)
+        response.status = '1'
+        response.message = 'signed transaction success'
+        response.signedTrans = signedTrans
+      } catch (e) {
+        response.status = '0'
+        response.message = 'Bad Request.'
+      }
+    }
     callback(null, response)
   }
 
