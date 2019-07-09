@@ -244,7 +244,9 @@ class CenterController {
   }
 
   _resetNetwork () {
+    console.log('resetNetwork')
     let peers = this.ndp.getPeers()
+    console.log(peers)
     peers.forEach(peer => {
       this.ndp.removePeer(peer)
     })
@@ -262,6 +264,9 @@ class CenterController {
         console.error(chalk.bold.red(err.stack || err))
       })
     }
+    console.log('resetNetwork Finish')
+    console.log(this.ndp.getPeers())
+    console.log(this.rlp.getPeers().length)
   }
 
   _refreshDHTConnections () {
