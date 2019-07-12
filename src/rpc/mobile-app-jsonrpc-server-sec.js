@@ -5,7 +5,7 @@ const CryptoJS = require('crypto-js')
 let core = {}
 
 
-function _getWalletKeys() {
+function _getWalletKeys () {
   let keys = SECUtil.generateSecKeys()
   let privKey64 = keys.privKey
   let privateKey = privKey64
@@ -39,7 +39,7 @@ function _getKeysFromPrivateKey (privateKey) {
   }
 }
 
-function _signTransaction(privateKey, transfer) {
+function _signTransaction (privateKey, transfer) {
   let timeStamp = new Date().getTime()
   let transferData = [{
     timestamp: timeStamp,
@@ -490,21 +490,21 @@ let server = jayson.server({
    */
   sec_getKeysFromPrivate: function (args, callback) {
     let response = {}
-    let companyName = args[0].companyName
-    let privateKey = args[0].privateKey
-    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
-      response.status = '0'
-      response.message = 'No authorized to use the api'
-    } else {
-      try {
+    try {
+      let companyName = args[0].companyName
+      let privateKey = args[0].privateKey
+      if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+        response.status = '0'
+        response.message = 'No authorized to use the api'
+      } else {
         let keys = _getKeysFromPrivateKey(privateKey)
         response.status = '1'
         response.keys = keys
         response.message = 'Get keys successed'
-      } catch (e) {
-        response.status = '0'
-        response.message = 'Bad Request.'
       }
+    } catch (e) {
+      response.status = '0'
+      response.message = 'Bad Request.'
     }
     callback(null, response)
   },
@@ -524,24 +524,24 @@ let server = jayson.server({
    * @param {string} response.message response的信息
    * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
    */
-  sec_signedTransaction: function(args, callback) {
+  sec_signedTransaction: function (args, callback) {
     let response = {}
-    let companyName = args[0].companyName
-    let privateKey = args[0].privateKey
-    let transfer = args[0].transfer
-    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
-      response.status = '0'
-      response.message = 'No authorized to use the api'
-    } else {
-      try {
+    try {
+      let companyName = args[0].companyName
+      let privateKey = args[0].privateKey
+      let transfer = args[0].transfer
+      if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+        response.status = '0'
+        response.message = 'No authorized to use the api'
+      } else {
         let signedTrans = _signTransaction(privateKey, transfer)
         response.status = '1'
         response.message = 'signed transaction success'
         response.signedTrans = signedTrans
-      } catch (e) {
-        response.status = '0'
-        response.message = 'Bad Request.'
       }
+    } catch (e) {
+      response.status = '0'
+      response.message = 'Bad Request.'
     }
     callback(null, response)
   }
