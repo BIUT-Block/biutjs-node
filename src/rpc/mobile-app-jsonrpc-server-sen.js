@@ -262,6 +262,7 @@ let server = jayson.server({
   },
 
   sec_getTotalReward: function (args, callback) {
+    console.log('sen_getTotalReward calling')
     console.time('sen_getTotalReward')
     let response = {}
     core.senAPIs.getTotalRewards((err, reward) => {
