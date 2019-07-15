@@ -173,8 +173,6 @@ class NetworkEvent {
           this.NODES_IP_SYNC(_payload, requests)
           break
 
-        case SECDEVP2P.SEC.MESSAGE_CODES.NEW_TOKEN_INFO:
-          this.NEW_TOKEN_INFO(_payload, requests)
       }
       debug(chalk.bold.greenBright(`==================== End On Message from ${this.ChainName} ${this.addr} ====================\n\n`))
     })
@@ -726,16 +724,6 @@ class NetworkEvent {
     }
   }
 
-  NEW_TOKEN_INFO (payload, requests) {
-    debug(chalk.bold.yellow(`===== NEW TOKEN INFO =====`))
-    if (!this.forkVerified) return
-
-    let tokenInfoObj = cloneDeep(JSON.parse(payload))
-    this._onNewTokenInfo(tokenInfoObj)
-
-    debug(chalk.bold.yellow(`===== End NEW TOKEN INFO =====`))
-  }
-
   syncFromIp (ip, callback) {
     this.BlockChain.chain.getGenesisBlock((err, geneBlock) => {
       if (err) callback(err)
@@ -881,28 +869,6 @@ class NetworkEvent {
       }
     }
     return _hashList
-  }
-  
-  _onNewTokenInfo (updateTokenInfo) {
-    for(contractAddr in updateTokenInfo){
-      this.BlockChain.chain.getTokenInfo(contractAddr, (err,localTokenInfo)=>{
-        if(err){
-          this.logger.error(`Error in network.js, _onNewTokenInfo function, getTokenInfo: ${err}`)
-          console.error(`Error in network.js, _onNewTokenInfo function, getTokenInfo: ${err}`)          
-        } else {
-          localTokenInfo.depositBalance = Object.assign(localTokenInfo.depositBalance, updateTokenInfo[contractAddr])
-          this.BlockChain.chain.addTokenMap(localTokenInfo, contractAddr, (err)=>{
-            if(err){
-              this.logger.error(`Error in network.js, _onNewTokenInfo function, addTokenMap: ${err}`)
-              console.error(`Error in network.js, _onNewTokenInfo function, addTokenMap: ${err}`)               
-            }
-          })
-        }
-      })
-    }
-    this.BlockChain.sendNewTokenInfo(updateTokenInfo, this.peer)
-    this.logger.info(`New Token Info: (from ${MainUtils.getPeerAddr(this.peer)})`)
-    console.log(`New Token Info: (from ${MainUtils.getPeerAddr(this.peer)})`)    
   }
 }
 

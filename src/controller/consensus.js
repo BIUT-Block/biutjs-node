@@ -1,28 +1,17 @@
 const chalk = require('chalk')
 const cp = require('child_process')
 const path = require('path')
-const Big = require('bignumber.js')
 const cloneDeep = require('clone-deep')
 const SECConfig = require('../../config/default.json')
-const SECUtils = require('@biut-block/biutjs-util')
-const SECRunContract = require('./run-contract')
+
 const SECBlockChain = require('@biut-block/biutjs-blockchain')
-const SECDEVP2P = require('@biut-block/biutjs-devp2p')
 // const SECTransaction = require('@biut-block/biutjs-tx')
 const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 const SECCircle = require('./circle')
 const SENReward = require('./reward')
-const MainUtils = require('../utils/utils')
 
-const DEC_NUM = 8
-Big.config({
-  ROUNDING_MODE: 0
-})
-Big.set({
-  ROUNDING_MODE: Big.ROUND_DOWN
-})
 class Consensus {
-  constructor(config) {
+  constructor (config) {
     // -------------------------------  Init class global variables  -------------------------------
     this.config = config
     this.rlp = config.rlp
@@ -60,9 +49,9 @@ class Consensus {
   }
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
-  runPOW() {
+  runPOW () {
     try {
-      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), this.chainName, (err, balance) => {
+      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
         if (err) {
           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
           console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
@@ -125,86 +114,44 @@ class Consensus {
                     if (err) return this.resetPOW()
 
                     let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
-
                     if (_secTxFeeTx !== null) {
                       txsInPoll.unshift(_secTxFeeTx)
                     }
 
                     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-                      if (err) {
-                        return this.resetPOW()
-                      } else {
-                        let senTxFeeTx = this.secReward.getSenTxFeeTx(txsInPoll, newBlock.Beneficiary)
-                        if (senTxFeeTx !== null) {
-                          senTxFeeTx = senTxFeeTx.getTx()
-                          txsInPoll.unshift(senTxFeeTx)
-                        }
-                        txsInPoll.unshift(_rewardTx)
-                        // assign txHeight
-                        let txHeight = 0
-                        let contractTransactions = []
-                        // sort Tx Array
-                        txArray.sort((a,b)=>{
-                          return a.TimeStamp - b.TimeStamp
-                        })
-                        txArray.forEach((tx) => {
-                          tx.TxReceiptStatus = 'success'
-                          tx.TxHeight = txHeight
-                          txHeight = txHeight + 1
-                          if (SECUtils.isContractAddr(tx.TxTo)) {
-                            contractTransactions.push(this.runcontractPromise(tx))
-                          }
-                        })
-
-                        Promise.all(contractTransactions).then((contractTransactions) => {
-                          let tokenTxArr = contractTransactions.reduce((finalList, obj) => {
-                            if(obj.tokenTx){
-                              finalList.push(obj.tokenTx)
-                            }
-                            return finalList
-                          }, [])
-                          newBlock.Transactions = txArray.concat(tokenTxArr)
-                          let tokenInfoObj = contractTransactions.reduce((finalObj, obj) => {
-                            let tokenInfo = obj.tokenInfo
-                            if(tokenInfo){
-                              if(tokenInfo.contractAddr in finalObj){
-                                  finalObj[tokenInfo.contractAddr][tokenInfo.walletAddr] = {
-                                    deposit: tokenInfo.walletDeposit,
-                                  }
-                              } else {
-                                finalObj[tokenInfo.contractAddr] = {
-                                    [tokenInfo.walletAddr]: tokenInfo.walletDeposit,
-                                }
-                              }
-                            }
-                            return finalObj
-                          }, {})
-
-                          // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
-                          try {
-                            let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                            this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
-                              if (err) {
-                                this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                                console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
-                              } else {
-                                this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                                console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
-                                this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
-                                console.log(chalk.green(`New generated block hash is: ${senBlock.getHeaderHash()}`))
-                                senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                                this.BlockChain.sendNewBlockHash(senBlock)
-                                this.BlockChain.sendNewTokenInfo(tokenInfoObj)
-                                this.BlockChain.pool.clear()
-                                this.resetPOW()
-                              }
-                            })
-                          } catch (err) {
-                            console.log(`Error:`, err.stack)
-                            this.resetPOW()
-                          }
-                        })
+                      if (err) return this.resetPOW()
+                      let senTxFeeTx = this.secReward.getSenTxFeeTx(txArray, newBlock.Beneficiary)
+                      if (senTxFeeTx !== null) {
+                        senTxFeeTx = senTxFeeTx.getTx()
+                        txArray.unshift(senTxFeeTx)
                       }
+                      txArray.unshift(_rewardTx)
+                      // assign txHeight
+                      let txHeight = 0
+                      txArray.forEach((tx) => {
+                        tx.TxReceiptStatus = 'success'
+                        tx.TxHeight = txHeight
+                        txHeight = txHeight + 1
+                      })
+
+                      newBlock.Transactions = txArray
+                      // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
+                      let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                        if (err) {
+                          this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                          console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
+                        } else {
+                          this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                          console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
+                          this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
+                          console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
+                          senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                          this.BlockChain.sendNewBlockHash(senBlock)
+                          this.BlockChain.pool.clear()
+                          this.resetPOW()
+                        }
+                      })
                     })
                   })
                 })
@@ -223,182 +170,8 @@ class Consensus {
     }
   }
 
-  runcontractPromise(tx) {
-    return new Promise((resolve, reject) => {
-      let secRunContract = new SECRunContract(tx, this.BlockChain.chain)
-      secRunContract.run((err, contractResult) => {
-        if (err) {
-          reject(err)
-        } else {
-          switch (contractResult.functionType) {
-            case 'transfer':
-              contractForTransfer(tx, contractResult, (err, tokenTx) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve({tokenTx: tokenTx})
-                }
-              })
-              break
-            case 'deposit':
-              contractForDeposit(tx, contractResult, (err, tokenInfo) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve({tokenInfo: tokenInfo})
-                }
-              })
-              break
-            case 'withdraw':
-              contractForWithdraw(tx, contractResult, (err, tokenTx, tokenInfo) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve({tokenTx: tokenTx, tokenInfo: tokenInfo})
-                }
-              })
-              break
-            default:
-              resolve({})
-          }
-        }
-      })
-    })
-  }
-
-  contractForTransfer(tx, contractResult, callback) {
-    this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        let tokenTx = {
-          Version: '0.1',
-          TxReceiptStatus: 'success',
-          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-          TxFrom: tx.TxTo,
-          TxTo: contractResult.transferResult.Address,
-          Value: contractResult.transferResult.Amount.toString(),
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          Nonce: nonce,
-          InputData: `Smart Contract Transaction`
-        }
-        let txHashBuffer = [
-          Buffer.from(tokenTx.Version),
-          SECUtils.intToBuffer(tokenTx.TimeStamp),
-          Buffer.from(tokenTx.TxFrom, 'hex'),
-          Buffer.from(tokenTx.TxTo, 'hex'),
-          Buffer.from(tokenTx.Value),
-          Buffer.from(tokenTx.GasLimit),
-          Buffer.from(tokenTx.GasUsedByTxn),
-          Buffer.from(tokenTx.GasPrice),
-          Buffer.from(tokenTx.Nonce),
-          Buffer.from(tokenTx.InputData)
-        ]
-
-        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-        callback(null, tokenTx)
-      }
-    })
-  }
-
-  contractForDeposit(tx, contractResult, callback) {
-    this.BlockChain.chain.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        let depositBalance = tokenInfo.depositBalance
-        let walletAddress = tx.TxFrom
-        if (walletAddress in depositBalance) {
-          let balance = depositBalance.walletAddress
-          balance = new Big(balance)
-          balance = balance.plus(contractResult.Amount)
-          balance = balance.toFixed(DEC_NUM)
-          tokenInfo.depositBalance.walletAddress = balance.toString()
-        } else {
-          tokenInfo.depositBalance.walletAddress = contractResult.Amount.toString()
-        }
-        this.BlockChain.chain.addTokenMap(tokenInfo, tx.TxTo, (err) => {
-          if (err) {
-            callback(err, null)
-          } else {
-            let updateObj = {
-                contractAddr: tx.TxTo,
-                walletAddr: tx.TxFrom,
-                walletDeposit: balance.toString(),
-            }
-            callback(null, updateObj)
-          }
-        })
-      }
-    })
-  }
-
-  contractForWithdraw(tx, contractResult, callback) {
-    this.BlockChain.chain.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
-      if (err) {
-        callback(err, null, null)
-      } else {
-        let depositBalance = tokenInfo.depositBalance
-        let walletAddress = tx.TxFrom
-        if (walletAddress in depositBalance) {
-          let balance = depositBalance.walletAddress
-          balance = new Big(balance)
-          if(balance.gte(contractResult.Amount)){
-            let tokenTx = {
-              Version: '0.1',
-              TxReceiptStatus: 'success',
-              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-              TxFrom: tx.TxTo,
-              TxTo: contractResult.transferResult.Address,
-              Value: contractResult.transferResult.Amount.toString(),
-              GasLimit: '0',
-              GasUsedByTxn: '0',
-              GasPrice: '0',
-              Nonce: nonce,
-              InputData: `Smart Contract Transaction`
-            }
-            let txHashBuffer = [
-              Buffer.from(tokenTx.Version),
-              SECUtils.intToBuffer(tokenTx.TimeStamp),
-              Buffer.from(tokenTx.TxFrom, 'hex'),
-              Buffer.from(tokenTx.TxTo, 'hex'),
-              Buffer.from(tokenTx.Value),
-              Buffer.from(tokenTx.GasLimit),
-              Buffer.from(tokenTx.GasUsedByTxn),
-              Buffer.from(tokenTx.GasPrice),
-              Buffer.from(tokenTx.Nonce),
-              Buffer.from(tokenTx.InputData)
-            ]
-    
-            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-
-            balance = balance.minus(contractResult.Amount)
-            balance = balance.toFixed(DEC_NUM)
-            tokenInfo.depositBalance.walletAddress = balance
-            this.BlockChain.chain.addTokenMap(tokenInfo, tx.TxTo, (err) => {
-              if (err) {
-                callback(err, null, null)
-              } else {
-                let updateObj = {
-                  contractAddr: tx.TxTo,
-                  walletAddr: tx.TxFrom,
-                  walletDeposit: balance.toString(),
-                }
-                callback(null, tokenTx, updateObj)
-              }
-            })            
-          }
-        } else {
-          callback(new Error('No Available Deposit Before'), null, null)
-        }
-      }
-    })
-  }
-
-  resetPOW() {
-    if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId && !this.syncInfo.flag) {
+  resetPOW () {
+    if ((process.env.pow || this.powEnableFlag) && this.isPowRunning) {
       try {
         this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
         console.log(chalk.magenta('Reset POW'))
@@ -411,7 +184,7 @@ class Consensus {
     }
   }
 
-  runCircle() {
+  runCircle () {
     let accAddress = this.BlockChain.SECAccount.getAddress()
     this.myGroupId = this.secCircle.getHostGroupId(accAddress)
 
@@ -431,7 +204,7 @@ class Consensus {
           this.myGroupId = this.secCircle.getHostGroupId(accAddress)
         }
 
-        if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId) {
+        if ((process.env.pow || this.powEnableFlag) && groupId === this.myGroupId && !this.syncInfo.flag) {
           this.resetPOW()
           this.runPOW()
         } else if (this.isPowRunning) {
@@ -444,14 +217,14 @@ class Consensus {
     }, this.secCircle.timeResolution)
   }
 
-  resetCircle() {
+  resetCircle () {
     this.config.dbconfig.logger.info(chalk.magenta('Reset Circle'))
     console.log(chalk.magenta('Reset Circle'))
     clearInterval(this.circleInterval)
   }
 
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
-  generateSecBlock(beneficiary, callback) {
+  generateSecBlock (beneficiary, callback) {
     let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
       if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, checkTxArray: ${err}`), null)
@@ -480,7 +253,6 @@ class Consensus {
 
           newBlock.Transactions = txArray
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
             this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
@@ -506,7 +278,7 @@ class Consensus {
     })
   }
 
-  run() {
+  run () {
     if (this.chainName === 'SEC') {
       // do nothing
     } else if (this.chainName === 'SEN') {

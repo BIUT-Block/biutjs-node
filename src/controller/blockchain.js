@@ -105,24 +105,6 @@ class BlockChain {
       }
     })
   }
-
-  sendNewTokenInfo(tokenInfoObj, excludePeer = {
-    _socket: {}
-  }) {
-    debug(chalk.blue('Send Token Block Hash -> sendNewBlockHash()'))
-    let updateTokenInfo = JSON.stringify(tokenInfoObj)
-    this.rlp.getPeers().forEach(peer => {
-      try {
-        if (MainUtils.getPeerAddr(peer) !== MainUtils.getPeerAddr(excludePeer)) {
-          debug(`Send new tokenInfo to Peer: ${MainUtils.getPeerAddr(peer)}`)
-          peer.getProtocols()[0].sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_TOKEN_INFO, [Buffer.from(this.chainID), Buffer.from(updateTokenInfo)])
-        }
-      } catch (err) {
-        this.config.dbconfig.logger.error(`Error in sendNewTokenInfo function: ${err}`)
-        console.error(`Error in sendNewTokenInfo function: ${err}`)
-      }
-    })
-  }
   
   generateTx() {
     const tx = SECRandomData.generateTokenTransaction()
