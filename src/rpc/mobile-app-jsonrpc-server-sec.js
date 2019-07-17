@@ -116,7 +116,7 @@ let server = jayson.server({
   /**
   * get all the previous transactions for a specific address
   */
-  sec_getTransactions: function (args, callback) {
+  /* sec_getTransactions: function (args, callback) {
     console.time('sec_getTransactions')
     let response = {}
     let accAddr = args[0] // address
@@ -149,6 +149,54 @@ let server = jayson.server({
           response.message = 'OK'
           response.resultInChain = txArray
           response.resultInPool = txArraryInPool
+        }
+        console.timeEnd('sec_getTransactions')
+        callback(null, response)
+      })
+    }
+  },
+  */
+  /**
+    * get all the previous transactions for a specific address with paging
+    */
+  sec_getTransactions: function (args, callback) {
+    console.time('sec_getTransactions')
+    let response = {}
+    let accAddr = args[0] // address
+
+    let currentPage = parseInt(args[1] || 1)
+    let pageSize = parseInt(args[2] || 39)
+
+    // verify accAddr
+    if (accAddr[0] === '0' && accAddr[1] === 'x') {
+      accAddr = accAddr.substr(2)
+    }
+    if (accAddr.length !== 40) {
+      response.status = '0'
+      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
+      console.timeEnd('sec_getTransactions')
+      callback(null, response)
+    } else {
+      core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+        if (err) {
+          response.status = '0'
+          response.message = `Failed to get user transactions, error info: ${err}`
+          response.resultInChain = []
+          response.resultInPool = []
+        } else {
+          let txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
+          txArray = txArray.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          txArraryInPool = txArraryInPool.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          response.status = '1'
+          response.message = 'OK'
+          response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArraryInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.currentPage = currentPage
+          response.totalNumber = txArray.length
         }
         console.timeEnd('sec_getTransactions')
         callback(null, response)
@@ -215,7 +263,8 @@ let server = jayson.server({
     core.secAPIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
-      response.ipv4 = ipv4
+      // response.ipv4 = ipv4
+      response.ipv4 = 'test'
       response.timeZone = geoip.lookup(ipv4).timezone
       console.timeEnd('sec_getNodeInfo')
       callback(null, response)

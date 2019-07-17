@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\config",
+    "\\src",
+    "\\src\\apis",
+    "\\src\\node",
+    "\\src\\rpc",
+    "\\src\\utils"
+  ],
+  "SelectedNode": "\\src\\rpc\\mobile-app-jsonrpc-server-sec.js",
+  "PreviewInSolutionExplorer": false
+}

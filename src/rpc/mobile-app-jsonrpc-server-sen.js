@@ -46,7 +46,7 @@ let server = jayson.server({
   /**
   * get all the previous transactions for a specific address
   */
-  sec_getTransactions: function (args, callback) {
+ /* sec_getTransactions: function (args, callback) {
     console.time('sen_getTransactions')
     let response = {}
     let accAddr = args[0] // address
@@ -79,6 +79,54 @@ let server = jayson.server({
           response.message = 'OK'
           response.resultInChain = txArray
           response.resultInPool = txArraryInPool
+        }
+        console.timeEnd('sen_getTransactions')
+        callback(null, response)
+      })
+    }
+  }, */
+
+  /**
+  * get all the previous transactions for a specific address
+  */
+  sec_getTransactions: function (args, callback) {
+    console.time('sen_getTransactions')
+    let response = {}
+    let accAddr = args[0] // address
+
+    let currentPage = parseInt(args[1] || 1)
+    let pageSize = parseInt(args[2] || 39)
+
+    // verify accAddr
+    if (accAddr[0] === '0' && accAddr[1] === 'x') {
+      accAddr = accAddr.substr(2)
+    }
+    if (accAddr.length !== 40) {
+      response.status = '0'
+      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
+      console.timeEnd('sen_getTransactions')
+      callback(null, response)
+    } else {
+      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+        if (err) {
+          response.status = '0'
+          response.message = `Failed to get user transactions, error info: ${err}`
+          response.resultInChain = []
+          response.resultInPool = []
+        } else {
+          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+          txArray = txArray.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          txArraryInPool = txArraryInPool.sort((a, b) => {
+            return b.TimeStamp - a.TimeStamp
+          })
+          response.status = '1'
+          response.message = 'OK'
+          response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArraryInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.currentPage = currentPage
+          response.totalNumber = txArray.length
         }
         console.timeEnd('sen_getTransactions')
         callback(null, response)
