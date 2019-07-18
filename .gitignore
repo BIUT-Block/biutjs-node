@@ -8,3 +8,5 @@ address
 ndpprivatekey
 biutlogs
 *logs
+.vs
+.vs/*
