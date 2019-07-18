@@ -1,9 +1,7 @@
 const geoip = require('geoip-lite')
 const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
-const CryptoJS = require('crypto-js')
 let core = {}
-
 
 function _getWalletKeys () {
   let keys = SECUtil.generateSecKeys()
@@ -495,8 +493,8 @@ let server = jayson.server({
     callback(null, response)
   },
 
-  biut_validateAddress: function (args, callback) {
-    console.time('biut_validateAddress')
+  sec_validateAddress: function (args, callback) {
+    console.time('sec_validateAddress')
     let response = {}
     let address = args[0]
     core.secAPIs.validateAddress(address, (result) => {
@@ -508,7 +506,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('biut_validateAddress')
+      console.timeEnd('sec_validateAddress')
       callback(null, response)
     })
   },

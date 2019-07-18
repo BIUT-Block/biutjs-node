@@ -46,7 +46,7 @@ let server = jayson.server({
   /**
   * get all the previous transactions for a specific address
   */
- /* sec_getTransactions: function (args, callback) {
+  /* sec_getTransactions: function (args, callback) {
     console.time('sen_getTransactions')
     let response = {}
     let accAddr = args[0] // address
@@ -433,8 +433,8 @@ let server = jayson.server({
     callback(null, response)
   },
 
-  biut_validateAddress: function (args, callback) {
-    console.time('biut_validateAddress')
+  sec_validateAddress: function (args, callback) {
+    console.time('sen_validateAddress')
     let response = {}
     let address = args[0]
     core.secAPIs.validateAddress(address, (result) => {
@@ -446,7 +446,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('biut_validateAddress')
+      console.timeEnd('sen_validateAddress')
       callback(null, response)
     })
   },
