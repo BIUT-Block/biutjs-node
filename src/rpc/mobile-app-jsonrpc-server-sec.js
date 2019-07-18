@@ -495,6 +495,24 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  biut_validateAddress: function (args, callback) {
+    console.time('biut_validateAddress')
+    let response = {}
+    let address = args[0]
+    core.secAPIs.validateAddress(address, (result) => {
+      if (result === true) {
+        response.status = '1'
+        response.jsonrpc = '2.0'
+        response.result = 'true'
+      } else {
+        response.status = '0'
+        response.info = `Address format is wrong, error info: ${result}`
+      }
+      console.timeEnd('biut_validateAddress')
+      callback(null, response)
+    })
+  },
+
   /**
    * @param {array} args
    * @param {string} args[0] 'coinegg' 或者 'fcoin'才可以调用该rpc方法。

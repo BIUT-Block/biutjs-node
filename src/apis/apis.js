@@ -209,6 +209,14 @@ class APIs {
   getRLPPeersNumber () {
     return this.CenterController.rlp.getPeers().length
   }
+
+  validateAddress (userAddress, callback) {
+    let result = false
+    if (userAddress.match(/[0-9A-Fa-f]{40}/)) {
+      result = true
+    }
+    callback(result)
+  }
 }
 
 module.exports = APIs

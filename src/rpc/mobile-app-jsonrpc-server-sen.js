@@ -431,7 +431,25 @@ let server = jayson.server({
     response.message = core.senAPIs.getSyncInfo()
     console.timeEnd('sen_getSyncInfo')
     callback(null, response)
-  }
+  },
+
+  biut_validateAddress: function (args, callback) {
+    console.time('biut_validateAddress')
+    let response = {}
+    let address = args[0]
+    core.secAPIs.validateAddress(address, (result) => {
+      if (result === true) {
+        response.status = '1'
+        response.jsonrpc = '2.0'
+        response.result = 'true'
+      } else {
+        response.status = '0'
+        response.info = `Address format is wrong, error info: ${result}`
+      }
+      console.timeEnd('biut_validateAddress')
+      callback(null, response)
+    })
+  },
 
   // _setBlock: function (args, callback) {
   //   let response = {}
