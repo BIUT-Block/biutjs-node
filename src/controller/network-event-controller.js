@@ -34,7 +34,7 @@ class NetworkEvent {
     let netType = process.env.netType
     this.NETWORK_ID = netType === 'main' ? 1 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 1
     this.logger.info(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
-    console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)    this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
+    console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
     this.CHECK_BLOCK_NR = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_NR
 
@@ -172,7 +172,6 @@ class NetworkEvent {
         case SECDEVP2P.SEC.MESSAGE_CODES.NODES_IP_SYNC:
           this.NODES_IP_SYNC(_payload, requests)
           break
-
       }
       debug(chalk.bold.greenBright(`==================== End On Message from ${this.ChainName} ${this.addr} ====================\n\n`))
     })
@@ -289,7 +288,7 @@ class NetworkEvent {
           setTimeout(() => {
             this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainIDBuff, []])
           }, 15000)
-          
+
           this._addPeerToNDP()
           this._startSyncNodesIP()
         } else {
@@ -450,16 +449,16 @@ class NetworkEvent {
       console.log(this.syncInfo.address)
       console.log(remoteAddress)
       this.logger.info(this.syncInfo.address)
-      this.logger.info(remoteAddress)      
+      this.logger.info(remoteAddress)
       if (this.syncInfo.address !== remoteAddress) return
     } else {
       this.logger.info('Flag: false and set to true')
-      this.logger.info('Address: ' + this.syncInfo.address)      
+      this.logger.info('Address: ' + this.syncInfo.address)
       this.syncInfo.flag = true
       this.syncInfo.address = remoteAddress
     }
     this.logger.info('Not return')
-    console.log('Not return')    
+    console.log('Not return')
     clearTimeout(this.syncInfo.timer)
     this.syncInfo.timer = setTimeout(() => {
       this.syncInfo.flag = false
@@ -467,11 +466,11 @@ class NetworkEvent {
     }, ms('15s'))
 
     let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
-    console.time('NEW_BLOCK ' + firstBlockNum)    
+    console.time('NEW_BLOCK ' + firstBlockNum)
     debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
     this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
 
-    console.time('delBlockFromHeight ' + firstBlockNum)    
+    console.time('delBlockFromHeight ' + firstBlockNum)
     // remove all the blocks which have a larger block number than the first block to be syncronized
     this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
       console.timeEnd('delBlockFromHeight ' + firstBlockNum)
@@ -485,12 +484,12 @@ class NetworkEvent {
         this.logger.info(`Syncronizing block ${block.Number}`)
         debug(`Syncronizing block ${block.Number}`)
         console.time('putBlockToDB ' + block.Number)
-        console.time('writeNewBlock ' + block.Number)        
+        console.time('writeNewBlock ' + block.Number)
         this.BlockChain.chain.putBlockToDB(block, (_err) => {
-          console.timeEnd('putBlockToDB ' + block.Number)          
+          console.timeEnd('putBlockToDB ' + block.Number)
           if (_err) callback(_err)
           else {
-            this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))            
+            this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
             if (this.ChainName === 'SEN') {
@@ -498,7 +497,7 @@ class NetworkEvent {
             }
             this.BlockChain.pool.updateByBlock(block)
             console.timeEnd('writeNewBlock ' + block.Number)
-            console.log()            
+            console.log()
             callback()
           }
         })
@@ -597,11 +596,11 @@ class NetworkEvent {
           this.logger.error('Something very strange: ')
           this.logger.error(JSON.stringify(hashList))
           return
-        }        
+        }
         if (errPos !== -1) {
           console.error(`Local hashList invalid: ${hashList}`)
           // TODO: local hash list incomplete
-        } else {        
+        } else {
           let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
           if (blockPosition.length > 0) {
             // No fork found, send 'SYNC_CHUNK' blocks to remote node
@@ -632,7 +631,7 @@ class NetworkEvent {
               this.logger.error('Something very strange: ')
               this.logger.error(JSON.stringify(remoteHashList))
               return
-            }            
+            }
             if (_errPos === -1) {
               // find fork position
               let forkPosition = 0
@@ -641,12 +640,12 @@ class NetworkEvent {
                   this.logger.info('remoteHashList not consistent')
                   this.logger.info(JSON.stringify(remoteHashList))
                   console.log(remoteHashList)
-                  return                  
+                  return
                 }
                 if (hashList === undefined) {
                   this.logger.info('hashList is undefined')
                   console.log('hashList is undefined')
-                }                
+                }
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
                   forkPosition = remoteHashList[i].Number
                   debug('Fork Position: ' + forkPosition)
@@ -743,7 +742,7 @@ class NetworkEvent {
       }, ms('1s'))
       return
     }
-    
+
     const txHashHex = _tx.getTxHash()
     if (txCache.has(txHashHex)) return
     txCache.set(txHashHex, true)
@@ -766,7 +765,7 @@ class NetworkEvent {
     let _newBlock = cloneDeep(newBlock)
     this.BlockChain.sendNewBlockHash(_newBlock, this.peer)
     debug('----------------------------------------------------------------------------------------------------------')
-    this.logger.info(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)    
+    this.logger.info(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     console.log(`New ${this.ChainName} block ${_newBlock.getBlock().Number}: ${_newBlock.getBlock().Hash} (from ${MainUtils.getPeerAddr(this.peer)})`)
     debug('----------------------------------------------------------------------------------------------------------')
     this.BlockChain.pool.updateByBlock(_newBlock.getBlock())
@@ -819,7 +818,7 @@ class NetworkEvent {
       return -2
     }
   }
-  
+
   // TODO: must be reimplement
   _isValidTx (tx) {
     return true

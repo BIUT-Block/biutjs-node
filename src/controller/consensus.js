@@ -51,7 +51,7 @@ class Consensus {
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
     try {
-      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
+      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), this.chainName, (err, balance) => {
         if (err) {
           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
           console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)

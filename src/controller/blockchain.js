@@ -185,7 +185,7 @@ class BlockChain {
   getBalance(userAddress, tokenName, callback) {
     this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) {
-        callback(err)
+        return callback(err)
       } else {
         if (tokenName === 'All') {
           let allBalanceJson = Object.assign({}, value)
@@ -194,7 +194,7 @@ class BlockChain {
             this.chain.getContractAddress(tmpTokenName, (err, contractAddr) => {
               let balance = allBalanceJson[tmpTokenName]
               balance = new Big(balance)
-              if (err) callback(err, null)
+              if (err) return callback(err, null)
               let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
               txArray.forEach((tx) => {
                 balance = balance.minus(tx.Value)
@@ -230,7 +230,7 @@ class BlockChain {
             callback(null, balance)
           } else {
             this.chain.getContractAddress(tokenName, (err, contractAddr) => {
-              if (err) callback(err, null)
+              if (err) return callback(err, null)
               let balance = value[tokenName]
               balance = new Big(balance)
               let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))

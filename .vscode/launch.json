@@ -15,7 +15,7 @@
                 "pow": true,
                 //"tx": true,
                 "DEBUG": "core:* node ./bin/www",
-                "secTest": true
+                "netType": "test"
             }
         }
     ]
