@@ -1,9 +1,7 @@
 const geoip = require('geoip-lite')
 const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
-const CryptoJS = require('crypto-js')
 let core = {}
-
 
 function _getWalletKeys () {
   let keys = SECUtil.generateSecKeys()
@@ -210,43 +208,56 @@ let server = jayson.server({
   sec_sendRawTransaction: function (args, callback) {
     console.time('sec_sendRawTransaction')
     let response = {}
-    // get nonce for signing the tx
-    core.secAPIs.getNonce(args[0].from, (err, nonce) => {
-      if (err) {
+    try {
+      if (parseFloat(args[0].value) === 0 || parseFloat(args[0].value) < 0) {
         response.status = '0'
-        response.info = `Unexpected error occurs, error info: ${err}`
-        console.timeEnd('sec_sendRawTransaction')
-        callback(null, response)
-      } else {
-        let tokenTx = {
-          Nonce: nonce,
-          TxReceiptStatus: 'pending',
-          TimeStamp: args[0].timestamp,
-          TxFrom: args[0].from,
-          TxTo: args[0].to,
-          Value: args[0].value,
-          GasLimit: args[0].gasLimit,
-          GasUsedByTxn: args[0].gas,
-          GasPrice: args[0].gasPrice,
-          TxFee: args[0].txFee,
-          InputData: args[0].inputData,
-          Signature: args[0].data
-        }
-        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
-          if (err) {
-            response.status = '0'
-            response.info = `Error occurs: ${err}`
-          } else {
-            response.status = '1'
-            response.info = 'OK'
-            response.txHash = tokenTx.TxHash
-          }
+        response.info = `Value Can not equal 0 or smaller than 0`
+        console.timeEnd('sen_sendRawTransaction')
+        return callback(null, response)
+      }
+      // get nonce for signing the tx
+      core.secAPIs.getNonce(args[0].from, (err, nonce) => {
+        if (err) {
+          response.status = '0'
+          response.info = `Unexpected error occurs, error info: ${err}`
           console.timeEnd('sec_sendRawTransaction')
           callback(null, response)
-        })
-      }
-    })
+        } else {
+          let tokenTx = {
+            Nonce: nonce,
+            TxReceiptStatus: 'pending',
+            TimeStamp: args[0].timestamp,
+            TxFrom: args[0].from,
+            TxTo: args[0].to,
+            Value: args[0].value,
+            GasLimit: args[0].gasLimit,
+            GasUsedByTxn: args[0].gas,
+            GasPrice: args[0].gasPrice,
+            TxFee: args[0].txFee,
+            InputData: args[0].inputData,
+            Signature: args[0].data
+          }
+          tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+          core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
+            if (err) {
+              response.status = '0'
+              response.info = `Error occurs: ${err}`
+            } else {
+              response.status = '1'
+              response.info = 'OK'
+              response.txHash = tokenTx.TxHash
+            }
+            console.timeEnd('sec_sendRawTransaction')
+            callback(null, response)
+          })
+        }
+      })
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('sen_sendRawTransaction')
+      callback(null, response)
+    }
   },
 
   sec_getChainHeight: function (args, callback) {
@@ -495,8 +506,8 @@ let server = jayson.server({
     callback(null, response)
   },
 
-  biut_validateAddress: function (args, callback) {
-    console.time('biut_validateAddress')
+  sec_validateAddress: function (args, callback) {
+    console.time('sec_validateAddress')
     let response = {}
     let address = args[0]
     core.secAPIs.validateAddress(address, (result) => {
@@ -508,7 +519,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('biut_validateAddress')
+      console.timeEnd('sec_validateAddress')
       callback(null, response)
     })
   },

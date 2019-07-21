@@ -46,7 +46,7 @@ let server = jayson.server({
   /**
   * get all the previous transactions for a specific address
   */
- /* sec_getTransactions: function (args, callback) {
+  /* sec_getTransactions: function (args, callback) {
     console.time('sen_getTransactions')
     let response = {}
     let accAddr = args[0] // address
@@ -140,42 +140,55 @@ let server = jayson.server({
   sec_sendRawTransaction: function (args, callback) {
     console.time('sen_sendRawTransaction')
     let response = {}
-    core.senAPIs.getNonce(args[0].from, (err, nonce) => {
-      if (err) {
+    try {
+      if (parseFloat(args[0].value) === 0 || parseFloat(args[0].value) < 0) {
         response.status = '0'
-        response.info = `Unexpected error occurs, error info: ${err}`
+        response.info = `Value Can not equal 0 or smaller than 0`
         console.timeEnd('sen_sendRawTransaction')
-        callback(null, response)
-      } else {
-        let tokenTx = {
-          Nonce: nonce,
-          TxReceiptStatus: 'pending',
-          TimeStamp: args[0].timestamp,
-          TxFrom: args[0].from,
-          TxTo: args[0].to,
-          Value: args[0].value,
-          GasLimit: args[0].gasLimit,
-          GasUsedByTxn: args[0].gas,
-          GasPrice: args[0].gasPrice,
-          TxFee: args[0].txFee,
-          InputData: args[0].inputData,
-          Signature: args[0].data
-        }
-        tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
-          if (err) {
-            response.status = '0'
-            response.info = `Error occurs: ${err}`
-          } else {
-            response.status = '1'
-            response.info = 'OK'
-            response.txHash = tokenTx.TxHash
-          }
+        return callback(null, response)
+      }
+      core.senAPIs.getNonce(args[0].from, (err, nonce) => {
+        if (err) {
+          response.status = '0'
+          response.info = `Unexpected error occurs, error info: ${err}`
           console.timeEnd('sen_sendRawTransaction')
           callback(null, response)
-        })
-      }
-    })
+        } else {
+          let tokenTx = {
+            Nonce: nonce,
+            TxReceiptStatus: 'pending',
+            TimeStamp: args[0].timestamp,
+            TxFrom: args[0].from,
+            TxTo: args[0].to,
+            Value: args[0].value,
+            GasLimit: args[0].gasLimit,
+            GasUsedByTxn: args[0].gas,
+            GasPrice: args[0].gasPrice,
+            TxFee: args[0].txFee,
+            InputData: args[0].inputData,
+            Signature: args[0].data
+          }
+          tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
+          core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
+            if (err) {
+              response.status = '0'
+              response.info = `Error occurs: ${err}`
+            } else {
+              response.status = '1'
+              response.info = 'OK'
+              response.txHash = tokenTx.TxHash
+            }
+            console.timeEnd('sen_sendRawTransaction')
+            callback(null, response)
+          })
+        }
+      })
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('sen_sendRawTransaction')
+      callback(null, response)
+    }
   },
 
   sec_getChainHeight: function (args, callback) {
@@ -378,7 +391,6 @@ let server = jayson.server({
           let tokenTx = {
             Nonce: nonce,
             TxReceiptStatus: 'pending',
-
             TimeStamp: new Date().getTime(),
             TxFrom: userInfo.secAddress,
             TxTo: args[0].to,
@@ -433,8 +445,8 @@ let server = jayson.server({
     callback(null, response)
   },
 
-  biut_validateAddress: function (args, callback) {
-    console.time('biut_validateAddress')
+  sec_validateAddress: function (args, callback) {
+    console.time('sen_validateAddress')
     let response = {}
     let address = args[0]
     core.secAPIs.validateAddress(address, (result) => {
@@ -446,11 +458,10 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('biut_validateAddress')
+      console.timeEnd('sen_validateAddress')
       callback(null, response)
     })
-  },
-
+  }
   // _setBlock: function (args, callback) {
   //   let response = {}
   //   core.senAPIs.writeBlock(args[0], (err) => {

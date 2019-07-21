@@ -9,3 +9,7 @@ ndpprivatekey
 biutlogs
 *logs
 .vs
+<<<<<<< HEAD
+=======
+.vs/*
+>>>>>>> 6df7dcb4aab29e69904827e0e0f9d0636241ebfb
