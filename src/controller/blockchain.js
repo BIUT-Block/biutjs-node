@@ -40,7 +40,7 @@ class BlockChain {
     this.pool = new SECTransactionPool({
       poolname: 'pool'
     })
-    this.chain = new SECBlockChain.SECTokenBlockChain(config)
+    this.chain = new SECBlockChain.SECTokenBlockChain(config, this.pool)
   }
 
   // only for SEC chain
