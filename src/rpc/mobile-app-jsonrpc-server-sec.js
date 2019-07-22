@@ -58,7 +58,8 @@ function _signTransaction (privateKey, transfer) {
     Buffer.from(transferData[0].gasLimit),
     Buffer.from(transferData[0].gas),
     Buffer.from(transferData[0].gasPrice),
-    Buffer.from(transferData[0].inputData)
+    Buffer.from(transferData[0].inputData),
+    'SEC'
   ]
   let txSigHash = Buffer.from(SECUtil.rlphash(tokenTxBuffer).toString('hex'), 'hex')
   let signature = SECUtil.ecsign(txSigHash, Buffer.from(privateKey, 'hex'))

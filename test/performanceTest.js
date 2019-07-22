@@ -34,7 +34,8 @@ function sendTx1 () {
     Buffer.from(request[0].gasLimit),
     Buffer.from(request[0].gas),
     Buffer.from(request[0].gasPrice),
-    Buffer.from(request[0].inputData)
+    Buffer.from(request[0].inputData),
+    'SEN'
   ]
   let txSigHash = Buffer.from(SECUtils.rlphash(tokenTxBuffer).toString('hex'), 'hex')
   let signature = SECUtils.ecsign(txSigHash, Buffer.from(userInfo.privKey, 'hex'))
