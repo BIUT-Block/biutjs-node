@@ -44,7 +44,7 @@ function _registerPrivateKey (privateKey) {
   let keylib = { table: [] }
   let key = privateKey
   keylib.table.push(key)
-  fs.appendFile(path.join(__dirname, '../temp.json'), JSON.stringify(keylib), 'utf-8', (err) => {
+  fs.appendFile(path.join(__dirname, '../keylib.json'), JSON.stringify(keylib), 'utf-8', (err) => {
     if (err) {
       console.log(err)
     }
@@ -53,7 +53,7 @@ function _registerPrivateKey (privateKey) {
 }
 
 function _getPrivateKeysFromAddress (userAddress) {
-  fs.readFile(path.join(__dirname, '../temp.json'), 'utf-8', (err, data) => {
+  fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
     if (err) {
       console.log(err)
     } else {
