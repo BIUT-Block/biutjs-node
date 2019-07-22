@@ -19,8 +19,12 @@ let server = jayson.server({
     // }
     try {
       let accAddr = args[0]
+      let tokenName = args[1]
+      if (tokenName === undefined) {
+        tokenName = 'All'
+      }
       // let time = args[1] 'latest'
-      core.secAPIs.getBalance(accAddr, 'SEC', (err, balance) => {
+      core.secAPIs.getBalance(accAddr, tokenName, (err, balance) => {
         if (err) {
           response.status = '0'
           response.info = `Failed to get user balance, error info: ${err}`
@@ -122,6 +126,64 @@ let server = jayson.server({
     })
   },
 
+  sec_sendContractTransaction: function(args, callback) {
+    let response = {}
+    core.secAPIs.getTokenName(args[0].to, (err, tokenname) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Unexpected error occurs, error info: ${err}`
+        callback(null, response)
+      } else if (!tokenname) {
+        response.status = '0'
+        response.info = `ContractAddress doesn't exist`
+        callback(null, response)
+      } else {
+        core.secAPIs.getNonce(args[0].from, (err, nonce) => {
+          if (err) {
+            response.status = '0'
+            response.info = `Unexpected error occurs, error info: ${err}`
+            callback(null, response)
+          } else {
+            let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
+            if(args[0].inputData.match(regexPattern)){
+              let txAmount = RegExp.$2
+              if (txAmount > args[0].value) {
+                response.status = '0'
+                response.info = 'Smart Contract transaction requires more than sent'
+                callback(null, response)
+              }
+            }
+            let tokenTx = {
+              Nonce: nonce,
+              TxReceiptStatus: 'pending',
+              TimeStamp: args[0].timestamp,
+              TxFrom: args[0].from,
+              TxTo: args[0].to,
+              Value: args[0].value,
+              GasLimit: args[0].gasLimit,
+              GasUsedByTxn: args[0].gas,
+              GasPrice: args[0].gasPrice,
+              InputData: args[0].inputData,
+              Signature: args[0].data
+            }
+            tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+            core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
+              if (err) {
+                response.status = '0'
+                response.info = `Error occurs: ${err.stack}`
+              } else {
+                response.status = '1'
+                response.info = 'OK'
+                response.txHash = tokenTx.TxHash
+              }
+              callback(null, response)
+            })
+          }
+        })
+      }
+    })
+  },
+    
   sec_getChainHeight: function (args, callback) {
     let response = {}
     response.ChainHeight = core.secAPIs.getTokenChainHeight()
