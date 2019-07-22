@@ -36,3 +36,11 @@ process.on('message', blockForPOW => {
 process.on('close', () => {
   secPow.cacheDB.close()
 })
+
+process.on('SIGINT', () => {
+  secPow.cacheDB.close()
+})
+
+process.on('SIGTERM', () => {
+  secPow.cacheDB.close()
+})

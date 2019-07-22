@@ -50,46 +50,46 @@ class Consensus {
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
-    try {
-      this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
-        if (err) {
-          this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
-          console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
-        } else if (balance < this.reward.MIN_MORTGAGE) {
-          return this.resetPOW()
-        } else {
-          let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
+    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
+      if (err) {
+        this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+        console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
+      } else if (balance < this.reward.MIN_MORTGAGE) {
+        return this.resetPOW()
+      } else {
+        let newBlock = cloneDeep(SECRandomData.generateTokenBlock(this.BlockChain.chain))
 
-          this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
-            if (err) {
-              this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
-              console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
-            } else {
-              let lastBlock = cloneDeep(_lastBlock)
-              newBlock.Number = lastBlock.Number + 1
-              newBlock.ParentHash = lastBlock.Hash
-              this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
-                if (err) {
-                  this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
-                  console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
-                } else {
-                  let blockForPOW = {
-                    Number: newBlock.Number,
-                    lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
-                    lastPowCalcTime: lastPowCalcTime,
-                    Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
-                    cacheDBPath: this.cacheDBPath
-                  }
-                  this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
-                  console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
-                  this.powWorker.send(blockForPOW)
+        this.BlockChain.chain.getLastBlock((err, _lastBlock) => {
+          if (err) {
+            this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+            console.error(`Error in consensus.js, runPow function, getLastBlock: ${err}`)
+          } else {
+            let lastBlock = cloneDeep(_lastBlock)
+            newBlock.Number = lastBlock.Number + 1
+            newBlock.ParentHash = lastBlock.Hash
+            this.secCircle.getLastPowDuration(this.BlockChain.chain, (err, lastPowCalcTime) => {
+              if (err) {
+                this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+                console.error(`Error in consensus.js, runPow function, getLastPowDuration: ${err}`)
+              } else {
+                let blockForPOW = {
+                  Number: newBlock.Number,
+                  lastBlockDifficulty: parseFloat(lastBlock.Difficulty),
+                  lastPowCalcTime: lastPowCalcTime,
+                  Header: Buffer.concat(new SECBlockChain.SECTokenBlock(newBlock).getPowHeaderBuffer()),
+                  cacheDBPath: this.cacheDBPath
                 }
-              })
-            }
-          })
+                this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+                console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+                this.powWorker.send(blockForPOW)
+              }
+            })
+          }
+        })
 
-          this.isPowRunning = true
-          this.powWorker.on('message', (result) => {
+        this.isPowRunning = true
+        this.powWorker.once('message', (result) => {
+          try {
             // verify the node is not synchronizing
             if (!this.syncInfo.flag) {
               // verify circle group id
@@ -161,13 +161,13 @@ class Consensus {
             } else {
               this.resetPOW()
             }
-          })
-        }
-      })
-    } catch (err) {
-      this.config.dbconfig.logger.error(err)
-      console.error(err)
-    }
+          } catch (err) {
+            this.config.dbconfig.logger.error(err)
+            console.error(err)
+          }
+        })
+      }
+    })
   }
 
   resetPOW () {
