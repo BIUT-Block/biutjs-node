@@ -68,9 +68,8 @@ function _getPrivateKeysFromAddress (userAddress) {
 }
 
 function _signTransaction (userAddress, transfer) {
-  let timeStamp = new Date().getTime()
   let transferData = [{
-    timestamp: timeStamp,
+    timestamp: transfer.timeStamp,
     from: transfer.walletAddress,
     to: transfer.sendToAddress,
     value: transfer.amount,

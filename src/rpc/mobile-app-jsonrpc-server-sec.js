@@ -38,9 +38,8 @@ function _getKeysFromPrivateKey (privateKey) {
 }
 
 function _signTransaction (privateKey, transfer) {
-  let timeStamp = new Date().getTime()
   let transferData = [{
-    timestamp: timeStamp,
+    timestamp: transfer.timeStamp,
     from: transfer.walletAddress,
     to: transfer.sendToAddress,
     value: transfer.amount,
@@ -215,42 +214,33 @@ let server = jayson.server({
         console.timeEnd('sen_sendRawTransaction')
         return callback(null, response)
       }
-      // get nonce for signing the tx
-      core.secAPIs.getNonce(args[0].from, (err, nonce) => {
+
+      let tokenTx = {
+        Nonce: args[0].nonce,
+        TxReceiptStatus: 'pending',
+        TimeStamp: args[0].timestamp,
+        TxFrom: args[0].from,
+        TxTo: args[0].to,
+        Value: args[0].value,
+        GasLimit: args[0].gasLimit,
+        GasUsedByTxn: args[0].gas,
+        GasPrice: args[0].gasPrice,
+        TxFee: args[0].txFee,
+        InputData: args[0].inputData,
+        Signature: args[0].data
+      }
+      tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+      core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
-          response.info = `Unexpected error occurs, error info: ${err}`
-          console.timeEnd('sec_sendRawTransaction')
-          callback(null, response)
+          response.info = `Error occurs: ${err}`
         } else {
-          let tokenTx = {
-            Nonce: nonce,
-            TxReceiptStatus: 'pending',
-            TimeStamp: args[0].timestamp,
-            TxFrom: args[0].from,
-            TxTo: args[0].to,
-            Value: args[0].value,
-            GasLimit: args[0].gasLimit,
-            GasUsedByTxn: args[0].gas,
-            GasPrice: args[0].gasPrice,
-            TxFee: args[0].txFee,
-            InputData: args[0].inputData,
-            Signature: args[0].data
-          }
-          tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-          core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
-            if (err) {
-              response.status = '0'
-              response.info = `Error occurs: ${err}`
-            } else {
-              response.status = '1'
-              response.info = 'OK'
-              response.txHash = tokenTx.TxHash
-            }
-            console.timeEnd('sec_sendRawTransaction')
-            callback(null, response)
-          })
+          response.status = '1'
+          response.info = 'OK'
+          response.txHash = tokenTx.TxHash
         }
+        console.timeEnd('sec_sendRawTransaction')
+        callback(null, response)
       })
     } catch (err) {
       response.status = '0'

@@ -147,41 +147,32 @@ let server = jayson.server({
         console.timeEnd('sen_sendRawTransaction')
         return callback(null, response)
       }
-      core.senAPIs.getNonce(args[0].from, (err, nonce) => {
+      let tokenTx = {
+        Nonce: args[0].nonce,
+        TxReceiptStatus: 'pending',
+        TimeStamp: args[0].timestamp,
+        TxFrom: args[0].from,
+        TxTo: args[0].to,
+        Value: args[0].value,
+        GasLimit: args[0].gasLimit,
+        GasUsedByTxn: args[0].gas,
+        GasPrice: args[0].gasPrice,
+        TxFee: args[0].txFee,
+        InputData: args[0].inputData,
+        Signature: args[0].data
+      }
+      tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
+      core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
-          response.info = `Unexpected error occurs, error info: ${err}`
-          console.timeEnd('sen_sendRawTransaction')
-          callback(null, response)
+          response.info = `Error occurs: ${err}`
         } else {
-          let tokenTx = {
-            Nonce: nonce,
-            TxReceiptStatus: 'pending',
-            TimeStamp: args[0].timestamp,
-            TxFrom: args[0].from,
-            TxTo: args[0].to,
-            Value: args[0].value,
-            GasLimit: args[0].gasLimit,
-            GasUsedByTxn: args[0].gas,
-            GasPrice: args[0].gasPrice,
-            TxFee: args[0].txFee,
-            InputData: args[0].inputData,
-            Signature: args[0].data
-          }
-          tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-          core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
-            if (err) {
-              response.status = '0'
-              response.info = `Error occurs: ${err}`
-            } else {
-              response.status = '1'
-              response.info = 'OK'
-              response.txHash = tokenTx.TxHash
-            }
-            console.timeEnd('sen_sendRawTransaction')
-            callback(null, response)
-          })
+          response.status = '1'
+          response.info = 'OK'
+          response.txHash = tokenTx.TxHash
         }
+        console.timeEnd('sen_sendRawTransaction')
+        callback(null, response)
       })
     } catch (err) {
       response.status = '0'
