@@ -358,6 +358,22 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  sec_getNonce: function (args, callback) {
+    let response = {}
+    let address = args[0]
+    core.senAPIs.getNonce(address, (err, nonce) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Unexpected error occurs, error info: ${err}`
+      } else {
+        response.status = '1'
+        response.info = 'OK'
+        response.Nonce = nonce
+      }
+      callback(null, response)
+    })
+  },
+
   /**
   * free charging function, for testing purpose
   */
@@ -440,7 +456,7 @@ let server = jayson.server({
     console.time('sen_validateAddress')
     let response = {}
     let address = args[0]
-    core.secAPIs.validateAddress(address, (result) => {
+    core.senAPIs.validateAddress(address, (result) => {
       if (result === true) {
         response.status = '1'
         response.jsonrpc = '2.0'
