@@ -57,7 +57,8 @@ class BlockChain {
     })
   }
 
-  run() {
+  run () {
+    // main network is not enabled to randomly generate transactions
     if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
         this.generateTx()
@@ -70,9 +71,7 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx(_tx, excludePeer = {
-    _socket: {}
-  }) {
+  sendNewTokenTx (_tx, excludePeer = { _socket: {} }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
     let tx = cloneDeep(_tx)
     this.rlp.getPeers().forEach(peer => {
@@ -124,7 +123,9 @@ class BlockChain {
       freeChargeFlag = true
       // return callback(new Error('Invalid TxFrom address'))
     }
+
     let tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
+
     // check balance
     this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
       if (err) return callback(err)

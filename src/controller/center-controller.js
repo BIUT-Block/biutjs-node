@@ -219,9 +219,9 @@ class CenterController {
       const openSlots = this.rlp._getOpenSlots()
       const queueLength = this.rlp._peersQueue.length
       const queueLength2 = this.rlp._peersQueue.filter((o) => o.ts <= Date.now()).length
-      this.config.dbconfig.logger.info(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))      
+      this.config.dbconfig.logger.info(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
       console.log(chalk.yellow(`Total nodes in NDP: ${peersCount}, RLP Info: peers: ${rlpPeers.length}, open slots: ${openSlots}, queue: ${queueLength} / ${queueLength2}, Time: ${new Date().toISOString()}`))
-      this.config.dbconfig.logger.info(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))      
+      this.config.dbconfig.logger.info(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))
       console.log(chalk.yellow(`Current SEC Block Chain Height: ${this.secChain.chain.getCurrentHeight()}, Current SEN Block Chain Height: ${this.senChain.chain.getCurrentHeight()}`))
       rlpPeers.forEach((peer, index) => {
         debug(chalk.yellow(`    Peer ${index + 1} : ${Utils.getPeerAddr(peer)}) in RLP`))
@@ -243,6 +243,32 @@ class CenterController {
     }, ms('30s'))
   }
 
+  _resetNetwork () {
+    console.log('resetNetwork')
+    let peers = this.ndp.getPeers()
+    console.log(peers)
+    peers.forEach(peer => {
+      this.ndp.removePeer(peer)
+    })
+    // add bootstrap nodes
+    const BOOTNODES = this.bootstrapNodes.map(node => {
+      return {
+        address: node.ip,
+        udpPort: node.port,
+        tcpPort: node.port
+      }
+    })
+    for (let bootnode of BOOTNODES) {
+      this.ndp.bootstrap(bootnode).catch(err => {
+        this.config.dbconfig.logger.error(`${err.stack || err}`)
+        console.error(chalk.bold.red(err.stack || err))
+      })
+    }
+    console.log('resetNetwork Finish')
+    console.log(this.ndp.getPeers())
+    console.log(this.rlp.getPeers().length)
+  }
+
   _refreshDHTConnections () {
     setInterval(() => {
       let _peers = this.ndp.getPeers()
@@ -254,14 +280,17 @@ class CenterController {
       })
       peers.forEach(peer => {
         this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
-          this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))          
+          this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
           console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
         }).catch((err) => {
-          this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))          
-          console.log(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+          this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+          console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
-    }, ms('10m'))
+      if (this.rlp.getPeers().length === 0) {
+        this._resetNetwork()
+      }
+    }, ms('5m'))
   }
 }
 

@@ -129,6 +129,7 @@ class SENReward {
           InputData: `Mining reward`
         }
         rewardTx = cloneDeep(new SECTransaction.SECTokenTx(rewardTx).getTx())
+
         if (reward <= 0) {
           return callback(null, null)
         } else {
@@ -164,7 +165,7 @@ class SENReward {
 
     if (txFee <= 0) {
       return null
-    }    
+    }
     return txFeeTxObject
   }
 
@@ -193,7 +194,7 @@ class SENReward {
     let txFeeTxObject = cloneDeep(new SECTransaction.SECTokenTx(txFeeTx))
     if (txFee <= 0) {
       return null
-    }    
+    }
     return txFeeTxObject
   }
 }

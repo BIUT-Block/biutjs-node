@@ -20,7 +20,7 @@ class Core {
     loggerPath: 'biutlogs'
   }) {
     config.logger = SECLogger.createLogger(config.loggerPath)
-    config.logger.info('Start Logger (new restart)')    
+    config.logger.info('Start Logger (new restart)')
     if (process.env.netType === 'test') {
       config.SecDBPath = config.SecDBPath + 'test/'
       config.SenDBPath = config.SenDBPath + 'test/'
@@ -37,7 +37,7 @@ class Core {
     if (fs.existsSync(addrFilePath)) {
       config.address = fs.readFileSync(addrFilePath, 'utf8')
     }
-    
+
     // --------------------  GENERATE NDP PRIVATE_KEY  --------------------
     if (args['NDPPrivKey'] !== undefined) {
       config.NDPPrivKey = args['NDPPrivKey']

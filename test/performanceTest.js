@@ -1,6 +1,6 @@
 const jayson = require('jayson')
 const ip = require('ip')
-const SECUtils = require('@sec-block/secjs-util')
+const SECUtils = require('@biut-block/biutjs-util')
 
 let myIp = ip.address()
 
@@ -34,7 +34,9 @@ function sendTx1 () {
     Buffer.from(request[0].gasLimit),
     Buffer.from(request[0].gas),
     Buffer.from(request[0].gasPrice),
-    Buffer.from(request[0].inputData)
+    Buffer.from(request[0].nonce),
+    Buffer.from(request[0].inputData),
+    Buffer.from('SEN')
   ]
   let txSigHash = Buffer.from(SECUtils.rlphash(tokenTxBuffer).toString('hex'), 'hex')
   let signature = SECUtils.ecsign(txSigHash, Buffer.from(userInfo.privKey, 'hex'))

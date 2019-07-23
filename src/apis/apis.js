@@ -12,12 +12,12 @@ class APIs {
       this.chain = this.CenterController.getSecChain()
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
-      this.accTree = this.chain.chain.accTree      
+      this.accTree = this.chain.chain.accTree
     } else {
       this.chain = this.CenterController.getSenChain()
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
-      this.accTree = this.chain.chain.accTree      
+      this.accTree = this.chain.chain.accTree
     }
   }
 
@@ -195,7 +195,6 @@ class APIs {
   getTokenChainHeight () {
     return this.chain.chain.getCurrentHeight()
   }
-  
   getSyncInfo () {
     let response = {
       isSyncing: null,
@@ -208,7 +207,15 @@ class APIs {
 
   getRLPPeersNumber () {
     return this.CenterController.rlp.getPeers().length
-  }  
+  }
+
+  validateAddress (userAddress, callback) {
+    let result = false
+    if (userAddress.match(/[0-9A-Fa-f]{40}/)) {
+      result = true
+    }
+    callback(result)
+  }
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   getTokenName(addr, callback) {
