@@ -34,13 +34,19 @@ process.on('message', blockForPOW => {
 })
 
 process.on('close', () => {
-  secPow.cacheDB.close()
+  if (secPow.cacheDB) {
+    secPow.cacheDB.close()
+  }
 })
 
 process.on('SIGINT', () => {
-  secPow.cacheDB.close()
+  if (secPow.cacheDB) {
+    secPow.cacheDB.close()
+  }
 })
 
 process.on('SIGTERM', () => {
-  secPow.cacheDB.close()
+  if (secPow.cacheDB) {
+    secPow.cacheDB.close()
+  }
 })

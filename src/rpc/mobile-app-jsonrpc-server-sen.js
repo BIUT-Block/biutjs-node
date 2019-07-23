@@ -538,6 +538,7 @@ let server = jayson.server({
         response.signedTrans = signedTrans
       }
     } catch (e) {
+      console.log(e)
       response.status = '0'
       response.message = 'Bad Request.'
     }
