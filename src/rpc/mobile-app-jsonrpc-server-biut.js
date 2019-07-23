@@ -44,16 +44,18 @@ function _registerPrivateKey (privateKey) {
   let keylib = { table: [] }
   let key = privateKey
   keylib.table.push(key)
-  fs.appendFile(path.join(__dirname, '../temp.json'), JSON.stringify(keylib), 'utf-8', (err) => {
+  fs.appendFile(path.join(__dirname, '../keylib.json'), JSON.stringify(keylib), 'utf-8', (err) => {
     if (err) {
-      console.log(err)
+      let registerInfo = 'Register Failed'
+      return registerInfo
     }
-    console.log('Register key successed')
+    let registerInfo = 'Register Successd'
+    return registerInfo
   })
 }
 
 function _getPrivateKeysFromAddress (userAddress) {
-  fs.readFile(path.join(__dirname, '../temp.json'), 'utf-8', (err, data) => {
+  fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
     if (err) {
       console.log(err)
     } else {
@@ -530,7 +532,7 @@ let server = jayson.server({
   },
   */
 
-  /* 替代generatedWalletKeys, 不返回其他的key, 只返回address， 其他的可以存入本json文件中 */
+  /* 初始化方法，替代generatedWalletKeys, 不返回其他的key, 只返回address， 其他的可以存入本地json文件中 */
   biut_getNewAddress: function (args, callback) {
     let response = {}
     let companyName = args[0]
@@ -539,10 +541,10 @@ let server = jayson.server({
       response.message = 'No authorized to use the api'
     } else {
       let generatedKeys = _getWalletKeys()
-      _registerPrivateKey(generatedKeys)
+      let regsiterInfo = _registerPrivateKey(generatedKeys)
       response.status = '1'
       response.result = generatedKeys.userAddress
-      response.message = 'get new address success'
+      response.message = regsiterInfo
     }
     callback(null, response)
   },
@@ -585,7 +587,7 @@ let server = jayson.server({
   /**
    * @param {array} args
    * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
-   * @param {string} args[0].privateKey 钱包私钥
+   * @param {string} args[0].userAddress 用户地址
    * @param {string} args[0].transfer 交易信息的json结构
    * @param {string} args[0].transfer.walletAddress 发起交易的钱包地址
    * @param {string} args[0].transfer.sendToAddress 收款方的钱包地址
