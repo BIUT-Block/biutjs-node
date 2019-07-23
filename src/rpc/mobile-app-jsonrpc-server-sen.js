@@ -236,45 +236,40 @@ let server = jayson.server({
         response.info = `Contract for TokenName already exists under: ${address}`
         callback(null, response)
       } else {
-        core.senAPIs.getNonce(args[0].from, (err, nonce) => {
+        // let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
+        // if(args[0].inputData.match(regexPattern)){
+        //   let txAmount = RegExp.$2
+        //   if (txAmount > args[0].value) {
+        //     response.status = '0'
+        //     response.info = 'Smart Contract transaction requires more than sent'
+        //     callback(null, response)
+        //   }
+        // }
+        let tokenTx = {
+          Nonce: args[0].nonce,
+          TxReceiptStatus: 'pending',
+          TimeStamp: args[0].timestamp,
+          TxFrom: args[0].from,
+          TxTo: args[0].to,
+          Value: args[0].value,
+          GasLimit: args[0].gasLimit,
+          GasUsedByTxn: args[0].gas,
+          GasPrice: args[0].gasPrice,
+          TxFee: args[0].txFee,
+          InputData: args[0].inputData,
+          Signature: args[0].data
+        }
+        tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Unexpected error occurs, error info: ${err.stack}`
-            callback(null, response)
+            response.info = `Error occurs: ${err.stack}`
           } else {
-            let tokenTx = {
-              Nonce: nonce,
-              TxReceiptStatus: 'pending',
-              TimeStamp: args[0].timestamp,
-              TxFrom: args[0].from,
-              TxTo: args[0].to,
-              Value: args[0].value,
-              GasLimit: args[0].gasLimit,
-              GasUsedByTxn: args[0].gas,
-              GasPrice: args[0].gasPrice,
-              InputData: args[0].inputData,
-              Signature: args[0].data
-            }
-            tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-            core.senAPIs.addTokenNameMap(tokenName, args[0].to, (err)=>{
-              if(err) {
-                response.status = '0'
-                response.info = `Error occurs: ${err.stack}`
-              } else {
-                core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
-                  if (err) {
-                    response.status = '0'
-                    response.info = `Error occurs: ${err.stack}`
-                  } else {
-                    response.status = '1'
-                    response.info = 'OK'
-                    response.txHash = tokenTx.TxHash
-                  }
-                  callback(null, response)
-                })
-              }
-            })
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
           }
+          callback(null, response)
         })
       }
     })
@@ -330,6 +325,27 @@ let server = jayson.server({
       }
     })
   },
+
+  sec_getTimeLock: function(args, callback) {
+    console.time('sec_getTimeLock')
+    let response = {}
+    let senderAddress = args[0]
+    let contractAddress = args[1]
+    core.senAPIs.getTimeLock(contractAddress, (timeLock)=>{
+      if(err) {
+        response.status = '0'
+        response.info = `Error occurs: ${err.stack}`
+      } else {
+        if(senderAddress in timeLock && senderAddress in timeLock[senderAddress]){
+          response.status = '1'
+          response.info = 'OK'
+          response.timeLock = timeLock[senderAddress][senderAddress]
+        } else {
+          response.status = '0'
+          response.info = `Error occurs: No Valid Lock History`        }
+      }
+    })
+  }
 
   sec_getChainHeight: function (args, callback) {
     console.time('sen_getChainHeight')

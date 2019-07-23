@@ -226,6 +226,10 @@ class APIs {
     this.chain.chain.getContractAddress(tokenname, callback)
   }
 
+  getTimeLock(addr, callback) {
+    this.chain.chain.getTokenName(addr, callback)
+  }
+
   addTokenMap(tokenInfo, addr, callback) {
     this.chain.chain.addTokenMap(tokenInfo, addr, callback)
   }
