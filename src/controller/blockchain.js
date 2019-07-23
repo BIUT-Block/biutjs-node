@@ -136,7 +136,7 @@ class BlockChain {
         } else {
           // verify tx signature
           if (!freeChargeFlag) {
-            if (!tokenTx.verifySignature()) {
+            if (!tokenTx.verifySignature(this.chainName)) {
               let err = new Error('Failed to verify transaction signature')
               return callback(err)
             }

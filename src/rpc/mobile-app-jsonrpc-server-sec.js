@@ -3,7 +3,7 @@ const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
 let core = {}
 
-function _getWalletKeys () {
+function _getWalletKeys() {
   let keys = SECUtil.generateSecKeys()
   let privKey64 = keys.privKey
   let privateKey = privKey64
@@ -20,7 +20,7 @@ function _getWalletKeys () {
   }
 }
 
-function _getKeysFromPrivateKey (privateKey) {
+function _getKeysFromPrivateKey(privateKey) {
   try {
     let privateKeyBuffer = SECUtil.privateToBuffer(privateKey)
     let extractAddress = SECUtil.privateToAddress(privateKeyBuffer).toString('hex')
@@ -37,7 +37,7 @@ function _getKeysFromPrivateKey (privateKey) {
   }
 }
 
-function _signTransaction (privateKey, transfer) {
+function _signTransaction(privateKey, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
     from: transfer.walletAddress,
@@ -74,12 +74,12 @@ function _signTransaction (privateKey, transfer) {
 }
 
 /**
-  * create a server at localhost:3002
-  */
+ * create a server at localhost:3002
+ */
 let server = jayson.server({
   /**
-  * get account balance
-  */
+   * get account balance
+   */
   sec_getBalance: function (args, callback) {
     console.time('sec_getBalance')
     let response = {}
@@ -118,8 +118,8 @@ let server = jayson.server({
   },
 
   /**
-  * get all the previous transactions for a specific address
-  */
+   * get all the previous transactions for a specific address
+   */
   /* sec_getTransactions: function (args, callback) {
     console.time('sec_getTransactions')
     let response = {}
@@ -161,8 +161,8 @@ let server = jayson.server({
   },
   */
   /**
-    * get all the previous transactions for a specific address with paging
-    */
+   * get all the previous transactions for a specific address with paging
+   */
   sec_getTransactions: function (args, callback) {
     console.time('sec_getTransactions')
     let response = {}
@@ -209,8 +209,8 @@ let server = jayson.server({
   },
 
   /**
-  * request to initiate a transaction
-  */
+   * request to initiate a transaction
+   */
   sec_sendRawTransaction: function (args, callback) {
     console.time('sec_sendRawTransaction')
     let response = {}
@@ -257,7 +257,7 @@ let server = jayson.server({
     }
   },
 
-  sec_sendContractTransaction: function(args, callback) {
+  sec_sendContractTransaction: function (args, callback) {
     let response = {}
     core.secAPIs.getTokenName(args[0].to, (err, tokenname) => {
       if (err) {
@@ -269,52 +269,45 @@ let server = jayson.server({
         response.info = `ContractAddress doesn't exist`
         callback(null, response)
       } else {
-        core.secAPIs.getNonce(args[0].from, (err, nonce) => {
+        // let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
+        // if(args[0].inputData.match(regexPattern)){
+        //   let txAmount = RegExp.$2
+        //   if (txAmount > args[0].value) {
+        //     response.status = '0'
+        //     response.info = 'Smart Contract transaction requires more than sent'
+        //     callback(null, response)
+        //   }
+        // }
+        let tokenTx = {
+          Nonce: args[0].nonce,
+          TxReceiptStatus: 'pending',
+          TimeStamp: args[0].timestamp,
+          TxFrom: args[0].from,
+          TxTo: args[0].to,
+          Value: args[0].value,
+          GasLimit: args[0].gasLimit,
+          GasUsedByTxn: args[0].gas,
+          GasPrice: args[0].gasPrice,
+          TxFee: args[0].txFee,
+          InputData: args[0].inputData,
+          Signature: args[0].data
+        }
+        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
-            response.info = `Unexpected error occurs, error info: ${err}`
-            callback(null, response)
+            response.info = `Error occurs: ${err.stack}`
           } else {
-            let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
-            if(args[0].inputData.match(regexPattern)){
-              let txAmount = RegExp.$2
-              if (txAmount > args[0].value) {
-                response.status = '0'
-                response.info = 'Smart Contract transaction requires more than sent'
-                callback(null, response)
-              }
-            }
-            let tokenTx = {
-              Nonce: nonce,
-              TxReceiptStatus: 'pending',
-              TimeStamp: args[0].timestamp,
-              TxFrom: args[0].from,
-              TxTo: args[0].to,
-              Value: args[0].value,
-              GasLimit: args[0].gasLimit,
-              GasUsedByTxn: args[0].gas,
-              GasPrice: args[0].gasPrice,
-              InputData: args[0].inputData,
-              Signature: args[0].data
-            }
-            tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-            core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
-              if (err) {
-                response.status = '0'
-                response.info = `Error occurs: ${err.stack}`
-              } else {
-                response.status = '1'
-                response.info = 'OK'
-                response.txHash = tokenTx.TxHash
-              }
-              callback(null, response)
-            })
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
           }
+          callback(null, response)
         })
       }
     })
   },
-    
+
   sec_getChainHeight: function (args, callback) {
     console.time('sec_getChainHeight')
     let response = {}
@@ -491,8 +484,8 @@ let server = jayson.server({
   },
 
   /**
-  * free charging function, for testing purpose
-  */
+   * free charging function, for testing purpose
+   */
   sec_freeCharge: function (args, callback) {
     console.time('sec_freeCharge')
     const userInfo = {
