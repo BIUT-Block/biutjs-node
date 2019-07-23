@@ -48,6 +48,7 @@ function _signTransaction (privateKey, transfer) {
     gas: '0',
     gasPrice: '0',
     data: '',
+    nonce: transfer.nonce,
     inputData: ''
   }]
   const tokenTxBuffer = [
@@ -58,8 +59,9 @@ function _signTransaction (privateKey, transfer) {
     Buffer.from(transferData[0].gasLimit),
     Buffer.from(transferData[0].gas),
     Buffer.from(transferData[0].gasPrice),
+    Buffer.from(transferData[0].nonce),
     Buffer.from(transferData[0].inputData),
-    'SEC'
+    Buffer.from('SEC')
   ]
   let txSigHash = Buffer.from(SECUtil.rlphash(tokenTxBuffer).toString('hex'), 'hex')
   let signature = SECUtil.ecsign(txSigHash, Buffer.from(privateKey, 'hex'))
@@ -580,7 +582,7 @@ let server = jayson.server({
 
   /**
    * @param {array} args
-   * @param {string} args[0].companyName 'coinegg' 或者 'fcoin'才可以调用该rpc方法。
+   * @param {string} args[0].companyName 'coinegg', 'biki', 'bigone' 或者 'fcoin'才可以调用该rpc方法。
    * @param {string} args[0].privateKey 钱包私钥
    * @param {string} args[0].transfer 交易信息的json结构
    * @param {string} args[0].transfer.walletAddress 发起交易的钱包地址
@@ -599,7 +601,7 @@ let server = jayson.server({
       let companyName = args[0].companyName
       let privateKey = args[0].privateKey
       let transfer = args[0].transfer
-      if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
+      if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki' && companyName !== 'bigone') {
         response.status = '0'
         response.message = 'No authorized to use the api'
       } else {
