@@ -28,7 +28,7 @@
     "@biut-block/biutjs-pow": "^1.0.1",
     "@biut-block/biutjs-randomdatagenerator": "^1.0.0",
     "@biut-block/biutjs-transactionpool": "^1.0.10",
-    "@biut-block/biutjs-tx": "^1.0.1",
+    "@biut-block/biutjs-tx": "^1.0.2",
     "@biut-block/biutjs-util": "^1.0.0",
     "@maxmind/geoip2-node": "^0.4.0",
     "bignumber.js": "^8.1.1",

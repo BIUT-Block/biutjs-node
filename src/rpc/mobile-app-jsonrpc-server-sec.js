@@ -58,6 +58,7 @@ function _signTransaction (privateKey, transfer) {
     Buffer.from(transferData[0].gasLimit),
     Buffer.from(transferData[0].gas),
     Buffer.from(transferData[0].gasPrice),
+    Buffer.from(transferData[0].nonce),
     Buffer.from(transferData[0].inputData),
     'SEC'
   ]
