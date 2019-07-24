@@ -53,6 +53,7 @@ function _registerPrivateKey (privateKey) {
 }
 
 function _getPrivateKeysFromAddress (userAddress) {
+  /* 同步 */
   let data = fs.readFileSync(path.join(__dirname, '../keylib.json'), 'utf-8')
   let _data = data.substring(0, data.length - 1)
   let transData = '{"table": [' + _data + ']}'
@@ -65,9 +66,11 @@ function _getPrivateKeysFromAddress (userAddress) {
   }
   return privateKey
 
-  /* fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
+  /* 异步读取
+  fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
     if (err) {
       console.log(err)
+      callback(err, null)
     } else {
       let _data = data.substring(0, data.length - 1)
       let transData = '{"table": [' + _data + ']}'
@@ -76,9 +79,9 @@ function _getPrivateKeysFromAddress (userAddress) {
       for (var i = 0; i < jsonData.table.length; i++) {
         if (jsonData.table[i].userAddress === userAddress) {
           privateKey = jsonData.table[i].privateKey
+          callback(null, privateKey)
         }
       }
-      return privateKey
     }
   }) */
 }
@@ -624,7 +627,6 @@ let server = jayson.server({
         response.status = '0'
         response.message = 'No authorized to use the api'
       } else {
-        console.log('*************')
         let signedTrans = _signTransaction(userAddress, transfer)
         response.status = '1'
         response.message = 'signed transaction success'
