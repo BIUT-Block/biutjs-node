@@ -345,7 +345,7 @@ let server = jayson.server({
           response.info = `Error occurs: No Valid Lock History`        }
       }
     })
-  }
+  },
 
   sec_getChainHeight: function (args, callback) {
     console.time('sen_getChainHeight')
