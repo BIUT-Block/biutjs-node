@@ -2,6 +2,7 @@ const chalk = require('chalk')
 
 const SecRpcServer = require('./rpc/mobile-app-jsonrpc-server-sec')
 const SenRpcServer = require('./rpc/mobile-app-jsonrpc-server-sen')
+const BiutServer = require('./rpc/mobile-app-jsonrpc-server-biut')
 
 class SECRPC {
   constructor (core) {
@@ -13,6 +14,7 @@ class SECRPC {
       console.log(chalk.yellow('Starting RPC'))
       SecRpcServer.runRpc(this.core)
       SenRpcServer.runRpc(this.core)
+      BiutServer.runRpc(this.core)
     }
   }
 }

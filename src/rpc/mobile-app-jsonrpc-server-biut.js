@@ -41,10 +41,8 @@ function _getKeysFromPrivateKey (privateKey) {
 }
 
 function _registerPrivateKey (privateKey) {
-  let keylib = { table: [] }
-  let key = privateKey
-  keylib.table.push(key)
-  fs.appendFile(path.join(__dirname, '../keylib.json'), JSON.stringify(keylib), 'utf-8', (err) => {
+  var content = JSON.stringify(privateKey) + ','
+  fs.appendFile(path.join(__dirname, '../keylib.json'), content, 'utf-8', (err) => {
     if (err) {
       let registerInfo = 'Register Failed'
       return registerInfo
@@ -55,18 +53,34 @@ function _registerPrivateKey (privateKey) {
 }
 
 function _getPrivateKeysFromAddress (userAddress) {
-  fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
+  let data = fs.readFileSync(path.join(__dirname, '../keylib.json'), 'utf-8')
+  let _data = data.substring(0, data.length - 1)
+  let transData = '{"table": [' + _data + ']}'
+  let jsonData = JSON.parse(transData)
+  let privateKey
+  for (var i = 0; i < jsonData.table.length; i++) {
+    if (jsonData.table[i].userAddress === userAddress) {
+      privateKey = jsonData.table[i].privateKey
+    }
+  }
+  return privateKey
+
+  /* fs.readFile(path.join(__dirname, '../keylib.json'), 'utf-8', (err, data) => {
     if (err) {
       console.log(err)
     } else {
-      let obj = JSON.parse(data)
-      for (var i = 0; i < obj.table.length; i++) {
-        if (obj.table[i].userAddress === userAddress) {
-          return obj.table[i].privateKey
+      let _data = data.substring(0, data.length - 1)
+      let transData = '{"table": [' + _data + ']}'
+      let jsonData = JSON.parse(transData)
+      let privateKey
+      for (var i = 0; i < jsonData.table.length; i++) {
+        if (jsonData.table[i].userAddress === userAddress) {
+          privateKey = jsonData.table[i].privateKey
         }
       }
+      return privateKey
     }
-  })
+  }) */
 }
 
 function _signTransaction (userAddress, transfer) {
@@ -333,7 +347,7 @@ let server = jayson.server({
     })
   },
 
-  sec_getBlockByHeight: function (args, callback) {
+  biut_getBlockByHeight: function (args, callback) {
     console.time('biut_getBlockByHeight')
     let response = {}
     let blockHeight = args[0]
@@ -531,7 +545,7 @@ let server = jayson.server({
   },
   */
 
-  /* 初始化方法，替代generatedWalletKeys, 不返回其他的key, 只返回address， 其他的可以存入本地json文件中 */
+  /* 初始化方法，替代generatedWalletKeys, 不返回其他的key, 只返回address， 其他的可以存入本地json文件中 */ 
   biut_getNewAddress: function (args, callback) {
     let response = {}
     let companyName = args[0]
@@ -598,7 +612,6 @@ let server = jayson.server({
    * @param {string} response.message response的信息
    * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
    */
-
   biut_signedTransaction: function (args, callback) {
     let response = {}
     try {
@@ -610,11 +623,30 @@ let server = jayson.server({
         response.status = '0'
         response.message = 'No authorized to use the api'
       } else {
+        console.log('*************')
         let signedTrans = _signTransaction(userAddress, transfer)
         response.status = '1'
         response.message = 'signed transaction success'
         response.signedTrans = signedTrans
       }
+    } catch (e) {
+      response.status = '0'
+      response.message = 'Bad Request.'
+    }
+    callback(null, response)
+  },
+
+  /**
+   * 用来测试，不对外使用
+   */
+  biut_getkeyFromAddress: function (args, callback) {
+    let response = {}
+    try {
+      let address = args[0]
+      let key = _getPrivateKeysFromAddress(address)
+      response.status = '1'
+      response.key = key
+      response.message = 'Get keys successed'
     } catch (e) {
       response.status = '0'
       response.message = 'Bad Request.'
