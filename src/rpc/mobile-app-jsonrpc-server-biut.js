@@ -42,6 +42,8 @@ function _getKeysFromPrivateKey (privateKey) {
 
 function _registerPrivateKey (privateKey) {
   var content = JSON.stringify(privateKey) + ','
+  fs.appendFileSync(path.join(__dirname, '../keylib.json'), content)
+  /* 异步
   fs.appendFile(path.join(__dirname, '../keylib.json'), content, 'utf-8', (err) => {
     if (err) {
       let registerInfo = 'Register Failed'
@@ -49,7 +51,7 @@ function _registerPrivateKey (privateKey) {
     }
     let registerInfo = 'Register Successd'
     return registerInfo
-  })
+  }) */
 }
 
 function _getPrivateKeysFromAddress (userAddress) {
@@ -526,30 +528,8 @@ let server = jayson.server({
    * @param {json} callback.response 回调函数的传入参数response
    * @param {string} response.status '0' error; '1': 'success'
    * @param {string} response.message response的信息
-   * @param {json} response.keys 生成的keys
-   * @param {string} keys.privateKey 钱包的私钥
-   * @param {string} keys.publicKey 钱包的公钥
-   * @param {string} keys.englishWords 钱包助记词
-   * @param {string} keys.useraddress 钱包的地址
+   * @param {json} response.userAddress 生成的userAddress
   */
-  /*
-  biut_generateWalletKeys: function (args, callback) {
-    let response = {}
-    let companyName = args[0]
-    if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
-      response.status = '0'
-      response.message = 'No authorized to use the api'
-    } else {
-      let generatedKeys = _getWalletKeys()
-      response.status = '1'
-      response.keys = generatedKeys
-      response.message = 'Generate key success'
-    }
-    callback(null, response)
-  },
-  */
-
-  /* 初始化方法，替代generatedWalletKeys, 不返回其他的key, 只返回address， 其他的可以存入本地json文件中 */ 
   biut_getNewAddress: function (args, callback) {
     let response = {}
     let companyName = args[0]
@@ -558,10 +538,10 @@ let server = jayson.server({
       response.message = 'No authorized to use the api'
     } else {
       let generatedKeys = _getWalletKeys()
-      let regsiterInfo = _registerPrivateKey(generatedKeys)
+      _registerPrivateKey(generatedKeys)
       response.status = '1'
-      response.result = generatedKeys.userAddress
-      response.message = regsiterInfo
+      response.userAddress = generatedKeys.userAddress
+      response.message = 'Register successed'
     }
     callback(null, response)
   },
@@ -620,7 +600,6 @@ let server = jayson.server({
     let response = {}
     try {
       let companyName = args[0].companyName
-      // let privateKey = args[0].privateKey
       let userAddress = args[0].userAddress
       let transfer = args[0].transfer
       if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki') {
