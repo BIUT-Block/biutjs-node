@@ -257,6 +257,49 @@ let server = jayson.server({
     }
   },
 
+  sec_createContractTransaction: function(args, callback) {
+    let response = {}
+    let tokenName = args[1]
+    core.secAPIs.getContractAddress(tokenName, (err, address) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Unexpected error occurs, error info: ${err.stack}`
+        callback(null, response)
+      } else if (address) {
+        response.status = '0'
+        response.info = `Contract for TokenName already exists under: ${address}`
+        callback(null, response)
+      } else {
+        let tokenTx = {
+          Nonce: args[0].nonce,
+          TxReceiptStatus: 'pending',
+          TimeStamp: args[0].timestamp,
+          TxFrom: args[0].from,
+          TxTo: args[0].to,
+          Value: args[0].value,
+          GasLimit: args[0].gasLimit,
+          GasUsedByTxn: args[0].gas,
+          GasPrice: args[0].gasPrice,
+          TxFee: args[0].txFee,
+          InputData: args[0].inputData,
+          Signature: args[0].data
+        }
+        tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
+          if (err) {
+            response.status = '0'
+            response.info = `Error occurs: ${err.stack}`
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.txHash = tokenTx.TxHash
+          }
+          callback(null, response)
+        })
+      }
+    })
+  },
+
   sec_sendContractTransaction: function (args, callback) {
     let response = {}
     core.secAPIs.getTokenName(args[0].to, (err, tokenname) => {
@@ -324,7 +367,26 @@ let server = jayson.server({
           response.timeLock = timeLock[senderAddress][senderAddress]
         } else {
           response.status = '0'
-          response.info = `Error occurs: No Valid Lock History`        }
+          response.info = `Error occurs: No Valid Lock History`        
+        }
+        console.timeEnd('sec_getTimeLock')
+      }
+    })
+  },
+
+  sec_getCreatorContract: function(args, callback) {
+    console.time('sec_getCreatorContract')
+    let response = {}
+    let creatorAddress = args[0]
+    core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress)=>{
+      if(err) {
+        response.status = '0'
+        response.info = `Error occurs: ${err.stack}`
+      } else {
+        response.status = '1'
+        response.info = 'OK'
+        response.contractAddress = contractAddress
+        console.timeEnd('sec_getCreatorContract')
       }
     })
   },
