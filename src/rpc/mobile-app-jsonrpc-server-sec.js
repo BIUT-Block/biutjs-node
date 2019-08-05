@@ -361,10 +361,10 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
       } else {
-        if(senderAddress in timeLock && senderAddress in timeLock[senderAddress]){
+        if(senderAddress in timeLock){
           response.status = '1'
           response.info = 'OK'
-          response.timeLock = timeLock[senderAddress][senderAddress]
+          response.timeLock = timeLock[senderAddress]
         } else {
           response.status = '0'
           response.info = `Error occurs: No Valid Lock History`        

@@ -231,7 +231,7 @@ class APIs {
   }
 
   getTimeLock(addr, callback) {
-    this.chain.chain.getTokenName(addr, callback)
+    this.chain.chain.getTimeLock(addr, callback)
   }
 
   addTokenMap(tokenInfo, addr, callback) {
