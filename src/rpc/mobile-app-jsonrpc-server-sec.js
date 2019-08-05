@@ -193,8 +193,8 @@ let server = jayson.server({
           })
           response.status = '1'
           response.message = 'OK'
-          response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArraryInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArraryInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
