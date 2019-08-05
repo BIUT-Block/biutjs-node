@@ -356,7 +356,7 @@ let server = jayson.server({
     let response = {}
     let senderAddress = args[0]
     let contractAddress = args[1]
-    core.secAPIs.getTimeLock(contractAddress, (timeLock)=>{
+    core.secAPIs.getTimeLock(contractAddress, (err, timeLock)=>{
       if(err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
