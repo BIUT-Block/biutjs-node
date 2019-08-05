@@ -393,6 +393,42 @@ let server = jayson.server({
     })
   },
 
+  sec_getMultiCreatorContract: function(args, callback) {
+    console.time('sec_getCreatorContract')
+    let response = {}
+    let creatorAddressArr = args[0]
+    let promiseList = []
+
+    let promFunction = function(creatorAddress){
+      return new Promise(function(resolve, reject){
+        core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress)=>{
+          if(err) {
+            reject(err)
+          } else {
+            resolve({[creatorAddress]: contractAddress})
+          }
+        })
+      })
+    }
+
+    creatorAddressArr.forEach((creatorAddress)=>{
+      promiseList.push(promFunction(creatorAddress))
+    })
+
+    Promise.all(promiseList).then((contractAddressArr)=>{
+      response.status = '1'
+      response.info = 'OK'
+      response.contractAddress = contractAddressArr
+      callback(null, response)
+      console.timeEnd('sec_getCreatorContract')
+    }).catch((err)=>{
+      response.status = '0'
+      response.info = `Error occurs: ${err.stack}`
+      callback(null, response)
+      console.timeEnd('sec_getCreatorContract')
+    })
+  },
+
   sec_getChainHeight: function (args, callback) {
     console.time('sec_getChainHeight')
     let response = {}
