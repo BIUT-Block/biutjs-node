@@ -336,7 +336,7 @@ let server = jayson.server({
           Signature: args[0].data
         }
         tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
+        core.CenterController.getSecChain().iniFtiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
             response.info = `Error occurs: ${err.stack}`
@@ -371,6 +371,7 @@ let server = jayson.server({
         }
         console.timeEnd('sec_getTimeLock')
       }
+      callback(null, response)
     })
   },
 
@@ -388,6 +389,7 @@ let server = jayson.server({
         response.contractAddress = contractAddress
         console.timeEnd('sec_getCreatorContract')
       }
+      callback(null, response)
     })
   },
 
