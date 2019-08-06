@@ -266,6 +266,7 @@ let server = jayson.server({
 
     let currentPage = parseInt(args[1] || 1)
     let pageSize = parseInt(args[2] || 39)
+    let sortType = args[3]
 
     // verify accAddr
     if (accAddr[0] === '0' && accAddr[1] === 'x') {
@@ -286,10 +287,18 @@ let server = jayson.server({
         } else {
           let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
           txArray = txArray.sort((a, b) => {
-            return a.TimeStamp - b.TimeStamp
+            if (sortType === 'asc') {
+              return a.TimeStamp - b.TimeStamp
+            } else {
+              return b.TimeStamp - a.TimeStamp
+            }
           })
           txArraryInPool = txArraryInPool.sort((a, b) => {
-            return a.TimeStamp - b.TimeStamp
+            if (sortType === 'asc') {
+              return a.TimeStamp - b.TimeStamp
+            } else {
+              return b.TimeStamp - a.TimeStamp
+            }
           })
           response.status = '1'
           response.message = 'OK'
