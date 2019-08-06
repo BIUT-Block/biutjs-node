@@ -336,7 +336,7 @@ let server = jayson.server({
           Signature: args[0].data
         }
         tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
-        core.CenterController.getSecChain().iniFtiateTokenTx(tokenTx, (err) => {
+        core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
           if (err) {
             response.status = '0'
             response.info = `Error occurs: ${err.stack}`

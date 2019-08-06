@@ -234,9 +234,9 @@ class APIs {
         let tokenInfo = {}
         if(transaction){
           let inputData = transaction.InputData
-          tokenInfo = Json.parse(inputData)
+          tokenInfo = JSON.parse(inputData)
         }
-        callback(tokenInfo.tokenName)
+        callback(null, tokenInfo.tokenName)
       } else {
         callback(null, tokenName)
       }
