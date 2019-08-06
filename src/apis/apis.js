@@ -248,7 +248,29 @@ class APIs {
   }
 
   getCreatorContract(creatorAddress, callback){
-    this.chain.chain.getCreatorContract(creatorAddress, callback)
+    this.chain.chain.getCreatorContract(creatorAddress, (err, contractAddrArr) => {
+      if(err){
+        callback(err, null)
+      } else if(contractAddrArr.length==0) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return tx.TxFrom === creatorAddress && secUtils.isContractAddr(tx.TxTo)
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        try{
+          if(transaction){
+            let tokenInfo = JSON.parse(inputData)
+          }
+          callback(null, [transaction.TxTo], 'pending')
+        } catch(err){
+          callback(err, null)
+        }
+      } else {
+        callback(null, contractAddrArr, 'success')
+      }
+    })
   }
 
   getTimeLock(addr, callback) {
