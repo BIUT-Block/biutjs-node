@@ -354,24 +354,31 @@ let server = jayson.server({
   sec_getTimeLock: function(args, callback) {
     console.time('sec_getTimeLock')
     let response = {}
-    let senderAddress = args[0]
-    let contractAddress = args[1]
+    let contractAddress = args[0]
+    let senderAddress = args[1]
+
     core.secAPIs.getTimeLock(contractAddress, (err, timeLock)=>{
       if(err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
       } else {
-        if(senderAddress in timeLock && senderAddress in timeLock[senderAddress]){
-          response.status = '1'
-          response.info = 'OK'
-          response.timeLock = timeLock[senderAddress][senderAddress]
+        if(senderAddress){
+          if(senderAddress in timeLock && senderAddress in timeLock[senderAddress]){
+            response.status = '1'
+            response.info = 'OK'
+            response.timeLock = timeLock[senderAddress][senderAddress]
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.timeLock = []
+          }
         } else {
           response.status = '1'
-          response.info = 'OK'
-          response.timeLock = []
+          response.info = 'OK'          
+          response.timeLock = timeLock
         }
-        console.timeEnd('sec_getTimeLock')
       }
+      console.timeEnd('sec_getTimeLock')
       callback(null, response)
     })
   },
