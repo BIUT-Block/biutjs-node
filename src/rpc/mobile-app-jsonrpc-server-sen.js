@@ -341,9 +341,13 @@ let server = jayson.server({
           response.info = 'OK'
           response.timeLock = timeLock[senderAddress][senderAddress]
         } else {
-          response.status = '0'
-          response.info = `Error occurs: No Valid Lock History`        }
+          response.status = '1'
+          response.info = 'OK'
+          response.timeLock = []
+        }
+        console.timeEnd('sec_getTimeLock')
       }
+      callback(null, response)
     })
   },
 
