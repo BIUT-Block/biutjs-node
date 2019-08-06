@@ -219,7 +219,28 @@ class APIs {
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   getTokenName(addr, callback) {
-    this.chain.chain.getTokenName(addr, callback)
+
+    this.chain.chain.getTokenName(addr, (err, tokenName) => {
+      if(err){
+        callback(err, null)
+      } else if(!tokenName) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return tx.TxTo === addr
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        let tokenInfo = {}
+        if(transaction){
+          let inputData = transaction.InputData
+          tokenInfo = Json.parse(inputData)
+        }
+        callback(tokenInfo.tokenName)
+      } else {
+        callback(null, tokenName)
+      }
+    })
   }
 
   getContractAddress(tokenname, callback){
