@@ -286,10 +286,10 @@ let server = jayson.server({
         } else {
           let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
           txArray = txArray.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
+            return a.TimeStamp - b.TimeStamp
           })
           txArraryInPool = txArraryInPool.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
+            return a.TimeStamp - b.TimeStamp
           })
           response.status = '1'
           response.message = 'OK'
