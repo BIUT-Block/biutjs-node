@@ -256,7 +256,7 @@ class BlockChain {
         callback(err, null)
       } else if (contractAddrArr.length == 0) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return tx.TxFrom === creatorAddress && secUtils.isContractAddr(tx.TxTo)
+          return tx.TxFrom === creatorAddress && SECUtils.isContractAddr(tx.TxTo)
         })
         transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
@@ -359,7 +359,7 @@ class BlockChain {
         callback(err, null, null)
       } else if (!contractAddr) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return secUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName == tokenName
+          return SECUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName == tokenName
         })
         transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
