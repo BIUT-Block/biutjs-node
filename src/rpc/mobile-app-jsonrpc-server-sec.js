@@ -388,7 +388,7 @@ let server = jayson.server({
     let response = {}
     let contractAddress = args[0]
 
-    core.secAPIs.getContractInfo(contractAddress, (err, contractInfo)=>{
+    core.secAPIs.getContractInfo(contractAddress, (err, contractInfo, contractStatus)=>{
       if(err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
@@ -396,7 +396,7 @@ let server = jayson.server({
         response.status = '1'
         response.info = 'OK'
         response.contractAddress = contractInfo
-        response.contractStatus = status        
+        response.contractStatus = contractStatus        
       }
       console.timeEnd('sec_getContractInfo')
       callback(null, response)
@@ -407,7 +407,7 @@ let server = jayson.server({
     console.time('sec_getCreatorContract')
     let response = {}
     let creatorAddress = args[0]
-    core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress, status)=>{
+    core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress, contractStatus)=>{
       if(err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
@@ -415,7 +415,7 @@ let server = jayson.server({
         response.status = '1'
         response.info = 'OK'
         response.contractAddress = contractAddress
-        response.contractStatus = status
+        response.contractStatus = contractStatus
       }
       console.timeEnd('sec_getCreatorContract')
       callback(null, response)
