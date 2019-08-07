@@ -302,12 +302,12 @@ let server = jayson.server({
 
   sec_sendContractTransaction: function (args, callback) {
     let response = {}
-    core.secAPIs.getTokenName(args[0].to, (err, tokenname) => {
+    core.secAPIs.getContractInfo(args[0].to, (err, tokenInfo) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
         callback(null, response)
-      } else if (!tokenname) {
+      } else if (!tokenInfo.tokenname) {
         response.status = '0'
         response.info = `ContractAddress doesn't exist`
         callback(null, response)
