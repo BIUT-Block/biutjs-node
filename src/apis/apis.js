@@ -219,7 +219,6 @@ class APIs {
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   getTokenName(addr, callback) {
-
     this.chain.chain.getTokenName(addr, (err, tokenName) => {
       if(err){
         callback(err, null)
@@ -259,14 +258,17 @@ class APIs {
           a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
-        try{
-          if(transaction){
-            let tokenInfo = JSON.parse(inputData)
+        let contractAddrResult = []
+        status = 'failed'
+        if(transaction){
+          let inputData = transaction.InputData
+          let tokenInfo = JSON.parse(inputData)
+          if(tokenInfo.tokenName && tokenInfo.sourceCode){
+            contractAddrResult.push(transaction.TxTo)
+            status = pending
           }
-          callback(null, [transaction.TxTo], 'pending')
-        } catch(err){
-          callback(err, null)
         }
+        callback(null, contractAddrResult, status)
       } else {
         callback(null, contractAddrArr, 'success')
       }
