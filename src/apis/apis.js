@@ -218,70 +218,29 @@ class APIs {
   }
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
-  getTokenName(addr, callback) {
-    this.chain.chain.getTokenName(addr, (err, tokenName) => {
-      if(err){
-        callback(err, null)
-      } else if(!tokenName) {
-        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return tx.TxTo === addr
-        })
-        transactions.sort((a,b)=>{
-          a.TimeStamp - b.TimeStamp
-        })
-        let transaction = transactions[0]
-        let tokenInfo = {}
-        if(transaction){
-          let inputData = transaction.InputData
-          tokenInfo = JSON.parse(inputData)
-        }
-        callback(null, tokenInfo.tokenName)
-      } else {
-        callback(null, tokenName)
-      }
-    })
-  }
+  // getTokenName(addr, callback) {
+  //   this.chain.getTokenName(addr, callback)
+  // }
 
   getContractAddress(tokenname, callback){
-    this.chain.chain.getContractAddress(tokenname, callback)
+    this.chain.getContractAddress(tokenname, callback)
   }
 
   getCreatorContract(creatorAddress, callback){
-    this.chain.chain.getCreatorContract(creatorAddress, (err, contractAddrArr) => {
-      if(err){
-        callback(err, null)
-      } else if(contractAddrArr.length==0) {
-        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return tx.TxFrom === creatorAddress && secUtils.isContractAddr(tx.TxTo)
-        })
-        transactions.sort((a,b)=>{
-          a.TimeStamp - b.TimeStamp
-        })
-        let transaction = transactions[0]
-        let contractAddrResult = []
-        let status = 'failed'
-        if(transaction){
-          let inputData = transaction.InputData
-          let tokenInfo = JSON.parse(inputData)
-          if(tokenInfo.tokenName && tokenInfo.sourceCode){
-            contractAddrResult.push(transaction.TxTo)
-            status = pending
-          }
-        }
-        callback(null, contractAddrResult, status)
-      } else {
-        callback(null, contractAddrArr, 'success')
-      }
-    })
+    this.chain.getCreatorContract(creatorAddress, callback)
+  }
+  
+  getContractInfo(contractAddr, callback){
+    this.chain.getCreatorContract(contractAddr, callback)
   }
 
-  getTimeLock(addr, callback) {
-    this.chain.chain.getTimeLock(addr, callback)
-  }
+  // getTimeLock(addr, callback) {
+  //   this.chain.chain.getTimeLock(addr, callback)
+  // }
 
-  addTokenMap(tokenInfo, addr, callback) {
-    this.chain.chain.addTokenMap(tokenInfo, addr, callback)
-  }
+  // addTokenMap(tokenInfo, addr, callback) {
+  //   this.chain.chain.addTokenMap(tokenInfo, addr, callback)
+  // }
   
 }
 

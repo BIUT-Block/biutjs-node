@@ -248,6 +248,133 @@ class BlockChain {
     })
   }
 
+  getCreatorContract(creatorAddress, callback) {
+    this.chain.getCreatorContract(creatorAddress, (err, contractAddrArr) => {
+      if(err){
+        callback(err, null, null)
+      } else if(contractAddrArr.length==0) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return tx.TxFrom === creatorAddress && secUtils.isContractAddr(tx.TxTo)
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        let contractAddrResult = []
+        let status = 'failed'
+        if(transaction){
+          let oInputData = JSON.parse(transaction.InputData)
+          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+            contractAddrResult.push({
+              "tokenName": oInputData.tokenName,
+              "sourceCode": oInputData.sourceCode,
+              "totalSupply": oInputData.totalSupply,
+              "timeLock": {},
+              "approve": {},
+              "creator": transaction.TxFrom,
+              "txHash": transaction.TxHash,
+              "time": transaction.TimeStamp              
+            })
+            status = 'pending'
+          }
+        }
+        callback(null, contractAddrResult, status)
+      } else {
+        callback(null, contractAddrArr, 'success')
+      }
+    })
+  }
+
+  getTokenName(contractAddr, callback){
+    this.chain.getTokenName(contractAddr, (err, tokenName) => {
+      if(err){
+        callback(err, null, null)
+      } else if(!tokenName) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return tx.TxTo === contractAddr
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        let oInputData = {}
+        let status = 'failed'
+        if(transaction){
+          oInputData = JSON.parse(transaction.InputData)
+          status = 'pending'
+        }
+        callback(null, oInputData.tokenName, status)
+      } else {
+        callback(null, tokenName, 'success')
+      }
+    })
+  }
+
+  getContractInfo(contractAddr, callback) {
+    this.chain.getTokenInfo(contractAddr, (err, tokenInfo) => {
+      if(err){
+        callback(err, null, null)
+      } else if(!tokenInfo) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return tx.TxTo === contractAddr
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        let oTokenInfo = {}
+        let status = 'failed'
+        if(transaction){
+          let oInputData = JSON.parse(transaction.InputData)
+          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+            oTokenInfo = {
+              "tokenName": oInputData.tokenName,
+              "sourceCode": oInputData.sourceCode,
+              "totalSupply": oInputData.totalSupply,
+              "timeLock": {},
+              "approve": {},
+              "creator": transaction.TxFrom,
+              "txHash": transaction.TxHash,
+              "time": transaction.TimeStamp              
+            }
+            status = 'pending'
+          }
+        }
+        callback(null, oTokenInfo, status)
+      } else {
+        callback(null, tokenInfo, 'success')
+      }
+    })
+  }
+
+  getContractAddress(tokenName, callback){
+    this.chain.getContractAddress(tokenName, (err, contractAddr) => {
+      if(err){
+        callback(err, null, null)
+      } else if(!contractAddr) {
+        let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
+          return secUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName == tokenName
+        })
+        transactions.sort((a,b)=>{
+          a.TimeStamp - b.TimeStamp
+        })
+        let transaction = transactions[0]
+        let contractAddrResult = ''
+        let status = 'failed'        
+        if(transaction) {
+          let oInputData = JSON.parse(transaction.InputData)
+          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+            contractAddrResult = transaction.TxTo
+            status = 'pending'
+          }
+        }
+        callback(null, contractAddrResult, status)
+      } else {
+        callback(null, contractAddr, 'success')
+      }
+    })
+  }
+
   /**
    * Get user account address
    */
