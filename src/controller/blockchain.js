@@ -57,7 +57,7 @@ class BlockChain {
     })
   }
 
-  run () {
+  run() {
     // main network is not enabled to randomly generate transactions
     if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
@@ -71,7 +71,9 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx (_tx, excludePeer = { _socket: {} }) {
+  sendNewTokenTx(_tx, excludePeer = {
+    _socket: {}
+  }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
     let tx = cloneDeep(_tx)
     this.rlp.getPeers().forEach(peer => {
@@ -104,7 +106,7 @@ class BlockChain {
       }
     })
   }
-  
+
   generateTx() {
     const tx = SECRandomData.generateTokenTransaction()
     const tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
@@ -250,59 +252,60 @@ class BlockChain {
 
   getCreatorContract(creatorAddress, callback) {
     this.chain.getCreatorContract(creatorAddress, (err, contractAddrArr) => {
-      if(err){
-        callback(err, null, null)
-      } else if(contractAddrArr.length==0) {
+      if (err) {
+        callback(err, null)
+      } else if (contractAddrArr.length == 0) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
           return tx.TxFrom === creatorAddress && secUtils.isContractAddr(tx.TxTo)
         })
-        transactions.sort((a,b)=>{
+        transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
         })
-        let transaction = transactions[0]
         let contractAddrResult = []
-        let status = 'failed'
-        if(transaction){
+        for (let transaction of transactions) {
           let oInputData = JSON.parse(transaction.InputData)
-          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+          if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
             contractAddrResult.push({
               contractAddress: transaction.TxTo,
               contractInfo: {
-              "tokenName": oInputData.tokenName,
-              "sourceCode": oInputData.sourceCode,
-              "totalSupply": oInputData.totalSupply,
-              "timeLock": {},
-              "approve": {},
-              "creator": transaction.TxFrom,
-              "txHash": transaction.TxHash,
-              "time": transaction.TimeStamp              
-            }
-          })
-            status = 'pending'
+                "tokenName": oInputData.tokenName,
+                "sourceCode": oInputData.sourceCode,
+                "totalSupply": oInputData.totalSupply,
+                "timeLock": {},
+                "approve": {},
+                "creator": transaction.TxFrom,
+                "txHash": transaction.TxHash,
+                "time": transaction.TimeStamp
+              },
+              status: 'pending'
+            })
           }
         }
-        callback(null, contractAddrResult, status)
+        callback(null, contractAddrResult)
       } else {
-        callback(null, contractAddrArr, 'success')
+        for (let contractAddrInfo of contractAddrArr) {
+          contractAddrInfo.status = 'success'
+        }
+        callback(null, contractAddrArr)
       }
     })
   }
 
-  getTokenName(contractAddr, callback){
+  getTokenName(contractAddr, callback) {
     this.chain.getTokenName(contractAddr, (err, tokenName) => {
-      if(err){
+      if (err) {
         callback(err, null, null)
-      } else if(!tokenName) {
+      } else if (!tokenName) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
           return tx.TxTo === contractAddr
         })
-        transactions.sort((a,b)=>{
+        transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let oInputData = {}
         let status = 'failed'
-        if(transaction){
+        if (transaction) {
           oInputData = JSON.parse(transaction.InputData)
           status = 'pending'
         }
@@ -315,21 +318,20 @@ class BlockChain {
 
   getContractInfo(contractAddr, callback) {
     this.chain.getTokenInfo(contractAddr, (err, tokenInfo) => {
-      if(err){
-        callback(err, null, null)
-      } else if(!tokenInfo) {
+      if (err) {
+        callback(err, null)
+      } else if (!tokenInfo) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
           return tx.TxTo === contractAddr
         })
-        transactions.sort((a,b)=>{
+        transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let oTokenInfo = {}
-        let status = 'failed'
-        if(transaction){
+        if (transaction) {
           let oInputData = JSON.parse(transaction.InputData)
-          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+          if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
             oTokenInfo = {
               "tokenName": oInputData.tokenName,
               "sourceCode": oInputData.sourceCode,
@@ -338,35 +340,36 @@ class BlockChain {
               "approve": {},
               "creator": transaction.TxFrom,
               "txHash": transaction.TxHash,
-              "time": transaction.TimeStamp              
+              "time": transaction.TimeStamp,
+              "status": 'pending'
             }
-            status = 'pending'
           }
         }
-        callback(null, oTokenInfo, status)
+        callback(null, oTokenInfo)
       } else {
-        callback(null, tokenInfo, 'success')
+        tokenInfo.status = 'success'
+        callback(null, tokenInfo)
       }
     })
   }
 
-  getContractAddress(tokenName, callback){
+  getContractAddress(tokenName, callback) {
     this.chain.getContractAddress(tokenName, (err, contractAddr) => {
-      if(err){
+      if (err) {
         callback(err, null, null)
-      } else if(!contractAddr) {
+      } else if (!contractAddr) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
           return secUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName == tokenName
         })
-        transactions.sort((a,b)=>{
+        transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let contractAddrResult = ''
-        let status = 'failed'        
-        if(transaction) {
+        let status = 'failed'
+        if (transaction) {
           let oInputData = JSON.parse(transaction.InputData)
-          if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
+          if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
             contractAddrResult = transaction.TxTo
             status = 'pending'
           }
