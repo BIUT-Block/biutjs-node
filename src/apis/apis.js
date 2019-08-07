@@ -259,7 +259,7 @@ class APIs {
         })
         let transaction = transactions[0]
         let contractAddrResult = []
-        status = 'failed'
+        let status = 'failed'
         if(transaction){
           let inputData = transaction.InputData
           let tokenInfo = JSON.parse(inputData)
