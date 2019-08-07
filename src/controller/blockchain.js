@@ -266,6 +266,8 @@ class BlockChain {
           let oInputData = JSON.parse(transaction.InputData)
           if(oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply){
             contractAddrResult.push({
+              contractAddress: transaction.TxTo,
+              contractInfo: {
               "tokenName": oInputData.tokenName,
               "sourceCode": oInputData.sourceCode,
               "totalSupply": oInputData.totalSupply,
@@ -274,7 +276,8 @@ class BlockChain {
               "creator": transaction.TxFrom,
               "txHash": transaction.TxHash,
               "time": transaction.TimeStamp              
-            })
+            }
+          })
             status = 'pending'
           }
         }
