@@ -322,7 +322,7 @@ class BlockChain {
         callback(err, null)
       } else if (!tokenInfo) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return tx.TxTo === contractAddr
+          return tx.TxTo == contractAddr
         })
         transactions.sort((a, b) => {
           a.TimeStamp - b.TimeStamp

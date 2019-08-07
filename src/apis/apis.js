@@ -231,7 +231,7 @@ class APIs {
   }
   
   getContractInfo(contractAddr, callback){
-    this.chain.getCreatorContract(contractAddr, callback)
+    this.chain.getContractInfo(contractAddr, callback)
   }
 
   // getTimeLock(addr, callback) {
