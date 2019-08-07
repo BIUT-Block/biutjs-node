@@ -307,7 +307,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
         callback(null, response)
-      } else if (!tokenInfo.tokenname) {
+      } else if (!tokenInfo.tokenName) {
         response.status = '0'
         response.info = `ContractAddress doesn't exist`
         callback(null, response)
