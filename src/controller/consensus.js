@@ -81,13 +81,13 @@ class Consensus {
                 }
                 this.config.dbconfig.logger.info(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
                 console.log(chalk.magenta(`Starting POW, last block difficulty is ${blockForPOW.lastBlockDifficulty} ...`))
+                this.isPowRunning = true
                 this.powWorker.send(blockForPOW)
               }
             })
           }
         })
 
-        this.isPowRunning = true
         this.powWorker.once('message', (result) => {
           try {
             // verify the node is not synchronizing
@@ -175,7 +175,8 @@ class Consensus {
       try {
         this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
         console.log(chalk.magenta('Reset POW'))
-        this.powWorker.kill()
+        this.powWorker.kill('SIGKILL')
+        this.isPowRunning = false
         setTimeout(() => {
           this.powWorker = cp.fork(path.join(__dirname, '/pow-worker'))
           if (typeof callback === 'function') {
@@ -185,6 +186,12 @@ class Consensus {
       } catch (err) {
         this.config.dbconfig.logger.error(err)
         console.error(err)
+      }
+    } else if (process.env.pow || this.powEnableFlag) {
+      if (typeof callback === 'function') {
+        setTimeout(() => {
+          callback()
+        }, 1000)
       }
     }
   }
