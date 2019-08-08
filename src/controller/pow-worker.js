@@ -39,35 +39,35 @@ process.on('message', blockForPOW => {
   }
 })
 
-process.on('close', () => {
-  try {
-    if (secPow.cacheDB) {
-      secPow.cacheDB.close()
-    }
-  } catch (err) {
-    console.error('Error in pow-worker close')
-    console.error(err)
-  }
-})
+// process.on('close', () => {
+//   try {
+//     if (secPow.cacheDB) {
+//       secPow.cacheDB.close()
+//     }
+//   } catch (err) {
+//     console.error('Error in pow-worker close')
+//     console.error(err)
+//   }
+// })
 
-process.on('SIGINT', () => {
-  try {
-    if (secPow.cacheDB) {
-      secPow.cacheDB.close()
-    }
-  } catch (err) {
-    console.error('Error in pow-worker SIGINT')
-    console.error(err)
-  }
-})
+// process.on('SIGINT', () => {
+//   try {
+//     if (secPow.cacheDB) {
+//       secPow.cacheDB.close()
+//     }
+//   } catch (err) {
+//     console.error('Error in pow-worker SIGINT')
+//     console.error(err)
+//   }
+// })
 
-process.on('SIGTERM', () => {
-  try {
-    if (secPow.cacheDB) {
-      secPow.cacheDB.close()
-    }
-  } catch (err) {
-    console.error('Error in pow-worker SIGTERM')
-    console.error(err)
-  }
-})
+// process.on('SIGTERM', () => {
+//   try {
+//     if (secPow.cacheDB) {
+//       secPow.cacheDB.close()
+//     }
+//   } catch (err) {
+//     console.error('Error in pow-worker SIGTERM')
+//     console.error(err)
+//   }
+// })

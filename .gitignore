@@ -9,3 +9,5 @@ ndpprivatekey
 biutlogs
 *logs
 .vs/*
+test
+test/*
