@@ -212,6 +212,7 @@ let server = jayson.server({
         Signature: args[0].data
       }
       tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
+      let txHash = tokenTx.TxHash
       core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
@@ -219,7 +220,7 @@ let server = jayson.server({
         } else {
           response.status = '1'
           response.info = 'OK'
-          response.txHash = tokenTx.TxHash
+          response.txHash = txHash
         }
         console.timeEnd('sen_sendRawTransaction')
         callback(null, response)

@@ -343,6 +343,7 @@ let server = jayson.server({
         Signature: args[0].data
       }
       tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+      let txHash = tokenTx.TxHash
       core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
@@ -350,7 +351,7 @@ let server = jayson.server({
         } else {
           response.status = '1'
           response.info = 'OK'
-          response.txHash = tokenTx.TxHash
+          response.txHash = txHash
         }
         console.timeEnd('wallet_biut_sendRawTransaction')
         callback(null, response)
@@ -392,6 +393,7 @@ let server = jayson.server({
         Signature: args[0].data
       }
       tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
+      let txHash = tokenTx.TxHash
       core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
@@ -399,7 +401,7 @@ let server = jayson.server({
         } else {
           response.status = '1'
           response.info = 'OK'
-          response.txHash = tokenTx.TxHash
+          response.txHash = txHash
         }
         console.timeEnd('wallet_biut_sendRawTransaction')
         callback(null, response)
