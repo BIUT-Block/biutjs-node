@@ -142,6 +142,9 @@ class Consensus {
                           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                           console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                         } else {
+                          senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                          senBlock.getBlock().StateRoot = newStateRoot
+                          senBlock.getBlock().Hash = newHash                          
                           this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
@@ -270,13 +273,13 @@ class Consensus {
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
           this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err, newStateRoot, newHash) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
+            secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+            secBlock.getBlock().StateRoot = newStateRoot
+            secBlock.getBlock().Hash = newHash            
             this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             console.log(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
             console.log(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
-            secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-            secBlock.StateRoot = newStateRoot
-            secBlock.Hash = newHash
             this.BlockChain.sendNewBlockHash(secBlock)
             this.BlockChain.pool.clear()
 
