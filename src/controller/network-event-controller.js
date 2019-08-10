@@ -420,7 +420,7 @@ class NetworkEvent {
       let _secblock = cloneDeep(secblock.getBlock())
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.chain.putBlockToDB(_secblock, true, (err) => {
+      this.BlockChain.chain.putBlockToDB(_secblock, false, (err) => {
         if (err) {
           this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
           console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
