@@ -137,7 +137,7 @@ class Consensus {
                       newBlock.Transactions = txArray
                       // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
                       let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err, newStateRoot, newHash) => {
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), false, (err, newStateRoot, newHash) => {
                         if (err) {
                           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                           console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
@@ -268,7 +268,7 @@ class Consensus {
 
           newBlock.Transactions = txArray
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err, newStateRoot, newHash) => {
+          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), false, (err, newStateRoot, newHash) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
             secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
             secBlock.getBlock().StateRoot = newStateRoot
