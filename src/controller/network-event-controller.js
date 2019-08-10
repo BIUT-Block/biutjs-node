@@ -420,7 +420,7 @@ class NetworkEvent {
       let _secblock = cloneDeep(secblock.getBlock())
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.chain.putBlockToDB(_secblock, (err) => {
+      this.BlockChain.chain.putBlockToDB(_secblock, true, (err) => {
         if (err) {
           this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
           console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
@@ -479,13 +479,14 @@ class NetworkEvent {
         console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
       }
       async.eachSeries(payload[1], (payload, callback) => {
+        // console.log('mingNewBlock', payload)
         let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
         let block = cloneDeep(newTokenBlock.getBlock())
         this.logger.info(`Syncronizing block ${block.Number}`)
         debug(`Syncronizing block ${block.Number}`)
         console.time('putBlockToDB ' + block.Number)
         console.time('writeNewBlock ' + block.Number)
-        this.BlockChain.chain.putBlockToDB(block, (_err) => {
+        this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
           console.timeEnd('putBlockToDB ' + block.Number)
           if (_err) callback(_err)
           else {

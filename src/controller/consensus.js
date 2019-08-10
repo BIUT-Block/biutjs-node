@@ -137,7 +137,7 @@ class Consensus {
                       newBlock.Transactions = txArray
                       // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
                       let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err, newStateRoot) => {
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err, newStateRoot, newHash) => {
                         if (err) {
                           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                           console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
@@ -148,6 +148,7 @@ class Consensus {
                           console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
                           senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                           senBlock.StateRoot = newStateRoot
+                          senBlock.Hash = newHash
                           this.BlockChain.sendNewBlockHash(senBlock)
                           this.BlockChain.pool.clear()
                           this.resetPOW()
@@ -267,7 +268,7 @@ class Consensus {
 
           newBlock.Transactions = txArray
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err, newStateRoot) => {
+          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err, newStateRoot, newHash) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
             this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             console.log(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
@@ -275,6 +276,7 @@ class Consensus {
             console.log(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
             secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
             secBlock.StateRoot = newStateRoot
+            secBlock.Hash = newHash
             this.BlockChain.sendNewBlockHash(secBlock)
             this.BlockChain.pool.clear()
 
