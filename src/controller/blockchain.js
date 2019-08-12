@@ -129,8 +129,9 @@ class BlockChain {
     let tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
 
     // check balance
-    this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
+    this.getContractInfo(tx.TxTo, (err, tokenInfo) => {
       if (err) return callback(err)
+      let tokenName = this.chain.checkSecSubContract(tokenInfo.tokenName)
       this.checkBalance(tx, tokenName, (err, result) => {
         if (err) callback(err)
         else if (!result) {
@@ -413,7 +414,7 @@ class BlockChain {
         } else {
           let result = false
           if ((parseFloat(balance) >= parseFloat(tx.Value)) && (parseFloat(balance) >= 0)) {
-            this.senChain.getBalance(tx.TxFrom, tokenName, (err, _balance) => {
+            this.senChain.getBalance(tx.TxFrom, 'SEN', (err, _balance) => {
               if (err) {
                 callback(err, null)
               } else {
@@ -454,7 +455,7 @@ class BlockChain {
     if (addr === '0000000000000000000000000000000000000001') {
       return callback(null, true)
     }
-
+    tokenName = this.chain.checkSecSubContract(tokenName)
     this.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
         callback(err, null)
@@ -487,10 +488,11 @@ class BlockChain {
       if (typeof tx !== 'object') {
         tx = JSON.parse(tx)
       }
-      this.chain.getTokenName(tx.TxTo, (err, tokenName) => {
+      this.getContractInfo(tx.TxTo, (err, tokenInfo) => {
         if (err) {
           return callback(err)
         } else {
+          let tokenName = tokenInfo.tokenName
           this.isPositiveBalance(tx.TxFrom, tokenName, (err, balResult) => {
             if (err) return callback(err)
             this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {
