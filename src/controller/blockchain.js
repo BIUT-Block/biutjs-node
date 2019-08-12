@@ -501,7 +501,7 @@ class BlockChain {
         if (err) {
           return callback(err)
         } else {
-          let tokenName = tokenInfo.tokenName
+          let tokenName = Object.keys(tokenInfo)>0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
           this.isPositiveBalance(tx.TxFrom, tokenName, (err, balResult) => {
             if (err) return callback(err)
             this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {
