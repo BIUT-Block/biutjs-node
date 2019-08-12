@@ -131,7 +131,7 @@ class BlockChain {
     // check balance
     this.getContractInfo(tx.TxTo, (err, tokenInfo) => {
       if (err) return callback(err)
-      let tokenName = this.chain.checkSecSubContract(tokenInfo.tokenName)
+      let tokenName = Object.keys(tokenInfo)>0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
       this.checkBalance(tx, tokenName, (err, result) => {
         if (err) callback(err)
         else if (!result) {
@@ -187,66 +187,75 @@ class BlockChain {
    * Get user account balance
    */
   getBalance(userAddress, tokenName, callback) {
+    let self = this
     this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) {
         return callback(err)
       } else {
-        if (tokenName === 'All') {
-          let allBalanceJson = Object.assign({}, value)
-          let tokenNameArr = Object.keys(value)
-          tokenNameArr.forEach((tmpTokenName, index) => {
-            this.chain.getContractAddress(tmpTokenName, (err, contractAddr) => {
-              let balance = allBalanceJson[tmpTokenName]
-              balance = new Big(balance)
-              if (err) return callback(err, null)
-              let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
-              txArray.forEach((tx) => {
-                balance = balance.minus(tx.Value)
-              })
-
-              balance = balance.toFixed(DEC_NUM)
-              allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
-              if (index === tokenNameArr.length - 1) {
-                callback(null, allBalanceJson)
+        let txArrayFromPool = self.pool.getAllTxFromPool()
+        async.eachSeries(txArrayFromPool, (tx, _callback)=>{
+          if(SECUtils.isContractAddr(tx.TxTo)){
+            self.getContractInfo(tx.TxTo, (err, tokenInfo)=>{
+              if(err) return _callback(err)
+              else{
+                tx.tokenName = Object.keys(tokenInfo)>0 ? self.chain.checkSecSubContract(tokenInfo.tokenName) : self.chainName
+                _callback()
               }
             })
-          })
-        } else {
-          if (this.chainName === 'SEC' && tokenName === 'SEC') {
-            let balance = value[tokenName]
-            balance = new Big(balance)
-            let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-            txArray.forEach((tx) => {
-              balance = balance.minus(tx.Value)
-            })
-            balance = balance.toFixed(DEC_NUM)
-            balance = parseFloat(balance).toString()
-            callback(null, balance)
-          } else if (this.chainName === 'SEN' && tokenName === 'SEN') {
-            let balance = value[tokenName]
-            balance = new Big(balance)
-            let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress))
-            txArray.forEach((tx) => {
-              balance = balance.minus(tx.Value)
-            })
-            balance = balance.toFixed(DEC_NUM)
-            balance = parseFloat(balance).toString()
-            callback(null, balance)
           } else {
-            this.chain.getContractAddress(tokenName, (err, contractAddr) => {
-              if (err) return callback(err, null)
+            tx.tokenName = self.chainName
+            _callback()
+          }
+        }, function(err){
+          if(err) return callback(err, null)
+          if (tokenName === 'All') {
+            let allBalanceJson = Object.assign({}, value)
+            let tokenNameArr = Object.keys(value)
+            tokenNameArr.forEach((tmpTokenName, index) => {
+              let balance = allBalanceJson[tmpTokenName]
+              balance = new Big(balance)
+              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && tx.tokenName === tmpTokenName))
+              txArray.forEach((tx) => {
+                balance = balance.minus(tx.Value)
+              })           
+              balance = balance.toFixed(DEC_NUM)
+              allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
+              callback(null, allBalanceJson)
+            })
+          } else {
+            if (self.chainName === 'SEC' && tokenName === 'SEC') {
               let balance = value[tokenName]
               balance = new Big(balance)
-              let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && (tx.TxFrom === contractAddr || tx.TxTo === contractAddr)))
+              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && tx.tokenName === 'SEC'))
               txArray.forEach((tx) => {
                 balance = balance.minus(tx.Value)
               })
               balance = balance.toFixed(DEC_NUM)
               balance = parseFloat(balance).toString()
               callback(null, balance)
-            })
+            } else if (self.chainName === 'SEN' && tokenName === 'SEN') {
+              let balance = value[tokenName]
+              balance = new Big(balance)
+              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress  && tx.tokenName === 'SEN'))
+              txArray.forEach((tx) => {
+                balance = balance.minus(tx.Value)
+              })
+              balance = balance.toFixed(DEC_NUM)
+              balance = parseFloat(balance).toString()
+              callback(null, balance)
+            } else {
+              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && tx.tokenName === tokenName))
+              let balance = value[tokenName]
+              balance = new Big(balance)
+              txArray.forEach((tx) => {
+                balance = balance.minus(tx.Value)
+              })
+              balance = balance.toFixed(DEC_NUM)
+              balance = parseFloat(balance).toString()
+              callback(null, balance)              
+            }
           }
-        }
+        })
       }
     })
   }
