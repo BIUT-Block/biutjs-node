@@ -430,6 +430,24 @@ let server = jayson.server({
     })
   },
 
+  sec_getLockerContract: function(args, callback) {
+    console.time('sec_getLockerContract')
+    let response = {}
+    let walletAddress = args[0]
+    core.secAPIs.getLockerContract(walletAddress, (err, contractAddrArr)=>{
+      if(err) {
+        response.status = '0'
+        response.info = `Error occurs: ${err.stack}`
+      } else {
+        response.status = '1'
+        response.info = 'OK'
+        response.contractAddrArr = contractAddrArr
+      }
+      console.timeEnd('sec_getLockerContract')
+      callback(null, response)
+    })
+  },
+
   sec_getMultiCreatorContract: function(args, callback) {
     console.time('sec_getCreatorContract')
     let response = {}

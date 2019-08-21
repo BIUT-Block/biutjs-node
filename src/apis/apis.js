@@ -234,6 +234,10 @@ class APIs {
     this.chain.getContractInfo(contractAddr, callback)
   }
 
+  getLockerContract(walletAddress, callback){
+    this.chain.getLockerContract(walletAddress, callback)
+  }
+
   // getTimeLock(addr, callback) {
   //   this.chain.chain.getTimeLock(addr, callback)
   // }

@@ -363,6 +363,10 @@ class BlockChain {
     })
   }
 
+  getLockerContract(walletAddr, callback) {
+    this.chain.getLockerContract(walletAddr, callback)
+  }
+
   getContractAddress(tokenName, callback) {
     this.chain.getContractAddress(tokenName, (err, contractAddr) => {
       if (err) {
