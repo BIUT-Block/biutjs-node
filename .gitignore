@@ -9,4 +9,9 @@ ndpprivatekey
 biutlogs
 *logs
 .vs/*
+<<<<<<< HEAD
 leylib.json
+=======
+test
+test/*
+>>>>>>> 191fecc3944bfc8b1e91a2da690a57fd3b064b58

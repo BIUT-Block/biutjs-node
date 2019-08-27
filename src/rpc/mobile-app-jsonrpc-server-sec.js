@@ -166,6 +166,7 @@ let server = jayson.server({
 
     let currentPage = parseInt(args[1] || 1)
     let pageSize = parseInt(args[2] || 39)
+    let sortType = args[3]
 
     // verify accAddr
     if (accAddr[0] === '0' && accAddr[1] === 'x') {
@@ -186,15 +187,23 @@ let server = jayson.server({
         } else {
           let txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
           txArray = txArray.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
+            if (sortType === 'asc') {
+              return a.TimeStamp - b.TimeStamp
+            } else {
+              return b.TimeStamp - a.TimeStamp
+            }
           })
           txArraryInPool = txArraryInPool.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
+            if (sortType === 'asc') {
+              return a.TimeStamp - b.TimeStamp
+            } else {
+              return b.TimeStamp - a.TimeStamp
+            }
           })
           response.status = '1'
           response.message = 'OK'
-          response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArraryInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArraryInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
@@ -233,6 +242,7 @@ let server = jayson.server({
         Signature: args[0].data
       }
       tokenTx = core.secAPIs.createSecTxObject(tokenTx).getTx()
+      let txHash = tokenTx.TxHash
       core.CenterController.getSecChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'
@@ -240,7 +250,7 @@ let server = jayson.server({
         } else {
           response.status = '1'
           response.info = 'OK'
-          response.txHash = tokenTx.TxHash
+          response.txHash = txHash
         }
         console.timeEnd('sec_sendRawTransaction')
         callback(null, response)
