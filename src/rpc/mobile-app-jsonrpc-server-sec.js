@@ -92,7 +92,7 @@ let server = jayson.server({
       let accAddr = args[0]
       let tokenName = args[1]
       if (tokenName === undefined) {
-        tokenName = 'All'
+        tokenName = 'SEC'
       }
       // let time = args[1] 'latest'
       core.secAPIs.getBalance(accAddr, tokenName, (err, balance) => {

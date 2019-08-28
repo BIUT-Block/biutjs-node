@@ -58,8 +58,8 @@ let server = jayson.server({
     try {
       let accAddr = args[0]
       let tokenName = args[1]
-      if (tokenName === undefined) {
-        tokenName = 'All'
+      if (tokenName == undefined) {
+        tokenName = 'SEN'
       }
       // let time = args[1] 'latest'
       core.senAPIs.getBalance(accAddr, tokenName, (err, balance) => {
