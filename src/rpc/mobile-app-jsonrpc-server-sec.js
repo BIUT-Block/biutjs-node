@@ -169,7 +169,7 @@ let server = jayson.server({
     let accAddr = args[0] // address
 
     let currentPage = parseInt(args[1] || 1)
-    let pageSize = parseInt(args[2] || 39)
+    let pageSize = parseInt(args[2] || Number.MAX_SAFE_INTEGER)
     let sortType = args[3]
 
     // verify accAddr
