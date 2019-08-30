@@ -123,11 +123,15 @@ class SENReward {
                         timeLock[address][address].forEach(lockRecord => {
                           if (Date.now() < lockRecord.unlockTime) {
                             reward += parseFloat(lockRecord.lockAmount) * rewardFactor / 100000
+                            console.log('reward ++')
+                            console.log(reward)
                           }
                         })
                       }
                     }
                     if (counter === contractAddArray.length) {
+                      console.log('all reward')
+                      console.log(reward)
                       callback(null, reward)
                     }
                   })
