@@ -236,17 +236,17 @@ let server = jayson.server({
           response.resultInChain = []
           response.resultInPool = []
         } else {
-          let txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
+          let txArrayInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
           txArray = txArray.sort((a, b) => {
             return b.TimeStamp - a.TimeStamp
           })
-          txArraryInPool = txArraryInPool.sort((a, b) => {
+          txArrayInPool = txArrayInPool.sort((a, b) => {
             return b.TimeStamp - a.TimeStamp
           })
           response.status = '1'
           response.message = 'OK'
           response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArraryInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArrayInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
@@ -278,14 +278,26 @@ let server = jayson.server({
       console.timeEnd('wallet_biu_getTransactions')
       callback(null, response)
     } else {
-      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+      core.senAPIs.getTokenTxForUser(accAddr, (err, _txArray) => {
         if (err) {
           response.status = '0'
           response.message = `Failed to get user transactions, error info: ${err}`
           response.resultInChain = []
           response.resultInPool = []
         } else {
-          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+          let txArrayInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+          let lastBlockHeight = core.senAPIs.getTokenChainHeight()
+          let txArray = []
+          let txRemoveArray = []
+          _txArray.forEach((tx, index) => {
+            if (lastBlockHeight - tx.BlockNumber > 1) {
+              txArray.push(Object.assign({}, tx))
+            } else {
+              tx.TxReceiptStatus = 'pending'
+              txRemoveArray.push(Object.assign({}, tx))
+            }
+          })
+          txArrayInPool = txArrayInPool.concat(txRemoveArray)
           txArray = txArray.sort((a, b) => {
             if (sortType === 'asc') {
               return a.TimeStamp - b.TimeStamp
@@ -293,7 +305,7 @@ let server = jayson.server({
               return b.TimeStamp - a.TimeStamp
             }
           })
-          txArraryInPool = txArraryInPool.sort((a, b) => {
+          txArrayInPool = txArrayInPool.sort((a, b) => {
             if (sortType === 'asc') {
               return a.TimeStamp - b.TimeStamp
             } else {
@@ -303,7 +315,7 @@ let server = jayson.server({
           response.status = '1'
           response.message = 'OK'
           response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArraryInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+          response.resultInPool = txArrayInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
