@@ -490,8 +490,7 @@ class NetworkEvent {
           console.timeEnd('putBlockToDB ' + block.Number)
           if (_err) {
             return callback(_err)
-          }
-          else {
+          } else {
             this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)

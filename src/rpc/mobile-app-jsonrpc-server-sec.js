@@ -3,7 +3,7 @@ const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
 let core = {}
 
-function _getWalletKeys() {
+function _getWalletKeys () {
   let keys = SECUtil.generateSecKeys()
   let privKey64 = keys.privKey
   let privateKey = privKey64
@@ -20,7 +20,7 @@ function _getWalletKeys() {
   }
 }
 
-function _getKeysFromPrivateKey(privateKey) {
+function _getKeysFromPrivateKey (privateKey) {
   try {
     let privateKeyBuffer = SECUtil.privateToBuffer(privateKey)
     let extractAddress = SECUtil.privateToAddress(privateKeyBuffer).toString('hex')
@@ -37,7 +37,7 @@ function _getKeysFromPrivateKey(privateKey) {
   }
 }
 
-function _signTransaction(privateKey, transfer) {
+function _signTransaction (privateKey, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
     from: transfer.walletAddress,
@@ -267,7 +267,7 @@ let server = jayson.server({
     }
   },
 
-  sec_createContractTransaction: function(args, callback) {
+  sec_createContractTransaction: function (args, callback) {
     let response = {}
     let tokenName = args[1]
     core.secAPIs.getContractAddress(tokenName, (err, address) => {
@@ -384,7 +384,7 @@ let server = jayson.server({
   //         }
   //       } else {
   //         response.status = '1'
-  //         response.info = 'OK'          
+  //         response.info = 'OK'
   //         response.timeLock = timeLock
   //       }
   //     }
@@ -393,13 +393,13 @@ let server = jayson.server({
   //   })
   // },
 
-  sec_getContractInfo: function(args, callback) {
+  sec_getContractInfo: function (args, callback) {
     console.time('sec_getContractInfo')
     let response = {}
     let contractAddress = args[0]
 
-    core.secAPIs.getContractInfo(contractAddress, (err, contractInfo)=>{
-      if(err) {
+    core.secAPIs.getContractInfo(contractAddress, (err, contractInfo) => {
+      if (err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
       } else {
@@ -412,12 +412,12 @@ let server = jayson.server({
     })
   },
 
-  sec_getCreatorContract: function(args, callback) {
+  sec_getCreatorContract: function (args, callback) {
     console.time('sec_getCreatorContract')
     let response = {}
     let creatorAddress = args[0]
-    core.secAPIs.getCreatorContract(creatorAddress, (err, contractInfo)=>{
-      if(err) {
+    core.secAPIs.getCreatorContract(creatorAddress, (err, contractInfo) => {
+      if (err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
       } else {
@@ -430,12 +430,12 @@ let server = jayson.server({
     })
   },
 
-  sec_getLockerContract: function(args, callback) {
+  sec_getLockerContract: function (args, callback) {
     console.time('sec_getLockerContract')
     let response = {}
     let walletAddress = args[0]
-    core.secAPIs.getLockerContract(walletAddress, (err, contractAddrArr)=>{
-      if(err) {
+    core.secAPIs.getLockerContract(walletAddress, (err, contractAddrArr) => {
+      if (err) {
         response.status = '0'
         response.info = `Error occurs: ${err.stack}`
       } else {
@@ -448,35 +448,35 @@ let server = jayson.server({
     })
   },
 
-  sec_getMultiCreatorContract: function(args, callback) {
+  sec_getMultiCreatorContract: function (args, callback) {
     console.time('sec_getCreatorContract')
     let response = {}
     let creatorAddressArr = args[0]
     let promiseList = []
 
-    let promFunction = function(creatorAddress){
-      return new Promise(function(resolve, reject){
-        core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress)=>{
-          if(err) {
+    let promFunction = function (creatorAddress) {
+      return new Promise(function (resolve, reject) {
+        core.secAPIs.getCreatorContract(creatorAddress, (err, contractAddress) => {
+          if (err) {
             reject(err)
           } else {
-            resolve({[creatorAddress]: contractAddress})
+            resolve({ [creatorAddress]: contractAddress })
           }
         })
       })
     }
 
-    creatorAddressArr.forEach((creatorAddress)=>{
+    creatorAddressArr.forEach((creatorAddress) => {
       promiseList.push(promFunction(creatorAddress))
     })
 
-    Promise.all(promiseList).then((contractAddressArr)=>{
+    Promise.all(promiseList).then((contractAddressArr) => {
       response.status = '1'
       response.info = 'OK'
       response.contractAddress = contractAddressArr
       callback(null, response)
       console.timeEnd('sec_getCreatorContract')
-    }).catch((err)=>{
+    }).catch((err) => {
       response.status = '0'
       response.info = `Error occurs: ${err.stack}`
       callback(null, response)

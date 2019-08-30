@@ -11,7 +11,7 @@ const SECCircle = require('./circle')
 const SENReward = require('./reward')
 
 class Consensus {
-  constructor(config) {
+  constructor (config) {
     // -------------------------------  Init class global variables  -------------------------------
     this.config = config
     this.rlp = config.rlp
@@ -49,7 +49,7 @@ class Consensus {
   }
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
-  runPOW() {
+  runPOW () {
     this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), this.chainName, (err, balance) => {
       if (err) {
         this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
@@ -144,7 +144,7 @@ class Consensus {
                         } else {
                           senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                           senBlock.getBlock().StateRoot = newStateRoot
-                          senBlock.getBlock().Hash = newHash                          
+                          senBlock.getBlock().Hash = newHash
                           this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
@@ -172,7 +172,7 @@ class Consensus {
     })
   }
 
-  resetPOW(callback) {
+  resetPOW (callback) {
     if ((process.env.pow || this.powEnableFlag) && this.isPowRunning) {
       try {
         this.config.dbconfig.logger.info(chalk.magenta('Reset POW'))
@@ -198,7 +198,7 @@ class Consensus {
     }
   }
 
-  runCircle() {
+  runCircle () {
     let accAddress = this.BlockChain.SECAccount.getAddress()
     this.myGroupId = this.secCircle.getHostGroupId(accAddress)
 
@@ -232,14 +232,14 @@ class Consensus {
     }, this.secCircle.timeResolution)
   }
 
-  resetCircle() {
+  resetCircle () {
     this.config.dbconfig.logger.info(chalk.magenta('Reset Circle'))
     console.log(chalk.magenta('Reset Circle'))
     clearInterval(this.circleInterval)
   }
 
   // ---------------------------------------  SEC Block Chain  ---------------------------------------
-  generateSecBlock(beneficiary, callback) {
+  generateSecBlock (beneficiary, callback) {
     let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
       if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, checkTxArray: ${err}`), null)
@@ -272,7 +272,7 @@ class Consensus {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
             secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
             secBlock.getBlock().StateRoot = newStateRoot
-            secBlock.getBlock().Hash = newHash            
+            secBlock.getBlock().Hash = newHash
             this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             console.log(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
@@ -295,7 +295,7 @@ class Consensus {
     })
   }
 
-  run() {
+  run () {
     if (this.chainName === 'SEC') {
       // do nothing
     } else if (this.chainName === 'SEN') {

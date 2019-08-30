@@ -222,19 +222,19 @@ class APIs {
   //   this.chain.getTokenName(addr, callback)
   // }
 
-  getContractAddress(tokenname, callback){
+  getContractAddress (tokenname, callback) {
     this.chain.getContractAddress(tokenname, callback)
   }
 
-  getCreatorContract(creatorAddress, callback){
+  getCreatorContract (creatorAddress, callback) {
     this.chain.getCreatorContract(creatorAddress, callback)
   }
-  
-  getContractInfo(contractAddr, callback){
+
+  getContractInfo (contractAddr, callback) {
     this.chain.getContractInfo(contractAddr, callback)
   }
 
-  getLockerContract(walletAddress, callback){
+  getLockerContract (walletAddress, callback) {
     this.chain.getLockerContract(walletAddress, callback)
   }
 
@@ -245,7 +245,6 @@ class APIs {
   // addTokenMap(tokenInfo, addr, callback) {
   //   this.chain.chain.addTokenMap(tokenInfo, addr, callback)
   // }
-  
 }
 
 module.exports = APIs

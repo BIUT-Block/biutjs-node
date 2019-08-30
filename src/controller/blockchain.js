@@ -24,7 +24,7 @@ Big.set({
 })
 
 class BlockChain {
-  constructor(config) {
+  constructor (config) {
     this.config = config
     this.chainID = config.chainID
     this.chainName = config.chainName
@@ -44,11 +44,11 @@ class BlockChain {
   }
 
   // only for SEC chain
-  setSenChain(senChain) {
+  setSenChain (senChain) {
     this.senChain = senChain
   }
 
-  init(rlp, callback) {
+  init (rlp, callback) {
     this.rlp = rlp
 
     this.chain.init((err) => {
@@ -57,7 +57,7 @@ class BlockChain {
     })
   }
 
-  run() {
+  run () {
     // main network is not enabled to randomly generate transactions
     if (process.env.tx && (process.env.netType === 'test' || process.env.netType === 'develop')) {
       this.Timer = setInterval(() => {
@@ -71,7 +71,7 @@ class BlockChain {
   // ----------------------------------  Token blockchain Functions  ---------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
-  sendNewTokenTx(_tx, excludePeer = {
+  sendNewTokenTx (_tx, excludePeer = {
     _socket: {}
   }) {
     debug(chalk.blue('Send Tx -> sendNewTokenTx()'))
@@ -89,7 +89,7 @@ class BlockChain {
     })
   }
 
-  sendNewBlockHash(block, excludePeer = {
+  sendNewBlockHash (block, excludePeer = {
     _socket: {}
   }) {
     debug(chalk.blue('Send Token Block Hash -> sendNewBlockHash()'))
@@ -107,14 +107,14 @@ class BlockChain {
     })
   }
 
-  generateTx() {
+  generateTx () {
     const tx = SECRandomData.generateTokenTransaction()
     const tokenTx = cloneDeep(new SECTransaction.SECTokenTx(tx))
     this.pool.addTxIntoPool(tokenTx.getTx())
     this.sendNewTokenTx(tokenTx)
   }
 
-  initiateTokenTx(tx, callback) {
+  initiateTokenTx (tx, callback) {
     let freeChargeFlag = false
     // pow reward tx
     // if (tx.TxFrom === '0000000000000000000000000000000000000000') {
@@ -131,7 +131,7 @@ class BlockChain {
     // check balance
     this.getContractInfo(tx.TxTo, (err, tokenInfo) => {
       if (err) return callback(err)
-      let tokenName = Object.keys(tokenInfo)>0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
+      let tokenName = Object.keys(tokenInfo) > 0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
       this.checkBalance(tx, tokenName, (err, result) => {
         if (err) callback(err)
         else if (!result) {
@@ -186,19 +186,19 @@ class BlockChain {
   /**
    * Get user account balance
    */
-  getBalance(userAddress, tokenName, callback) {
+  getBalance (userAddress, tokenName, callback) {
     let self = this
     this.chain.accTree.getBalance(userAddress, tokenName, (err, value) => {
       if (err) {
         return callback(err)
       } else {
         let txArrayFromPool = self.pool.getAllTxFromPool()
-        async.eachSeries(txArrayFromPool, (tx, _callback)=>{
-          if(SECUtils.isContractAddr(tx.TxTo)){
-            self.getContractInfo(tx.TxTo, (err, tokenInfo)=>{
-              if(err) return _callback(err)
-              else{
-                tx.TokenName = Object.keys(tokenInfo)>0 ? self.chain.checkSecSubContract(tokenInfo.tokenName) : self.chainName
+        async.eachSeries(txArrayFromPool, (tx, _callback) => {
+          if (SECUtils.isContractAddr(tx.TxTo)) {
+            self.getContractInfo(tx.TxTo, (err, tokenInfo) => {
+              if (err) return _callback(err)
+              else {
+                tx.TokenName = Object.keys(tokenInfo) > 0 ? self.chain.checkSecSubContract(tokenInfo.tokenName) : self.chainName
                 _callback()
               }
             })
@@ -206,8 +206,8 @@ class BlockChain {
             tx.TokenName = self.chainName
             _callback()
           }
-        }, function(err){
-          if(err) return callback(err, null)
+        }, function (err) {
+          if (err) return callback(err, null)
           if (tokenName === 'All') {
             let allBalanceJson = Object.assign({}, value)
             let tokenNameArr = Object.keys(value)
@@ -217,7 +217,7 @@ class BlockChain {
               let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && tx.TokenName === tmpTokenName))
               txArray.forEach((tx) => {
                 balance = balance.minus(tx.Value)
-              })           
+              })
               balance = balance.toFixed(DEC_NUM)
               allBalanceJson[tmpTokenName] = parseFloat(balance).toString()
               callback(null, allBalanceJson)
@@ -236,7 +236,7 @@ class BlockChain {
             } else if (self.chainName === 'SEN' && tokenName === 'SEN') {
               let balance = value[tokenName]
               balance = new Big(balance)
-              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress  && tx.TokenName === 'SEN'))
+              let txArray = self.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress && tx.TokenName === 'SEN'))
               txArray.forEach((tx) => {
                 balance = balance.minus(tx.Value)
               })
@@ -252,7 +252,7 @@ class BlockChain {
               })
               balance = balance.toFixed(DEC_NUM)
               balance = parseFloat(balance).toString()
-              callback(null, balance)              
+              callback(null, balance)
             }
           }
         })
@@ -260,16 +260,16 @@ class BlockChain {
     })
   }
 
-  getCreatorContract(creatorAddress, callback) {
+  getCreatorContract (creatorAddress, callback) {
     this.chain.getCreatorContract(creatorAddress, (err, contractAddrArr) => {
       if (err) {
         callback(err, null)
-      } else if (contractAddrArr.length == 0) {
+      } else if (contractAddrArr.length === 0) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
           return tx.TxFrom === creatorAddress && SECUtils.isContractAddr(tx.TxTo)
         })
         transactions.sort((a, b) => {
-          a.TimeStamp - b.TimeStamp
+          return a.TimeStamp - b.TimeStamp
         })
         let contractAddrResult = []
         for (let transaction of transactions) {
@@ -278,14 +278,14 @@ class BlockChain {
             contractAddrResult.push({
               contractAddress: transaction.TxTo,
               contractInfo: {
-                "tokenName": oInputData.tokenName,
-                "sourceCode": oInputData.sourceCode,
-                "totalSupply": oInputData.totalSupply,
-                "timeLock": {},
-                "approve": {},
-                "creator": transaction.TxFrom,
-                "txHash": transaction.TxHash,
-                "time": transaction.TimeStamp
+                'tokenName': oInputData.tokenName,
+                'sourceCode': oInputData.sourceCode,
+                'totalSupply': oInputData.totalSupply,
+                'timeLock': {},
+                'approve': {},
+                'creator': transaction.TxFrom,
+                'txHash': transaction.TxHash,
+                'time': transaction.TimeStamp
               },
               status: 'pending'
             })
@@ -301,7 +301,7 @@ class BlockChain {
     })
   }
 
-  getTokenName(contractAddr, callback) {
+  getTokenName (contractAddr, callback) {
     this.chain.getTokenName(contractAddr, (err, tokenName) => {
       if (err) {
         callback(err, null, null)
@@ -310,7 +310,7 @@ class BlockChain {
           return tx.TxTo === contractAddr
         })
         transactions.sort((a, b) => {
-          a.TimeStamp - b.TimeStamp
+          return a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let oInputData = {}
@@ -326,16 +326,16 @@ class BlockChain {
     })
   }
 
-  getContractInfo(contractAddr, callback) {
+  getContractInfo (contractAddr, callback) {
     this.chain.getTokenInfo(contractAddr, (err, tokenInfo) => {
       if (err) {
         callback(err, null)
       } else if (!tokenInfo) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return tx.TxTo == contractAddr
+          return tx.TxTo === contractAddr
         })
         transactions.sort((a, b) => {
-          a.TimeStamp - b.TimeStamp
+          return a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let oTokenInfo = {}
@@ -343,15 +343,15 @@ class BlockChain {
           let oInputData = JSON.parse(transaction.InputData)
           if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
             oTokenInfo = {
-              "tokenName": oInputData.tokenName,
-              "sourceCode": oInputData.sourceCode,
-              "totalSupply": oInputData.totalSupply,
-              "timeLock": {},
-              "approve": {},
-              "creator": transaction.TxFrom,
-              "txHash": transaction.TxHash,
-              "time": transaction.TimeStamp,
-              "status": 'pending'
+              'tokenName': oInputData.tokenName,
+              'sourceCode': oInputData.sourceCode,
+              'totalSupply': oInputData.totalSupply,
+              'timeLock': {},
+              'approve': {},
+              'creator': transaction.TxFrom,
+              'txHash': transaction.TxHash,
+              'time': transaction.TimeStamp,
+              'status': 'pending'
             }
           }
         }
@@ -363,20 +363,20 @@ class BlockChain {
     })
   }
 
-  getLockerContract(walletAddr, callback) {
+  getLockerContract (walletAddr, callback) {
     this.chain.getLockerContract(walletAddr, callback)
   }
 
-  getContractAddress(tokenName, callback) {
+  getContractAddress (tokenName, callback) {
     this.chain.getContractAddress(tokenName, (err, contractAddr) => {
       if (err) {
         callback(err, null, null)
       } else if (!contractAddr) {
         let transactions = this.chain.pool.getAllTxFromPool().filter(tx => {
-          return SECUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName == tokenName
+          return SECUtils.isContractAddr(tx.TxTo) && JSON.parse(tx.InputData).tokenName === tokenName
         })
         transactions.sort((a, b) => {
-          a.TimeStamp - b.TimeStamp
+          return a.TimeStamp - b.TimeStamp
         })
         let transaction = transactions[0]
         let contractAddrResult = ''
@@ -398,7 +398,7 @@ class BlockChain {
   /**
    * Get user account address
    */
-  getNonce(userAddress, callback) {
+  getNonce (userAddress, callback) {
     this.chain.accTree.getNonce(userAddress, (err, nonce) => {
       if (err) callback(err, null)
       else {
@@ -411,7 +411,7 @@ class BlockChain {
     })
   }
 
-  checkBalance(tx, tokenName, callback) {
+  checkBalance (tx, tokenName, callback) {
     // pow reward tx
     if (tx.TxFrom === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -459,7 +459,7 @@ class BlockChain {
     }
   }
 
-  isPositiveBalance(addr, tokenName, callback) {
+  isPositiveBalance (addr, tokenName, callback) {
     // pow reward tx
     if (addr === '0000000000000000000000000000000000000000') {
       return callback(null, true)
@@ -482,7 +482,7 @@ class BlockChain {
     })
   }
 
-  isTokenTxExist(txHash, callback) {
+  isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
     this.chain.txDB.getTx(txHash, (err, txData) => {
       if (err) callback(null, false)
@@ -492,7 +492,7 @@ class BlockChain {
     })
   }
 
-  checkTxArray(txArray, cb) {
+  checkTxArray (txArray, cb) {
     let index = 0
     let indexArray = []
     let _txArray = txArray
@@ -505,7 +505,7 @@ class BlockChain {
         if (err) {
           return callback(err)
         } else {
-          let tokenName = Object.keys(tokenInfo)>0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
+          let tokenName = Object.keys(tokenInfo) > 0 ? this.chain.checkSecSubContract(tokenInfo.tokenName) : this.chainName
           this.isPositiveBalance(tx.TxFrom, tokenName, (err, balResult) => {
             if (err) return callback(err)
             this.isTokenTxExist(tx.TxHash, (_err, exiResult) => {

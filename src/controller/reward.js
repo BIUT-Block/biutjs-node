@@ -3,7 +3,8 @@ const cloneDeep = require('clone-deep')
 const SECUtils = require('@biut-block/biutjs-util')
 const SECTransaction = require('@biut-block/biutjs-tx')
 
-const MAX_MORTGAGE = 100000
+// const MAX_MORTGAGE = 100000
+const MAX_MORTGAGE = Number.MAX_SAFE_INTEGER
 exports.MIN_MORTGAGE = 10
 const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
@@ -13,7 +14,7 @@ const INIT_TOT_REWARD = 90000
 class SENReward {
   constructor (chain) {
     this.chain = chain
-    this.reset(() => {})
+    this.reset(() => { })
   }
 
   reset (cb) {
@@ -88,7 +89,7 @@ class SENReward {
       return outAdj * this.periodList[currentPeriodId][1]
     }
   }
-  
+
   _getReward (addr, tokenName, callback) {
     // TODO: only for short time, later must be corrected
     let rewardFactor = 41.66666666 / 6
@@ -103,7 +104,42 @@ class SENReward {
           balance = 0
         }
         let reward = balance * rewardFactor / 100000
-        callback(null, reward)
+        this.chain.getLockerContract(addr, (err, contractAddArray) => {
+          if (err) {
+            console.error(err)
+            callback(null, reward)
+          } else {
+            if (contractAddArray) {
+              if (contractAddArray.length > 0) {
+                let counter = 0
+                contractAddArray.forEach(contractAdd => {
+                  this.chain.getContractInfo(contractAdd, (err, contractInfo) => {
+                    counter++
+                    if (err) {
+                      console.error(err)
+                    } else {
+                      let timeLock = contractInfo.timeLock
+                      for (let address in timeLock) {
+                        timeLock[address][address].forEach(lockRecord => {
+                          if (Date.now() < lockRecord.unlockTime) {
+                            reward += parseFloat(lockRecord.lockAmount) * rewardFactor / 100000
+                          }
+                        })
+                      }
+                    }
+                    if (counter === contractAddArray.length) {
+                      callback(null, reward)
+                    }
+                  })
+                })
+              } else {
+                callback(null, reward)
+              }
+            } else {
+              callback(null, reward)
+            }
+          }
+        })
       }
     })
   }
