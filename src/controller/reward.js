@@ -98,12 +98,14 @@ class SENReward {
       if (err) {
         callback(err, null)
       } else {
+        console.log(balance)
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
         } else if (balance < exports.MIN_MORTGAGE) {
           balance = 0
         }
         let reward = balance * rewardFactor / 100000
+        console.log(reward)
         this.chain.getLockerContract(addr, (err, contractAddArray) => {
           if (err) {
             console.error(err)
