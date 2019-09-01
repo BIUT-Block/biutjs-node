@@ -11,7 +11,7 @@ class Account {
   }
 
   getAddress () {
-    return this.Address
+    return this.Address.replace(/\n|\r/g, '')
   }
 
   setAddress (address) {

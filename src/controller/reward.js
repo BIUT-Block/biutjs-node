@@ -98,6 +98,8 @@ class SENReward {
       if (err) {
         callback(err, null)
       } else {
+        console.log(addr)
+        console.log(tokenName)
         console.log(balance)
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
