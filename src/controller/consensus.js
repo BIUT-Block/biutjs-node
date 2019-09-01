@@ -103,15 +103,27 @@ class Consensus {
               let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
               let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
+              console.log(result)
+              console.log('groupId: ' + groupId)
+              console.log('BeneGroupId: ' + BeneGroupId)
               if (result.result && groupId === BeneGroupId) {
                 let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
                 // append the pow reward tx
                 this.secReward.getRewardTx((err, rewardTx) => {
-                  if (err) return this.resetPOW()
-                  if (rewardTx === null) return this.resetPOW()
+                  if (err) {
+                    console.error(err)
+                    return this.resetPOW()
+                  }
+                  if (rewardTx === null) {
+                    console.error('rewardTx === null')
+                    return this.resetPOW()
+                  }
                   let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
                   this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
-                    if (err) return this.resetPOW()
+                    if (err) {
+                      console.error(err)
+                      return this.resetPOW()
+                    }
 
                     let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
                     if (_secTxFeeTx !== null) {
@@ -119,7 +131,10 @@ class Consensus {
                     }
 
                     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-                      if (err) return this.resetPOW()
+                      if (err) {
+                        console.error(err)
+                        return this.resetPOW()
+                      }
                       let senTxFeeTx = this.secReward.getSenTxFeeTx(txArray, newBlock.Beneficiary)
                       if (senTxFeeTx !== null) {
                         senTxFeeTx = senTxFeeTx.getTx()
@@ -158,9 +173,11 @@ class Consensus {
                   })
                 })
               } else {
+                console.error('result false or groupId not equal BeneGroupId')
                 this.resetPOW()
               }
             } else {
+              console.error('syncInfo flag === true')
               this.resetPOW()
             }
           } catch (err) {
