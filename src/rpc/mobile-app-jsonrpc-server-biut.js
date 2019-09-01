@@ -61,8 +61,8 @@ function _getPrivateKeysFromAddress (userAddress) {
 function _biutSignTransaction (userAddress, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
-    from: transfer.walletAddress,
-    to: transfer.sendToAddress,
+    from: transfer.walletAddress.replace('0x', ''),
+    to: transfer.sendToAddress.replace('0x', ''),
     value: transfer.amount,
     txFee: transfer.txFee,
     gasLimit: '0',
@@ -98,8 +98,8 @@ function _biutSignTransaction (userAddress, transfer) {
 function _biuSignTransaction (userAddress, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
-    from: transfer.walletAddress,
-    to: transfer.sendToAddress,
+    from: transfer.walletAddress.replace('0x', ''),
+    to: transfer.sendToAddress.replace('0x', ''),
     value: transfer.amount,
     txFee: transfer.txFee,
     gasLimit: '0',
@@ -344,8 +344,8 @@ let server = jayson.server({
         Nonce: args[0].nonce || '0',
         TxReceiptStatus: 'pending',
         TimeStamp: args[0].timestamp,
-        TxFrom: args[0].from,
-        TxTo: args[0].to,
+        TxFrom: args[0].from.replace('0x', ''),
+        TxTo: args[0].to.replace('0x', ''),
         Value: args[0].value,
         GasLimit: args[0].gasLimit,
         GasUsedByTxn: args[0].gas,
@@ -394,8 +394,8 @@ let server = jayson.server({
         Nonce: args[0].nonce || '0',
         TxReceiptStatus: 'pending',
         TimeStamp: args[0].timestamp,
-        TxFrom: args[0].from,
-        TxTo: args[0].to,
+        TxFrom: args[0].from.replace('0x', ''),
+        TxTo: args[0].to.replace('0x', ''),
         Value: args[0].value,
         GasLimit: args[0].gasLimit,
         GasUsedByTxn: args[0].gas,
