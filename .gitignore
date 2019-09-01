@@ -9,6 +9,6 @@ ndpprivatekey
 biutlogs
 *logs
 .vs/*
-leylib.json
+keylib.json
 test
 test/*
