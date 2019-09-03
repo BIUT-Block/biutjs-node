@@ -741,7 +741,7 @@ let server = jayson.server({
     console.time('sec_getRLPPeersNumber')
     let response = {}
     response.status = '1'
-    response.message = core.secAPIs.getRLPPeersNumber() + 1
+    response.message = core.secAPIs.getRLPPeersNumber()
     console.timeEnd('sec_getRLPPeersNumber')
     callback(null, response)
   },
