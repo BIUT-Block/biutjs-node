@@ -49,8 +49,8 @@
           "port": "13331"
         }
       ],
-      "txCache": 1000,
-      "blocksCache": 100,
+      "txCache": 10000,
+      "blocksCache": 2000,
       "ndp": {
         "timeout": 60000,
         "refreshInterval": 60000,
