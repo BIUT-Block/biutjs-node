@@ -3,6 +3,7 @@ const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
 
 let core = {}
+let _requestID = 0
 
 function _signTransaction (privateKey, transfer) {
   let transferData = [{
@@ -48,7 +49,8 @@ let server = jayson.server({
   * get account balance
   */
   sec_getBalance: function (args, callback) {
-    console.time('sen_getBalance')
+    let requestID = ++_requestID
+    console.time('sen_getBalance id: ' + requestID)
     let response = {}
     try {
       let accAddr = args[0]
@@ -67,14 +69,14 @@ let server = jayson.server({
           response.value = balance
           // response.value = {}
         }
-        console.timeEnd('sen_getBalance')
+        console.timeEnd('sen_getBalance id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
-      console.timeEnd('sen_getBalance')
+      console.timeEnd('sen_getBalance id: ' + requestID)
       callback(null, response)
     }
   },
@@ -83,7 +85,8 @@ let server = jayson.server({
   * get all the previous transactions for a specific address
   */
   sec_getTransactions: function (args, callback) {
-    console.time('sen_getTransactions')
+    let requestID = ++_requestID
+    console.time('sen_getTransactions id: ' + requestID)
     let response = {}
     let accAddr = args[0] // address
 
@@ -97,7 +100,7 @@ let server = jayson.server({
     if (accAddr.length !== 40) {
       response.status = '0'
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('sen_getTransactions')
+      console.timeEnd('sen_getTransactions id: ' + requestID)
       callback(null, response)
     } else {
       core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
@@ -129,7 +132,7 @@ let server = jayson.server({
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
-        console.timeEnd('sen_getTransactions')
+        console.timeEnd('sen_getTransactions id: ' + requestID)
         callback(null, response)
       })
     }
@@ -139,13 +142,14 @@ let server = jayson.server({
   * request to initiate a transaction
   */
   sec_sendRawTransaction: function (args, callback) {
-    console.time('sen_sendRawTransaction')
+    let requestID = ++_requestID
+    console.time('sen_sendRawTransaction id: ' + requestID)
     let response = {}
     try {
       if (parseFloat(args[0].value) === 0 || parseFloat(args[0].value) < 0) {
         response.status = '0'
         response.info = `Value Can not equal 0 or smaller than 0`
-        console.timeEnd('sen_sendRawTransaction')
+        console.timeEnd('sen_sendRawTransaction id: ' + requestID)
         return callback(null, response)
       }
       let tokenTx = {
@@ -173,28 +177,32 @@ let server = jayson.server({
           response.info = 'OK'
           response.txHash = txHash
         }
-        console.timeEnd('sen_sendRawTransaction')
+        console.timeEnd('sen_sendRawTransaction id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = '0'
       response.info = `Unexpected error occurs, error info: ${err}`
-      console.timeEnd('sen_sendRawTransaction')
+      console.timeEnd('sen_sendRawTransaction id: ' + requestID)
       callback(null, response)
     }
   },
 
   sec_createContractTransaction: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_createContractTransaction' + requestID)
     let response = {}
     let tokenName = args[1]
     core.senAPIs.getContractAddress(tokenName, (err, address) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err.stack}`
+        console.timeEnd('sen_createContractTransaction' + requestID)
         callback(null, response)
       } else if (address) {
         response.status = '0'
         response.info = `Contract for TokenName already exists under: ${address}`
+        console.timeEnd('sen_createContractTransaction' + requestID)
         callback(null, response)
       } else {
         let tokenTx = {
@@ -221,6 +229,7 @@ let server = jayson.server({
             response.info = 'OK'
             response.txHash = tokenTx.TxHash
           }
+          console.timeEnd('sen_createContractTransaction' + requestID)
           callback(null, response)
         })
       }
@@ -228,15 +237,19 @@ let server = jayson.server({
   },
 
   sec_sendContractTransaction: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_sendContractTransaction' + requestID)
     let response = {}
     core.senAPIs.getTokenName(args[0].to, (err, tokenname) => {
       if (err) {
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${err}`
+        console.timeEnd('sen_sendContractTransaction' + requestID)
         callback(null, response)
       } else if (!tokenname) {
         response.status = '0'
         response.info = `ContractAddress doesn't exist`
+        console.timeEnd('sen_sendContractTransaction' + requestID)
         callback(null, response)
       } else {
         let tokenTx = {
@@ -263,6 +276,7 @@ let server = jayson.server({
             response.info = 'OK'
             response.txHash = tokenTx.TxHash
           }
+          console.timeEnd('sen_sendContractTransaction' + requestID)
           callback(null, response)
         })
       }
@@ -270,7 +284,8 @@ let server = jayson.server({
   },
 
   sec_getTimeLock: function (args, callback) {
-    console.time('sec_getTimeLock')
+    let requestID = ++_requestID
+    console.time('sen_getTimeLock' + requestID)
     let response = {}
     let contractAddress = args[0]
     let senderAddress = args[1]
@@ -296,34 +311,37 @@ let server = jayson.server({
           response.timeLock = timeLock
         }
       }
-      console.timeEnd('sec_getTimeLock')
+      console.timeEnd('sen_getTimeLock' + requestID)
       callback(null, response)
     })
   },
 
   sec_getChainHeight: function (args, callback) {
-    console.time('sen_getChainHeight')
+    let requestID = ++_requestID
+    console.time('sen_getChainHeight id: ' + requestID)
     let response = {}
     response.ChainHeight = core.senAPIs.getTokenChainHeight()
-    console.timeEnd('sen_getChainHeight')
+    console.timeEnd('sen_getChainHeight id: ' + requestID)
     callback(null, response)
   },
 
   sec_getNodeInfo: function (args, callback) {
-    console.time('sen_getNodeInfo')
+    let requestID = ++_requestID
+    console.time('sen_getNodeInfo id: ' + requestID)
     let response = {}
     core.senAPIs.getNodeIpv4((ipv4) => {
       response.status = '1'
       response.time = new Date().getTime()
       response.ipv4 = ipv4
       response.timeZone = geoip.lookup(ipv4).timezone
-      console.timeEnd('sen_getNodeInfo')
+      console.timeEnd('sen_getNodeInfo id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getTokenChainSize: function (args, callback) {
-    console.time('sen_getTokenChainSize')
+    let requestID = ++_requestID
+    console.time('sen_getTokenChainSize id: ' + requestID)
     core.senAPIs.getTokenChainSize((err, size) => {
       let response = {}
       if (err) {
@@ -335,13 +353,14 @@ let server = jayson.server({
         response.info = 'OK'
         response.value = size.toString()
       }
-      console.timeEnd('sen_getTokenChainSize')
+      console.timeEnd('sen_getTokenChainSize id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_setPOW: function (args, callback) {
-    console.time('sen_setPOW')
+    let requestID = ++_requestID
+    console.time('sen_setPOW id: ' + requestID)
     let response = {}
     let command = args[0] // '0' means disable POW, '1' means enable POW
 
@@ -357,12 +376,13 @@ let server = jayson.server({
       response.status = '0'
       response.info = 'Invalid input argument'
     }
-    console.timeEnd('sen_setPOW')
+    console.timeEnd('sen_setPOW id: ' + requestID)
     callback(null, response)
   },
 
   sec_startNetworkEvent: function (args, callback) {
-    console.time('sen_startNetworkEvent')
+    let requestID = ++_requestID
+    console.time('sen_startNetworkEvent id: ' + requestID)
     let response = {}
     core.senAPIs.startNetworkEvent((result) => {
       if (result === true) {
@@ -372,13 +392,14 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Unexpected error occurs, error info: ${result}`
       }
-      console.timeEnd('sen_startNetworkEvent')
+      console.timeEnd('sen_startNetworkEvent id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getBlockByHash: function (args, callback) {
-    console.time('sen_getBlockByHash')
+    let requestID = ++_requestID
+    console.time('sen_getBlockByHash id: ' + requestID)
     let response = {}
     let blockHash = args[0]
     core.senAPIs.getTokenBlock(blockHash, (err, block) => {
@@ -391,13 +412,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('sen_getBlockByHash')
+      console.timeEnd('sen_getBlockByHash id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getBlockByHeight: function (args, callback) {
-    console.time('sen_getBlockByHeight')
+    let requestID = ++_requestID
+    console.time('sen_getBlockByHeight id: ' + requestID)
     let response = {}
     let blockHeight = args[0]
     core.senAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
@@ -410,13 +432,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('sen_getBlockByHeight')
+      console.timeEnd('sen_getBlockByHeight id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getWholeTokenBlockchain: function (args, callback) {
-    console.time('sen_getWholeTokenBlockchain')
+    let requestID = ++_requestID
+    console.time('sen_getWholeTokenBlockchain id: ' + requestID)
     let response = {}
     core.senAPIs.getWholeTokenBlockchain((err, value) => {
       if (err) {
@@ -427,14 +450,15 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = value
       }
-      console.timeEnd('sen_getWholeTokenBlockchain')
+      console.timeEnd('sen_getWholeTokenBlockchain id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getTotalReward: function (args, callback) {
-    console.log('sen_getTotalReward calling')
-    console.time('sen_getTotalReward')
+    console.log('sen_getTotalReward id:   + requestIDcalling')
+    let requestID = ++_requestID
+    console.time('sen_getTotalReward id: ' + requestID)
     let response = {}
     core.senAPIs.getTotalRewards((err, reward) => {
       if (err) {
@@ -445,13 +469,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = reward
       }
-      console.timeEnd('sen_getTotalReward')
+      console.timeEnd('sen_getTotalReward id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_debug_getAccTreeAccInfo: function (args, callback) {
-    console.time('sen_debug_getAccTreeAccInfo')
+    let requestID = ++_requestID
+    console.time('sen_debug_getAccTreeAccInfo id: ' + requestID)
     let response = {}
     core.senAPIs.getAccTreeAccInfo(args[0], (err, info) => {
       if (err) {
@@ -462,22 +487,25 @@ let server = jayson.server({
         response.message = 'OK'
         response.info = info
       }
-      console.timeEnd('sen_debug_getAccTreeAccInfo')
+      console.timeEnd('sen_debug_getAccTreeAccInfo id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_setAddress: function (args, callback) {
-    console.time('sen_setAddress')
+    let requestID = ++_requestID
+    console.time('sen_setAddress id: ' + requestID)
     let response = {}
     core.senAPIs.setAddress(args[0])
     response.status = '1'
     response.message = 'OK'
-    console.timeEnd('sen_setAddress')
+    console.timeEnd('sen_setAddress id: ' + requestID)
     callback(null, response)
   },
 
   sec_getNonce: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_getNonce id: ' + requestID)
     let response = {}
     let address = args[0]
     core.senAPIs.getNonce(address, (err, nonce) => {
@@ -489,6 +517,7 @@ let server = jayson.server({
         response.info = 'OK'
         response.Nonce = nonce
       }
+      console.timeEnd('sen_getNonce id: ' + requestID)
       callback(null, response)
     })
   },
@@ -497,7 +526,8 @@ let server = jayson.server({
   * free charging function, for testing purpose
   */
   sec_freeCharge: function (args, callback) {
-    console.time('sen_freeCharge')
+    let requestID = ++_requestID
+    console.time('sen_freeCharge id: ' + requestID)
     const userInfo = {
       secAddress: '0000000000000000000000000000000000000001'
     }
@@ -506,7 +536,7 @@ let server = jayson.server({
     if (process.env.netType === 'main' || process.env.netType === undefined) {
       response.status = '0'
       response.info = 'Main network does not support free charging'
-      console.timeEnd('sen_freeCharge')
+      console.timeEnd('sen_freeCharge id: ' + requestID)
       return callback(null, response)
     } else {
       core.senAPIs.getNonce(userInfo.secAddress, (err, nonce) => {
@@ -527,7 +557,6 @@ let server = jayson.server({
             InputData: 'Mobile APP JSONRPC API Function Test',
             Signature: {}
           }
-
           tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
           core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
             if (err) {
@@ -540,14 +569,15 @@ let server = jayson.server({
             }
           })
         }
-        console.timeEnd('sen_freeCharge')
+        console.timeEnd('sen_freeCharge id: ' + requestID)
         callback(null, response)
       })
     }
   },
 
   sec_rebuildAccTree: function (args, callback) {
-    console.time('sen_rebuildAccTree')
+    let requestID = ++_requestID
+    console.time('sen_rebuildAccTree id: ' + requestID)
     let response = {}
     core.senAPIs.rebuildAccTree((err) => {
       if (err) {
@@ -557,22 +587,24 @@ let server = jayson.server({
         response.status = '1'
         response.message = 'OK'
       }
-      console.timeEnd('sen_rebuildAccTree')
+      console.timeEnd('sen_rebuildAccTree id: ' + requestID)
       callback(null, response)
     })
   },
 
   sec_getSyncInfo: function (args, callback) {
-    console.time('sen_getSyncInfo')
+    let requestID = ++_requestID
+    console.time('sen_getSyncInfo id: ' + requestID)
     let response = {}
     response.status = '1'
     response.message = core.senAPIs.getSyncInfo()
-    console.timeEnd('sen_getSyncInfo')
+    console.timeEnd('sen_getSyncInfo id: ' + requestID)
     callback(null, response)
   },
 
   sec_validateAddress: function (args, callback) {
-    console.time('sen_validateAddress')
+    let requestID = ++_requestID
+    console.time('sen_validateAddress id: ' + requestID)
     let response = {}
     let address = args[0]
     core.senAPIs.validateAddress(address, (result) => {
@@ -584,7 +616,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('sen_validateAddress')
+      console.timeEnd('sen_validateAddress id: ' + requestID)
       callback(null, response)
     })
   },
@@ -605,6 +637,8 @@ let server = jayson.server({
    * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
    */
   sec_signedTransaction: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_signedTransaction id: ' + requestID)
     let response = {}
     try {
       let companyName = args[0].companyName
@@ -624,6 +658,7 @@ let server = jayson.server({
       response.status = '0'
       response.message = 'Bad Request.'
     }
+    console.timeEnd('sen_signedTransaction id: ' + requestID)
     callback(null, response)
   }
   // _syncFromIp: function (args, callback) {

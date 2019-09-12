@@ -1,6 +1,7 @@
 const jayson = require('jayson')
 const SECUtil = require('@biut-block/biutjs-util')
 let core = {}
+let _requestID = 0
 const fs = require('fs')
 const path = require('path')
 
@@ -140,7 +141,8 @@ let server = jayson.server({
   * get account balance
   */
   biut_getBalance: function (args, callback) {
-    console.time('wallet_biut_getBalance')
+    let requestID = ++_requestID
+    console.time('wallet_biut_getBalance id: ' + requestID)
     let response = {}
     try {
       let accAddr = args[0]
@@ -155,14 +157,14 @@ let server = jayson.server({
           response.value = balance
           // response.value = {}
         }
-        console.timeEnd('wallet_biut_getBalance')
+        console.timeEnd('wallet_biut_getBalance id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
-      console.timeEnd('wallet_biut_getBalance')
+      console.timeEnd('wallet_biut_getBalance id: ' + requestID)
       callback(null, response)
     }
   },
@@ -171,7 +173,8 @@ let server = jayson.server({
   * get account balance
   */
   biu_getBalance: function (args, callback) {
-    console.time('wallet_biu_getBalance')
+    let requestID = ++_requestID
+    console.time('wallet_biu_getBalance id: ' + requestID)
     let response = {}
     try {
       let accAddr = args[0]
@@ -186,14 +189,14 @@ let server = jayson.server({
           response.value = balance
           // response.value = {}
         }
-        console.timeEnd('wallet_biu_getBalance')
+        console.timeEnd('wallet_biu_getBalance id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = 'false'
       response.info = 'Arg[0] is empty, no account address received'
       response.value = '0'
-      console.timeEnd('wallet_biu_getBalance')
+      console.timeEnd('wallet_biu_getBalance id: ' + requestID)
       callback(null, response)
     }
   },
@@ -202,7 +205,8 @@ let server = jayson.server({
     * get all the previous transactions for a specific address with paging
     */
   biut_getTransactions: function (args, callback) {
-    console.time('wallet_biut_getTransactions')
+    let requestID = ++_requestID
+    console.time('wallet_biut_getTransactions id: ' + requestID)
     let response = {}
     let accAddr = args[0] // address
 
@@ -216,7 +220,7 @@ let server = jayson.server({
     if (accAddr.length !== 40) {
       response.status = '0'
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('wallet_biut_getTransactions')
+      console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
       callback(null, response)
     } else {
       core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
@@ -240,7 +244,7 @@ let server = jayson.server({
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
-        console.timeEnd('wallet_biut_getTransactions')
+        console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
         callback(null, response)
       })
     }
@@ -250,7 +254,8 @@ let server = jayson.server({
   * get all the previous transactions for a specific address with paging
   */
   biu_getTransactions: function (args, callback) {
-    console.time('wallet_biu_getTransactions')
+    let requestID = ++_requestID
+    console.time('wallet_biu_getTransactions id: ' + requestID)
     let response = {}
     let accAddr = args[0] // address
 
@@ -265,7 +270,7 @@ let server = jayson.server({
     if (accAddr.length !== 40) {
       response.status = '0'
       response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('wallet_biu_getTransactions')
+      console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
       callback(null, response)
     } else {
       core.senAPIs.getTokenTxForUser(accAddr, (err, _txArray) => {
@@ -309,7 +314,7 @@ let server = jayson.server({
           response.currentPage = currentPage
           response.totalNumber = txArray.length
         }
-        console.timeEnd('wallet_biu_getTransactions')
+        console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
         callback(null, response)
       })
     }
@@ -319,14 +324,15 @@ let server = jayson.server({
   * request to initiate a transaction
   */
   biut_sendRawTransaction: function (args, callback) {
-    console.time('wallet_biut_sendRawTransaction')
+    let requestID = ++_requestID
+    console.time('wallet_biut_sendRawTransaction id: ' + requestID)
     let response = {}
     // get nonce for signing the tx
     try {
       if (parseFloat(args[0].value) === 0 || parseFloat(args[0].value) < 0) {
         response.status = '0'
         response.info = `Value Can not equal 0 or smaller than 0`
-        console.timeEnd('sen_sendRawTransaction')
+        console.timeEnd('sen_sendRawTransaction id: ' + requestID)
         return callback(null, response)
       }
 
@@ -355,13 +361,13 @@ let server = jayson.server({
           response.info = 'OK'
           response.txHash = txHash
         }
-        console.timeEnd('wallet_biut_sendRawTransaction')
+        console.timeEnd('wallet_biut_sendRawTransaction id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = '0'
       response.info = `Unexpected error occurs, error info: ${err}`
-      console.timeEnd('sen_sendRawTransaction')
+      console.timeEnd('sen_sendRawTransaction id: ' + requestID)
       callback(null, response)
     }
   },
@@ -370,14 +376,15 @@ let server = jayson.server({
   * request to initiate a transaction
   */
   biu_sendRawTransaction: function (args, callback) {
-    console.time('wallet_biut_sendRawTransaction')
+    let requestID = ++_requestID
+    console.time('wallet_biut_sendRawTransaction id: ' + requestID)
     let response = {}
     // get nonce for signing the tx
     try {
       if (parseFloat(args[0].value) === 0 || parseFloat(args[0].value) < 0) {
         response.status = '0'
         response.info = `Value Can not equal 0 or smaller than 0`
-        console.timeEnd('sen_sendRawTransaction')
+        console.timeEnd('sen_sendRawTransaction id: ' + requestID)
         return callback(null, response)
       }
       let tokenTx = {
@@ -405,35 +412,38 @@ let server = jayson.server({
           response.info = 'OK'
           response.txHash = txHash
         }
-        console.timeEnd('wallet_biut_sendRawTransaction')
+        console.timeEnd('wallet_biut_sendRawTransaction id: ' + requestID)
         callback(null, response)
       })
     } catch (err) {
       response.status = '0'
       response.info = `Unexpected error occurs, error info: ${err}`
-      console.timeEnd('wallet_biut_sendRawTransaction')
+      console.timeEnd('wallet_biut_sendRawTransaction id: ' + requestID)
       callback(null, response)
     }
   },
 
   biut_getChainHeight: function (args, callback) {
-    console.time('wallet_biut_getChainHeight')
+    let requestID = ++_requestID
+    console.time('wallet_biut_getChainHeight id: ' + requestID)
     let response = {}
     response.ChainHeight = core.secAPIs.getTokenChainHeight()
-    console.timeEnd('wallet_biut_getChainHeight')
+    console.timeEnd('wallet_biut_getChainHeight id: ' + requestID)
     callback(null, response)
   },
 
   biu_getChainHeight: function (args, callback) {
-    console.time('wallet_biu_getChainHeight')
+    let requestID = ++_requestID
+    console.time('wallet_biu_getChainHeight id: ' + requestID)
     let response = {}
     response.ChainHeight = core.senAPIs.getTokenChainHeight()
-    console.timeEnd('wallet_biu_getChainHeight')
+    console.timeEnd('wallet_biu_getChainHeight id: ' + requestID)
     callback(null, response)
   },
 
   biut_getBlockByHash: function (args, callback) {
-    console.time('wallet_biut_getBlockByHash')
+    let requestID = ++_requestID
+    console.time('wallet_biut_getBlockByHash id: ' + requestID)
     let response = {}
     let blockHash = args[0]
     core.secAPIs.getTokenBlock(blockHash, (err, block) => {
@@ -446,13 +456,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('wallet_biut_getBlockByHash')
+      console.timeEnd('wallet_biut_getBlockByHash id: ' + requestID)
       callback(null, response)
     })
   },
 
   biu_getBlockByHash: function (args, callback) {
-    console.time('wallet_biu_getBlockByHash')
+    let requestID = ++_requestID
+    console.time('wallet_biu_getBlockByHash id: ' + requestID)
     let response = {}
     let blockHash = args[0]
     core.senAPIs.getTokenBlock(blockHash, (err, block) => {
@@ -465,13 +476,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('wallet_biu_getBlockByHash')
+      console.timeEnd('wallet_biu_getBlockByHash id: ' + requestID)
       callback(null, response)
     })
   },
 
   biut_getBlockByHeight: function (args, callback) {
-    console.time('wallet_biut_getBlockByHeight')
+    let requestID = ++_requestID
+    console.time('wallet_biut_getBlockByHeight id: ' + requestID)
     let response = {}
     let blockHeight = args[0]
     core.secAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
@@ -484,13 +496,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('wallet_biut_getBlockByHeight')
+      console.timeEnd('wallet_biut_getBlockByHeight id: ' + requestID)
       callback(null, response)
     })
   },
 
   biu_getBlockByHeight: function (args, callback) {
-    console.time('wallet_biu_getBlockByHeight')
+    let requestID = ++_requestID
+    console.time('wallet_biu_getBlockByHeight id: ' + requestID)
     let response = {}
     let blockHeight = args[0]
     core.senAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
@@ -503,13 +516,14 @@ let server = jayson.server({
         response.message = 'OK'
         response.blockInfo = block
       }
-      console.timeEnd('wallet_biu_getBlockByHeight')
+      console.timeEnd('wallet_biu_getBlockByHeight id: ' + requestID)
       callback(null, response)
     })
   },
 
   validateAddress: function (args, callback) {
-    console.time('wallet_biut_validateAddress')
+    let requestID = ++_requestID
+    console.time('wallet_biut_validateAddress id: ' + requestID)
     let response = {}
     let address = args[0]
     core.secAPIs.validateAddress(address, (result) => {
@@ -521,7 +535,7 @@ let server = jayson.server({
         response.status = '0'
         response.info = `Address format is wrong, error info: ${result}`
       }
-      console.timeEnd('wallet_biut_validateAddress')
+      console.timeEnd('wallet_biut_validateAddress id: ' + requestID)
       callback(null, response)
     })
   },
@@ -536,6 +550,8 @@ let server = jayson.server({
    * @param {json} response.userAddress 生成的userAddress
   */
   getNewAddress: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('wallet_getNewAddress id: ' + requestID)
     let response = {}
     let companyName = args[0]
     if (companyName !== 'coinegg' && companyName !== 'fcoin' && companyName !== 'biki' && companyName !== 'bigone') {
@@ -548,6 +564,7 @@ let server = jayson.server({
       response.userAddress = generatedKeys.userAddress
       response.message = 'Register successed'
     }
+    console.timeEnd('wallet_getNewAddress id: ' + requestID)
     callback(null, response)
   },
 
@@ -566,6 +583,8 @@ let server = jayson.server({
    * @param {string} keys.useraddress 钱包的地址
    */
   getKeysFromPrivate: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('wallet_getKeysFromPrivate id: ' + requestID)
     let response = {}
     try {
       let companyName = args[0].companyName
@@ -583,6 +602,7 @@ let server = jayson.server({
       response.status = '0'
       response.message = 'Bad Request.'
     }
+    console.timeEnd('wallet_getKeysFromPrivate id: ' + requestID)
     callback(null, response)
   },
 
@@ -602,6 +622,8 @@ let server = jayson.server({
    * @param {array} response.signedTrans 签名过后的交易数组。可直接作为下一步发送交易直接使用
    */
   biut_signedTransaction: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('wallet_biut_signedTransaction id: ' + requestID)
     let response = {}
     try {
       let companyName = args[0].companyName
@@ -621,6 +643,7 @@ let server = jayson.server({
       response.status = '0'
       response.message = 'Bad Request.'
     }
+    console.timeEnd('wallet_biut_signedTransaction id: ' + requestID)
     callback(null, response)
   },
 
@@ -641,6 +664,8 @@ let server = jayson.server({
   */
 
   biu_signedTransaction: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('wallet_biu_signedTransaction id: ' + requestID)
     let response = {}
     try {
       let companyName = args[0].companyName
@@ -659,6 +684,7 @@ let server = jayson.server({
       response.status = '0'
       response.message = 'Bad Request.'
     }
+    console.timeEnd('wallet_biu_signedTransaction id: ' + requestID)
     callback(null, response)
   },
 
@@ -666,6 +692,8 @@ let server = jayson.server({
    * 用来测试，不对外使用
    */
   getkeyFromAddress: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('wallet_getkeyFromAddress id: ' + requestID)
     let response = {}
     try {
       let address = args[0]
@@ -677,6 +705,7 @@ let server = jayson.server({
       response.status = '0'
       response.message = 'Bad Request.'
     }
+    console.timeEnd('wallet_getkeyFromAddress id: ' + requestID)
     callback(null, response)
   }
 })
