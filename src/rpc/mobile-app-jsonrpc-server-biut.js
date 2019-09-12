@@ -61,8 +61,8 @@ function _getPrivateKeysFromAddress (userAddress) {
 function _biutSignTransaction (userAddress, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
-    from: transfer.walletAddress.replace('0x', ''),
-    to: transfer.sendToAddress.replace('0x', ''),
+    from: transfer.walletAddress.replace('0x', '').toLowerCase(),
+    to: transfer.sendToAddress.replace('0x', '').toLowerCase(),
     value: transfer.amount,
     txFee: transfer.txFee,
     gasLimit: '0',
@@ -98,8 +98,8 @@ function _biutSignTransaction (userAddress, transfer) {
 function _biuSignTransaction (userAddress, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
-    from: transfer.walletAddress.replace('0x', ''),
-    to: transfer.sendToAddress.replace('0x', ''),
+    from: transfer.walletAddress.replace('0x', '').toLowerCase(),
+    to: transfer.sendToAddress.replace('0x', '').toLowerCase(),
     value: transfer.amount,
     txFee: transfer.txFee,
     gasLimit: '0',
@@ -142,11 +142,6 @@ let server = jayson.server({
   biut_getBalance: function (args, callback) {
     console.time('wallet_biut_getBalance')
     let response = {}
-    // if (args[0].coinType = null) {
-    // return all coins
-    // } else {
-    // args[0].coinType
-    // }
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
@@ -178,11 +173,6 @@ let server = jayson.server({
   biu_getBalance: function (args, callback) {
     console.time('wallet_biu_getBalance')
     let response = {}
-    // if (args[0].coinType = null) {
-    // return all coins
-    // } else {
-    // args[0].coinType
-    // }
     try {
       let accAddr = args[0]
       // let time = args[1] 'latest'
@@ -344,8 +334,8 @@ let server = jayson.server({
         Nonce: args[0].nonce || '0',
         TxReceiptStatus: 'pending',
         TimeStamp: args[0].timestamp,
-        TxFrom: args[0].from.replace('0x', ''),
-        TxTo: args[0].to.replace('0x', ''),
+        TxFrom: args[0].from.replace('0x', '').toLowerCase(),
+        TxTo: args[0].to.replace('0x', '').toLowerCase(),
         Value: args[0].value,
         GasLimit: args[0].gasLimit,
         GasUsedByTxn: args[0].gas,
@@ -394,8 +384,8 @@ let server = jayson.server({
         Nonce: args[0].nonce || '0',
         TxReceiptStatus: 'pending',
         TimeStamp: args[0].timestamp,
-        TxFrom: args[0].from.replace('0x', ''),
-        TxTo: args[0].to.replace('0x', ''),
+        TxFrom: args[0].from.replace('0x', '').toLowerCase(),
+        TxTo: args[0].to.replace('0x', '').toLowerCase(),
         Value: args[0].value,
         GasLimit: args[0].gasLimit,
         GasUsedByTxn: args[0].gas,

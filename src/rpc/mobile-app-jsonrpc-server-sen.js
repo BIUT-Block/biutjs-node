@@ -7,8 +7,8 @@ let core = {}
 function _signTransaction (privateKey, transfer) {
   let transferData = [{
     timestamp: transfer.timeStamp,
-    from: transfer.walletAddress.replace('0x', ''),
-    to: transfer.sendToAddress.replace('0x', ''),
+    from: transfer.walletAddress.replace('0x', '').toLowerCase(),
+    to: transfer.sendToAddress.replace('0x', '').toLowerCase(),
     value: transfer.amount,
     txFee: transfer.txFee,
     gasLimit: '0',
@@ -50,11 +50,6 @@ let server = jayson.server({
   sec_getBalance: function (args, callback) {
     console.time('sen_getBalance')
     let response = {}
-    // if (args[0].coinType = null) {
-    // return all coins
-    // } else {
-    // args[0].coinType
-    // }
     try {
       let accAddr = args[0]
       let tokenName = args[1]
@@ -87,49 +82,6 @@ let server = jayson.server({
   /**
   * get all the previous transactions for a specific address
   */
-  /* sec_getTransactions: function (args, callback) {
-    console.time('sen_getTransactions')
-    let response = {}
-    let accAddr = args[0] // address
-
-    // verify accAddr
-    if (accAddr[0] === '0' && accAddr[1] === 'x') {
-      accAddr = accAddr.substr(2)
-    }
-    if (accAddr.length !== 40) {
-      response.status = '0'
-      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('sen_getTransactions')
-      callback(null, response)
-    } else {
-      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
-        if (err) {
-          response.status = '0'
-          response.message = `Failed to get user transactions, error info: ${err}`
-          response.resultInChain = []
-          response.resultInPool = []
-        } else {
-          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
-          txArray = txArray.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
-          })
-          txArraryInPool = txArraryInPool.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
-          })
-          response.status = '1'
-          response.message = 'OK'
-          response.resultInChain = txArray
-          response.resultInPool = txArraryInPool
-        }
-        console.timeEnd('sen_getTransactions')
-        callback(null, response)
-      })
-    }
-  }, */
-
-  /**
-  * get all the previous transactions for a specific address
-  */
   sec_getTransactions: function (args, callback) {
     console.time('sen_getTransactions')
     let response = {}
@@ -139,7 +91,6 @@ let server = jayson.server({
     let pageSize = parseInt(args[2] || Number.MAX_SAFE_INTEGER)
     let sortType = args[3]
 
-    // verify accAddr
     if (accAddr[0] === '0' && accAddr[1] === 'x') {
       accAddr = accAddr.substr(2)
     }
@@ -201,8 +152,8 @@ let server = jayson.server({
         Nonce: args[0].nonce,
         TxReceiptStatus: 'pending',
         TimeStamp: args[0].timestamp,
-        TxFrom: args[0].from.replace('0x', ''),
-        TxTo: args[0].to.replace('0x', ''),
+        TxFrom: args[0].from.replace('0x', '').toLowerCase(),
+        TxTo: args[0].to.replace('0x', '').toLowerCase(),
         Value: args[0].value,
         GasLimit: args[0].gasLimit,
         GasUsedByTxn: args[0].gas,
@@ -246,15 +197,6 @@ let server = jayson.server({
         response.info = `Contract for TokenName already exists under: ${address}`
         callback(null, response)
       } else {
-        // let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
-        // if(args[0].inputData.match(regexPattern)){
-        //   let txAmount = RegExp.$2
-        //   if (txAmount > args[0].value) {
-        //     response.status = '0'
-        //     response.info = 'Smart Contract transaction requires more than sent'
-        //     callback(null, response)
-        //   }
-        // }
         let tokenTx = {
           Nonce: args[0].nonce,
           TxReceiptStatus: 'pending',
@@ -297,15 +239,6 @@ let server = jayson.server({
         response.info = `ContractAddress doesn't exist`
         callback(null, response)
       } else {
-        // let regexPattern = /transfer\(\s*(\w+),\s*([0-9]+[.]*[0-9]*)\)/
-        // if(args[0].inputData.match(regexPattern)){
-        //   let txAmount = RegExp.$2
-        //   if (txAmount > args[0].value) {
-        //     response.status = '0'
-        //     response.info = 'Smart Contract transaction requires more than sent'
-        //     callback(null, response)
-        //   }
-        // }
         let tokenTx = {
           Nonce: args[0].nonce,
           TxReceiptStatus: 'pending',
@@ -693,21 +626,6 @@ let server = jayson.server({
     }
     callback(null, response)
   }
-
-  // _setBlock: function (args, callback) {
-  //   let response = {}
-  //   core.senAPIs.writeBlock(args[0], (err) => {
-  //     if (err) {
-  //       response.status = '0'
-  //       response.message = 'Failed, reason: ' + err
-  //     } else {
-  //       response.status = '1'
-  //       response.message = 'OK'
-  //     }
-  //     callback(null, response)
-  //   })
-  // },
-
   // _syncFromIp: function (args, callback) {
   //   let response = {}
   //   if (args[0].ip === null) {
