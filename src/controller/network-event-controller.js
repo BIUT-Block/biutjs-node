@@ -466,7 +466,7 @@ class NetworkEvent {
       this.syncInfo.timer = setTimeout(() => {
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('60s'))
+      }, ms('600s'))
 
       let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstBlockNum)
