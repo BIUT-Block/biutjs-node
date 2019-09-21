@@ -13,11 +13,13 @@ class APIs {
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
       this.accTree = this.chain.chain.accTree
+      this.accDB = this.chain.chain.accDB
     } else {
       this.chain = this.CenterController.getSenChain()
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
       this.accTree = this.chain.chain.accTree
+      this.accDB = this.chain.chain.accTree.accDB
     }
   }
 
