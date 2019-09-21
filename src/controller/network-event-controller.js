@@ -464,9 +464,10 @@ class NetworkEvent {
       console.log('Not return')
       clearTimeout(this.syncInfo.timer)
       this.syncInfo.timer = setTimeout(() => {
+        this.syncingFlag = false
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('600s'))
+      }, ms('60s'))
 
       let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstBlockNum)
