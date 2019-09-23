@@ -289,9 +289,9 @@ class NetworkEvent {
           setTimeout(() => {
             this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.GET_NODE_DATA, [this.ChainIDBuff, []])
           }, 15000)
-
           this._addPeerToNDP()
           this._startSyncNodesIP()
+          this._startSyncListening()
         } else {
           debug(`Chain Name: ${this.ChainName}`)
           debug(`${blockHash} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${geneBlock.Hash}`)
@@ -948,6 +948,23 @@ class NetworkEvent {
       }
     }
     return _hashList
+  }
+
+  _startSyncListening () {
+    setInterval(() => {
+      if (this.forkVerified) {
+        this.logger.info(`Auto Syncing mechanism`)
+        console.log(`Auto Syncing mechanism`)
+        this.BlockChain.chain.getHashList((err, hashList) => {
+          if (err) {
+            this.logger.error(`Error Sync listening: ${err}`)
+            console.error(`Error Sync listening: ${err}`)
+          } else {
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+          }
+        })
+      }
+    }, 30000)
   }
 }
 
