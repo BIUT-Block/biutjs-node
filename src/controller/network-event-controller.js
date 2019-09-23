@@ -952,7 +952,7 @@ class NetworkEvent {
 
   _startSyncListening () {
     setInterval(() => {
-      if (this.forkVerified) {
+      if (this.forkVerified && (this.syncInfo.flag === false)) {
         this.logger.info(`Auto Syncing mechanism`)
         console.log(`Auto Syncing mechanism`)
         this.BlockChain.chain.getHashList((err, hashList) => {
