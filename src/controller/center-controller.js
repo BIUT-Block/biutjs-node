@@ -245,7 +245,9 @@ class CenterController {
 
   _resetNetwork () {
     console.log('resetNetwork')
+    this.config.dbconfig.logger.info('resetNetwork')
     let peers = this.ndp.getPeers()
+    this.config.dbconfig.logger.info(peers)
     console.log(peers)
     peers.forEach(peer => {
       this.ndp.removePeer(peer)
@@ -264,8 +266,11 @@ class CenterController {
         console.error(chalk.bold.red(err.stack || err))
       })
     }
+    this.config.dbconfig.logger.info('resetNetwork Finish')
     console.log('resetNetwork Finish')
+    this.config.dbconfig.logger.info(this.ndp.getPeers())
     console.log(this.ndp.getPeers())
+    this.config.dbconfig.logger.info(this.rlp.getPeers().length)
     console.log(this.rlp.getPeers().length)
   }
 
