@@ -442,6 +442,7 @@ class NetworkEvent {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
     console.log('syncingFlag: ' + this.syncingFlag)
+    this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {
       this.syncingFlag = true
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
@@ -476,6 +477,7 @@ class NetworkEvent {
 
       // find out wether Block removed from Blockchain are needed
       if (this.BlockChain.chain.getCurrentHeight() > firstBlockNum) {
+        this.logger.info('Remove block from blockchain')
         console.log('Remove block from blockchain')
         console.time('delBlockFromHeight ' + firstBlockNum)
         // remove all the blocks which have a larger block number than the first block to be syncronized
@@ -564,6 +566,7 @@ class NetworkEvent {
         })
       } else {
         // no Block removed from blockchain needed
+        this.logger.info('Do not remove block from blockchain')
         console.log('Do not remove block from blockchain')
         async.eachSeries(payload[1], (payload, callback) => {
           // console.log('mingNewBlock', payload)
@@ -573,6 +576,7 @@ class NetworkEvent {
           debug(`Syncronizing block ${block.Number}`)
           console.time('putBlockToDB ' + block.Number)
           console.time('writeNewBlock ' + block.Number)
+          this.logger.info(block.Number)
           console.log(block.Number)
           this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
             console.timeEnd('putBlockToDB ' + block.Number)
