@@ -445,6 +445,9 @@ class NetworkEvent {
     this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {
       this.syncingFlag = true
+      setTimeout(() => {
+        this.syncingFlag = false
+      }, ms('120s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
 
@@ -468,7 +471,7 @@ class NetworkEvent {
         this.syncingFlag = false
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('60s'))
+      }, ms('120s'))
 
       let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstBlockNum)
