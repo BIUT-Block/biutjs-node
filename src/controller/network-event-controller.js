@@ -534,6 +534,7 @@ class NetworkEvent {
                     this.BlockChain.pool.addTxIntoPool(tx)
                   })
                   // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
+                  this.syncingFlag = false
                   this.logger.info('Current Height: ')
                   this.logger.info(this.BlockChain.chain.getCurrentHeight())
                   this.logger.info('remote Height: ')
@@ -542,8 +543,8 @@ class NetworkEvent {
                     // synchronizing finished
                     this.syncInfo.flag = false
                     this.syncInfo.address = null
-                    clearTimeout(this.syncInfo)
                     this.syncingFlag = false
+                    clearTimeout(this.syncInfo)
                   } else {
                     // continue synchronizing
                     this.BlockChain.chain.getHashList((err, hashList) => {
