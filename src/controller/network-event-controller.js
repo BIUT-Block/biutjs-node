@@ -445,7 +445,7 @@ class NetworkEvent {
     this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {
       this.syncingFlag = true
-      setTimeout(() => {
+      let syncingTimer = setTimeout(() => {
         this.syncingFlag = false
       }, ms('120s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
@@ -529,6 +529,7 @@ class NetworkEvent {
                 console.timeEnd('checkTxArray ' + firstBlockNum)
                 if (err) {
                   this.syncingFlag = false
+                  clearTimeout(syncingTimer)
                   this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
                   console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
                 } else {
@@ -538,6 +539,7 @@ class NetworkEvent {
                   })
                   // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
                   this.syncingFlag = false
+                  clearTimeout(syncingTimer)
                   this.logger.info('Current Height: ')
                   this.logger.info(this.BlockChain.chain.getCurrentHeight())
                   this.logger.info('remote Height: ')
@@ -547,10 +549,12 @@ class NetworkEvent {
                     this.syncInfo.flag = false
                     this.syncInfo.address = null
                     this.syncingFlag = false
+                    clearTimeout(syncingTimer)
                     clearTimeout(this.syncInfo)
                   } else {
                     // continue synchronizing
                     this.BlockChain.chain.getHashList((err, hashList) => {
+                      clearTimeout(syncingTimer)
                       this.syncingFlag = false
                       if (err) {
                         this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
@@ -617,9 +621,11 @@ class NetworkEvent {
             this.syncInfo.address = null
             clearTimeout(this.syncInfo)
             this.syncingFlag = false
+            clearTimeout(syncingTimer)
           } else {
             // continue synchronizing
             this.BlockChain.chain.getHashList((err, hashList) => {
+              clearTimeout(syncingTimer)
               this.syncingFlag = false
               if (err) {
                 this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
@@ -646,6 +652,7 @@ class NetworkEvent {
           }
           this.BlockChain.chain.getHashList((err, hashList) => {
             this.syncingFlag = false
+            clearTimeout(syncingTimer)
             if (err) {
               this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
               console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
