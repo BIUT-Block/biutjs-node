@@ -475,11 +475,11 @@ class NetworkEvent {
 
       let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstBlockNum)
-      debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
-      this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks synced`)
+      debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks syncing`)
+      this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks syncing`)
 
       // find out wether Block removed from Blockchain are needed
-      if (this.BlockChain.chain.getCurrentHeight() > firstBlockNum) {
+      if (this.BlockChain.chain.getCurrentHeight() > firstBlockNum - 1) {
         this.logger.info('Remove block from blockchain')
         console.log('Remove block from blockchain')
         console.time('delBlockFromHeight ' + firstBlockNum)
@@ -568,7 +568,7 @@ class NetworkEvent {
             })
           }, 5000)
         })
-      } else {
+      } else if (this.BlockChain.chain.getCurrentHeight() === firstBlockNum - 1) {
         // no Block removed from blockchain needed
         this.logger.info('Do not remove block from blockchain')
         console.log('Do not remove block from blockchain')
@@ -632,6 +632,29 @@ class NetworkEvent {
               }
             })
           }
+        })
+      } else {
+        this.logger.info('Remove block from blockchain with current height')
+        console.log('Remove block from blockchai with current height')
+        console.time('delBlockFromHeight ' + this.BlockChain.chain.getCurrentHeight() - 1)
+        // remove all the blocks which have a larger block number than the first block to be syncronized
+        this.BlockChain.chain.delBlockFromHeight(this.BlockChain.chain.getCurrentHeight() - 1, (err, txArray) => {
+          console.timeEnd('delBlockFromHeight ' + firstBlockNum)
+          if (err) {
+            this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+            console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+          }
+          this.BlockChain.chain.getHashList((err, hashList) => {
+            this.syncingFlag = false
+            if (err) {
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+            } else {
+              // TODO: hashList may has consistent problem
+              hashList = this._hashListCorrection(hashList)
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+            }
+          })
         })
       }
     }
