@@ -43,6 +43,7 @@ class NetworkEvent {
     this.forkVerified = false
     this.syncingFlag = false
     this.syncInfo = config.syncInfo
+    this.syncListeningTimer = {}
     this.peer = {}
     this.addr = {}
     this.sec = {}
@@ -989,7 +990,7 @@ class NetworkEvent {
   }
 
   _startSyncListening () {
-    setInterval(() => {
+    this.syncListeningTimer = setInterval(() => {
       if (this.forkVerified && (this.syncInfo.flag === false)) {
         this.logger.info(`Auto Syncing mechanism`)
         console.log(`Auto Syncing mechanism`)
