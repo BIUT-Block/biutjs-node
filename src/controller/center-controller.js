@@ -1,6 +1,7 @@
 const chalk = require('chalk')
 const ms = require('ms')
 const assert = require('assert')
+const crypto = require('crypto')
 const SECConfig = require('../../config/default.json')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:center-controller')
@@ -72,6 +73,10 @@ class CenterController {
     if (process.env.network && this.runningFlag === false) {
       this.initNetwork()
     }
+    // Only for testing
+    // setInterval(() => {
+    //   this._resetMainProgramm()
+    // }, 120000)
   }
 
   _initNDP () {
@@ -212,7 +217,7 @@ class CenterController {
 
   run () {
     // Only export running states
-    setInterval(() => {
+    this.displayTimer = setInterval(() => {
       const peers = this.ndp.getPeers()
       const peersCount = peers.length
       const rlpPeers = this.rlp.getPeers()
@@ -243,34 +248,102 @@ class CenterController {
     }, ms('30s'))
   }
 
-  _resetNetwork () {
-    console.log('resetNetwork')
-    let peers = this.ndp.getPeers()
-    console.log(peers)
-    peers.forEach(peer => {
+  _resetMainProgramm () {
+    console.log('resetMainProgramm')
+    this.config.dbconfig.logger.info('resetMainProgramm')
+    console.log('removing all peers...')
+    this.config.dbconfig.logger.info('removing all peers...')
+    this.rlp.getPeers().forEach(peer => {
+      peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.CLIENT_QUITTING)
+    })
+    this.ndp.getPeers().forEach(peer => {
       this.ndp.removePeer(peer)
     })
-    // add bootstrap nodes
-    const BOOTNODES = this.bootstrapNodes.map(node => {
-      return {
-        address: node.ip,
-        udpPort: node.port,
-        tcpPort: node.port
-      }
-    })
-    for (let bootnode of BOOTNODES) {
-      this.ndp.bootstrap(bootnode).catch(err => {
-        this.config.dbconfig.logger.error(`${err.stack || err}`)
-        console.error(chalk.bold.red(err.stack || err))
+    setTimeout(() => {
+      this.rlp.destroy(this.rlp.getPeers())
+      this.ndp.destroy(this.ndp.getPeers())
+    }, 2000)
+
+    setTimeout(() => {
+      console.log(this.ndp.getPeers().length)
+      console.log(this.rlp.getPeers().length)
+      console.log('closing Database...')
+      this.config.dbconfig.logger.info('closing Database...')
+      this.secChain.chain.chainDB.tokenBlockChainDB.close()
+      this.secChain.chain.txDB.tokenTxDB.close()
+      this.secChain.chain.smartContractTxDB.smartContractDB.close()
+      this.secChain.chain.accTree.accTree.accTreeDB.close()
+      this.secChain.chain.accTree.accDB.accDB.close()
+
+      this.senChain.chain.chainDB.tokenBlockChainDB.close()
+      this.senChain.chain.txDB.tokenTxDB.close()
+      this.senChain.chain.smartContractTxDB.smartContractDB.close()
+      this.senChain.chain.accTree.accTree.accTreeDB.close()
+      this.senChain.chain.accTree.accDB.accDB.close()
+    }, 20000)
+
+    setTimeout(() => {
+      delete this.ndp
+      delete this.rlp
+      delete this.secChain
+      delete this.senChain
+      this.ndp = Object.assign({}, {})
+      this.rlp = Object.assign({}, {})
+      this.secChain = Object.assign({}, {})
+      this.senChain = Object.assign({}, {})
+      let config = this.config
+      config.PRIVATE_KEY = Buffer.from(crypto.randomBytes(32).toString('hex'), 'hex')
+      this.ndp = new SECDEVP2P.NDP(config.PRIVATE_KEY, {
+        refreshInterval: SECConfig.SECBlock.devp2pConfig.ndp.refreshInterval,
+        timeout: SECConfig.SECBlock.devp2pConfig.ndp.timeout,
+        endpoint: SECConfig.SECBlock.devp2pConfig.ndp.endpoint
       })
-    }
-    console.log('resetNetwork Finish')
-    console.log(this.ndp.getPeers())
-    console.log(this.rlp.getPeers().length)
+      this.rlp = new SECDEVP2P.RLPx(config.PRIVATE_KEY, {
+        ndp: this.ndp,
+        timeout: SECConfig.SECBlock.devp2pConfig.rlp.timeout,
+        maxPeers: SECConfig.SECBlock.devp2pConfig.rlp.maxPeers,
+        capabilities: [
+          SECDEVP2P.SEC.sec
+        ],
+        clientId: SECConfig.SECBlock.devp2pConfig.rlp.clientId,
+        remoteClientIdFilter: SECConfig.SECBlock.devp2pConfig.rlp.remoteClientIdFilter,
+        listenPort: null
+      })
+      this.syncInfo = {
+        flag: false,
+        address: null,
+        timer: null
+      }
+      Object.keys(this.NetworkEventContainer).forEach((chainName) => {
+        clearInterval(this.NetworkEventContainer[chainName].syncListeningTimer)
+        clearInterval(this.NetworkEventContainer[chainName].syncNodeTimer)
+      })
+      this.NetworkEventContainer = {}
+      clearInterval(this.refreshDHTTimer)
+      clearInterval(this.displayTimer)
+      this.config.syncInfo = this.syncInfo
+      config.chainName = 'SEC'
+      config.chainID = '010001'
+      config.dbconfig.DBPath = config.dbconfig.SecDBPath
+      this.secChain = new BlockChain(config)
+
+      config.chainName = 'SEN'
+      config.chainID = '010002'
+      config.dbconfig.DBPath = config.dbconfig.SenDBPath
+      config.secChain = this.secChain
+      this.senChain = new BlockChain(config)
+      this.secChain.setSenChain(this.senChain)
+      this.runningFlag = false
+      if (process.env.network && this.runningFlag === false) {
+        this.initNetwork()
+      }
+      this.config.dbconfig.logger.info('resetMainProgramm Finish')
+      console.log('resetMainProgramm Finish')
+    }, 25000)
   }
 
   _refreshDHTConnections () {
-    setInterval(() => {
+    this.refreshDHTTimer = setInterval(() => {
       let _peers = this.ndp.getPeers()
       let peers = []
       _peers.forEach(_peer => {
@@ -288,7 +361,7 @@ class CenterController {
         })
       })
       if (this.rlp.getPeers().length === 0) {
-        this._resetNetwork()
+        this._resetMainProgramm()
       }
     }, ms('5m'))
   }

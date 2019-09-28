@@ -13,11 +13,13 @@ class APIs {
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
       this.accTree = this.chain.chain.accTree
+      this.accDB = this.chain.chain.accDB
     } else {
       this.chain = this.CenterController.getSenChain()
       this.chainDB = this.chain.chain.chainDB
       this.txDB = this.chain.chain.txDB
       this.accTree = this.chain.chain.accTree
+      this.accDB = this.chain.chain.accTree.accDB
     }
   }
 
@@ -118,8 +120,8 @@ class APIs {
    * @param  {String} userAddress - user account address
    * @return {None}
    */
-  getBalance (userAddress, callback) {
-    this.chain.getBalance(userAddress, callback)
+  getBalance (userAddress, tokenName, callback) {
+    this.chain.getBalance(userAddress, tokenName, callback)
   }
 
   getNonce (userAddress, callback) {
@@ -195,7 +197,6 @@ class APIs {
   getTokenChainHeight () {
     return this.chain.chain.getCurrentHeight()
   }
-
   getSyncInfo () {
     let response = {
       isSyncing: null,
@@ -217,6 +218,35 @@ class APIs {
     }
     callback(result)
   }
+  // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
+
+  // getTokenName(addr, callback) {
+  //   this.chain.getTokenName(addr, callback)
+  // }
+
+  getContractAddress (tokenname, callback) {
+    this.chain.getContractAddress(tokenname, callback)
+  }
+
+  getCreatorContract (creatorAddress, callback) {
+    this.chain.getCreatorContract(creatorAddress, callback)
+  }
+
+  getContractInfo (contractAddr, callback) {
+    this.chain.getContractInfo(contractAddr, callback)
+  }
+
+  getLockerContract (walletAddress, callback) {
+    this.chain.getLockerContract(walletAddress, callback)
+  }
+
+  // getTimeLock(addr, callback) {
+  //   this.chain.chain.getTimeLock(addr, callback)
+  // }
+
+  // addTokenMap(tokenInfo, addr, callback) {
+  //   this.chain.chain.addTokenMap(tokenInfo, addr, callback)
+  // }
 }
 
 module.exports = APIs

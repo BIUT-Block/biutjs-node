@@ -50,7 +50,7 @@ class Consensus {
 
   // ---------------------------------------  SEN Block Chain  ---------------------------------------
   runPOW () {
-    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), (err, balance) => {
+    this.secChain.getBalance(this.BlockChain.SECAccount.getAddress(), this.chainName, (err, balance) => {
       if (err) {
         this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
         console.error(`Error in consensus.js, runPow function, getBalance: ${err}`)
@@ -103,15 +103,27 @@ class Consensus {
               let groupId = this.secCircle.getTimestampWorkingGroupId(newBlock.TimeStamp)
               let BeneGroupId = this.secCircle.getTimestampGroupId(newBlock.Beneficiary, newBlock.TimeStamp)
 
+              console.log(result)
+              console.log('groupId: ' + groupId)
+              console.log('BeneGroupId: ' + BeneGroupId)
               if (result.result && groupId === BeneGroupId) {
                 let txsInPoll = JSON.parse(JSON.stringify(this.BlockChain.pool.getAllTxFromPool()))
                 // append the pow reward tx
                 this.secReward.getRewardTx((err, rewardTx) => {
-                  if (err) return this.resetPOW()
-                  if (rewardTx === null) return this.resetPOW()
+                  if (err) {
+                    console.error(err)
+                    return this.resetPOW()
+                  }
+                  if (rewardTx === null) {
+                    console.error('rewardTx === null')
+                    return this.resetPOW()
+                  }
                   let _rewardTx = JSON.parse(JSON.stringify(rewardTx))
                   this.secChain.consensus.generateSecBlock(newBlock.Beneficiary, (err, biutTxFeeTx) => {
-                    if (err) return this.resetPOW()
+                    if (err) {
+                      console.error(err)
+                      return this.resetPOW()
+                    }
 
                     let _secTxFeeTx = JSON.parse(JSON.stringify(biutTxFeeTx))
                     if (_secTxFeeTx !== null) {
@@ -119,7 +131,10 @@ class Consensus {
                     }
 
                     this.BlockChain.checkTxArray(txsInPoll, (err, txArray) => {
-                      if (err) return this.resetPOW()
+                      if (err) {
+                        console.error(err)
+                        return this.resetPOW()
+                      }
                       let senTxFeeTx = this.secReward.getSenTxFeeTx(txArray, newBlock.Beneficiary)
                       if (senTxFeeTx !== null) {
                         senTxFeeTx = senTxFeeTx.getTx()
@@ -137,16 +152,18 @@ class Consensus {
                       newBlock.Transactions = txArray
                       // write the new block to DB, then broadcast the new block, clear tokenTx pool and reset POW
                       let senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), (err) => {
+                      this.BlockChain.chain.putBlockToDB(senBlock.getBlock(), false, (err, newStateRoot, newHash) => {
                         if (err) {
                           this.config.dbconfig.logger.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                           console.error(`Error in consensus.js, runPow function, putBlockToDB: ${err}`)
                         } else {
+                          senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+                          senBlock.getBlock().StateRoot = newStateRoot
+                          senBlock.getBlock().Hash = newHash
                           this.config.dbconfig.logger.info(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           console.log(chalk.green(`New SEN block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, current blockchain height: ${this.BlockChain.chain.getCurrentHeight()}`))
                           this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
                           console.log(chalk.green(`New generated block is: ${JSON.stringify(senBlock.getBlock())}`))
-                          senBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
                           this.BlockChain.sendNewBlockHash(senBlock)
                           this.BlockChain.pool.clear()
                           this.resetPOW()
@@ -156,9 +173,11 @@ class Consensus {
                   })
                 })
               } else {
+                console.error('result false or groupId not equal BeneGroupId')
                 this.resetPOW()
               }
             } else {
+              console.error('syncInfo flag === true')
               this.resetPOW()
             }
           } catch (err) {
@@ -266,13 +285,15 @@ class Consensus {
 
           newBlock.Transactions = txArray
           let secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
-          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), (err) => {
+          this.BlockChain.chain.putBlockToDB(secBlock.getBlock(), false, (err, newStateRoot, newHash) => {
             if (err) return callback(new Error(`Error in consensus.js, generateSecBlock function, putBlockToDB: ${err}`), null)
+            secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
+            secBlock.getBlock().StateRoot = newStateRoot
+            secBlock.getBlock().Hash = newHash
             this.config.dbconfig.logger.info(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             console.log(chalk.green(`New SEC block generated, ${newBlock.Transactions.length} Transactions saved in the new Block, Current Blockchain Height: ${this.BlockChain.chain.getCurrentHeight()}`))
             this.config.dbconfig.logger.info(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
             console.log(chalk.green(`New generated block is: ${JSON.stringify(secBlock.getBlock())}`))
-            secBlock = cloneDeep(new SECBlockChain.SECTokenBlock(newBlock))
             this.BlockChain.sendNewBlockHash(secBlock)
             this.BlockChain.pool.clear()
 
