@@ -956,7 +956,7 @@ class NetworkEvent {
   }
 
   _startSyncNodesIP () {
-    setInterval(() => {
+    this.syncNodeTimer = setInterval(() => {
       let _peers = []
       if (this.NodesIPSync.getNodesTable().length === 0) {
         let peers = this.NDP.getPeers()

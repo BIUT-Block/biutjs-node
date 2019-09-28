@@ -217,7 +217,7 @@ class CenterController {
 
   run () {
     // Only export running states
-    setInterval(() => {
+    this.displayTimer = setInterval(() => {
       const peers = this.ndp.getPeers()
       const peersCount = peers.length
       const rlpPeers = this.rlp.getPeers()
@@ -316,9 +316,11 @@ class CenterController {
       }
       Object.keys(this.NetworkEventContainer).forEach((chainName) => {
         clearInterval(this.NetworkEventContainer[chainName].syncListeningTimer)
+        clearInterval(this.NetworkEventContainer[chainName].syncNodeTimer)
       })
       this.NetworkEventContainer = {}
-
+      clearInterval(this.refreshDHTTimer)
+      clearInterval(this.displayTimer)
       this.config.syncInfo = this.syncInfo
       config.chainName = 'SEC'
       config.chainID = '010001'
@@ -341,7 +343,7 @@ class CenterController {
   }
 
   _refreshDHTConnections () {
-    setInterval(() => {
+    this.refreshDHTTimer = setInterval(() => {
       let _peers = this.ndp.getPeers()
       let peers = []
       _peers.forEach(_peer => {
