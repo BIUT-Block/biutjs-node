@@ -287,6 +287,8 @@ class CenterController {
       delete this.rlp
       delete this.secChain
       delete this.senChain
+      clearInterval(this.secChain.consensus.circleInterval)
+      clearInterval(this.senChain.consensus.circleInterval)
       this.ndp = Object.assign({}, {})
       this.rlp = Object.assign({}, {})
       this.secChain = Object.assign({}, {})
@@ -339,6 +341,7 @@ class CenterController {
       }
       this.config.dbconfig.logger.info('resetMainProgramm Finish')
       console.log('resetMainProgramm Finish')
+      this.config.dbconfig.logger.info('Please waiting for reconnection (can more than 2 hours)...')
     }, 25000)
   }
 

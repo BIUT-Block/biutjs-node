@@ -992,8 +992,8 @@ class NetworkEvent {
   _startSyncListening () {
     this.syncListeningTimer = setInterval(() => {
       if (this.forkVerified && (this.syncInfo.flag === false)) {
-        this.logger.info(`Auto Syncing mechanism`)
-        console.log(`Auto Syncing mechanism`)
+        // this.logger.info(`Auto Syncing mechanism`)
+        // console.log(`Auto Syncing mechanism`)
         this.BlockChain.chain.getHashList((err, hashList) => {
           if (err) {
             this.logger.error(`Error Sync listening: ${err}`)
@@ -1003,7 +1003,7 @@ class NetworkEvent {
           }
         })
       }
-    }, 300000)
+    }, 1800000)
   }
 }
 
