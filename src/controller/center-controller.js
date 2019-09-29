@@ -213,10 +213,12 @@ class CenterController {
         debug('senChain init finish')
         this._initNDP()
         this._initRLP()
-        this._refreshDHTConnections()
         this.secChain.run()
         this.senChain.run()
         this.run()
+        if (!this.restartingFlag) {
+          this._refreshDHTConnections()
+        }
         callback()
       })
     })
@@ -281,7 +283,6 @@ class CenterController {
     clearInterval(this.senChain.consensus.circleInterval)
     clearInterval(this.secChain.Timer)
     clearInterval(this.senChain.Timer)
-    clearInterval(this.refreshDHTTimer)
     clearInterval(this.displayTimer)
     this.rlp.getPeers().forEach(peer => {
       peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.CLIENT_QUITTING)
@@ -358,9 +359,11 @@ class CenterController {
           console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
         })
       })
-      if (this.rlp.getPeers().length === 0) {
-        this._resetMainProgramm()
-      }
+      setTimeout(() => {
+        if (this.rlp.getPeers().length === 0) {
+          this._resetMainProgramm()
+        }
+      }, 5000)
     }, ms('5m'))
   }
 }
