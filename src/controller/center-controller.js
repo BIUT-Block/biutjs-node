@@ -54,29 +54,34 @@ class CenterController {
       address: null,
       timer: null
     }
-    this.NetworkEventContainer = {}
+    this.NetworkEventContainer = { SEC: [], SEN: [] }
 
     this.config.syncInfo = this.syncInfo
     config.chainName = 'SEC'
     config.chainID = '010001'
     config.dbconfig.DBPath = config.dbconfig.SecDBPath
+    config.CenterController = this
     this.secChain = new BlockChain(config)
 
     config.chainName = 'SEN'
     config.chainID = '010002'
     config.dbconfig.DBPath = config.dbconfig.SenDBPath
     config.secChain = this.secChain
+    config.CenterController = this
     this.senChain = new BlockChain(config)
     this.secChain.setSenChain(this.senChain)
 
+    this.restartingFlag = false
     this.runningFlag = false
     if (process.env.network && this.runningFlag === false) {
-      this.initNetwork()
+      this.initNetwork((err) => {
+        if (err) console.error(err)
+        // Only for testing
+        setInterval(() => {
+          this._resetMainProgramm()
+        }, 120000)
+      })
     }
-    // Only for testing
-    // setInterval(() => {
-    //   this._resetMainProgramm()
-    // }, 120000)
   }
 
   _initNDP () {
@@ -134,15 +139,15 @@ class CenterController {
       // Add new config param ChainID, the first 01 means token chain, last 0001 means this chain is the first token chain
       let secNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010001', ChainName: 'SEC', BlockChain: this.secChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo, logger: this.config.dbconfig.logger })
       secNetworkEvent.PeerCommunication(peer, addr, sec)
-      this.NetworkEventContainer['SEC'] = secNetworkEvent
+      this.NetworkEventContainer['SEC'].push(secNetworkEvent)
 
       // -------------------------------  SEN BLOCK CHAIN  -------------------------------
       // Add new config param ChainID, the first 01 means token chain, last 0002 means this chain is the second token chain
       setTimeout(() => {
         let senNetworkEvent = new NetworkEvent({ ID: addr, ChainID: '010002', ChainName: 'SEN', BlockChain: this.senChain, NDP: this.ndp, NodesIPSync: this.nodesIPSync, syncInfo: this.syncInfo, logger: this.config.dbconfig.logger })
         senNetworkEvent.PeerCommunication(peer, addr, sec)
-        this.NetworkEventContainer['SEN'] = senNetworkEvent
-      }, 10000)
+        this.NetworkEventContainer['SEN'].push(senNetworkEvent)
+      }, 20000)
     })
 
     this.rlp.on('peer:removed', (peer, reasonCode, disconnectWe) => {
@@ -150,9 +155,17 @@ class CenterController {
       const total = this.rlp.getPeers().length
       // remove useless NetworkEvent Instance
       Object.keys(this.NetworkEventContainer).forEach((chainName) => {
-        if (this.NetworkEventContainer[chainName].getInstanceID() === Utils.getPeerAddr(peer)) {
-          delete this.NetworkEventContainer[chainName]
-        }
+        this.NetworkEventContainer[chainName].forEach((networkEvent, index) => {
+          console.log(networkEvent.getInstanceID())
+          console.log(Utils.getPeerAddr(peer))
+          if (networkEvent.getInstanceID() === Utils.getPeerAddr(peer)) {
+            console.log('Remove network Event Instance')
+            clearInterval(networkEvent.syncListeningTimer)
+            clearInterval(networkEvent.syncNodeTimer)
+            delete this.NetworkEventContainer[chainName][index]
+            this.NetworkEventContainer[chainName].splice(index, 1)
+          }
+        })
       })
       this.config.dbconfig.logger.info(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
@@ -180,7 +193,7 @@ class CenterController {
     this.rlp.listen(SECConfig.SECBlock.devp2pConfig.rlp.endpoint.tcpPort, SECConfig.SECBlock.devp2pConfig.rlp.endpoint.address)
   }
 
-  initNetwork () {
+  initNetwork (callback) {
     // -------------------------  IMPORTANT INSTANT  -------------------------
     this.runningFlag = true
     this.config.rlp = this.rlp
@@ -188,13 +201,13 @@ class CenterController {
     this.secChain.init(this.rlp, (err) => {
       if (err) {
         this.config.dbconfig.logger.error(err)
-        return console.error(err)
+        callback(err)
       }
       debug('secChain init finish')
       this.senChain.init(this.rlp, (err) => {
         if (err) {
           this.config.dbconfig.logger.error(err)
-          return console.error(err)
+          callback(err)
         }
         debug('senChain init finish')
         this._initNDP()
@@ -203,6 +216,7 @@ class CenterController {
         this.secChain.run()
         this.senChain.run()
         this.run()
+        callback()
       })
     })
   }
@@ -250,9 +264,24 @@ class CenterController {
 
   _resetMainProgramm () {
     console.log('resetMainProgramm')
-    this.config.dbconfig.logger.info('resetMainProgramm')
     console.log('removing all peers...')
+    this.config.dbconfig.logger.info('resetMainProgramm')
     this.config.dbconfig.logger.info('removing all peers...')
+    // Removing all Timer for setInterval
+    Object.keys(this.NetworkEventContainer).forEach((chainName) => {
+      this.NetworkEventContainer[chainName].forEach((networkEvent, index) => {
+        clearInterval(networkEvent.syncListeningTimer)
+        clearInterval(networkEvent.syncNodeTimer)
+        delete this.NetworkEventContainer[chainName][index]
+        this.NetworkEventContainer[chainName].splice(index, 1)
+      })
+    })
+    clearInterval(this.secChain.consensus.circleInterval)
+    clearInterval(this.senChain.consensus.circleInterval)
+    clearInterval(this.secChain.Timer)
+    clearInterval(this.senChain.Timer)
+    clearInterval(this.refreshDHTTimer)
+    clearInterval(this.displayTimer)
     this.rlp.getPeers().forEach(peer => {
       peer.disconnect(SECDEVP2P.RLPx.DISCONNECT_REASONS.CLIENT_QUITTING)
     })
@@ -265,34 +294,14 @@ class CenterController {
     }, 2000)
 
     setTimeout(() => {
-      console.log(this.ndp.getPeers().length)
-      console.log(this.rlp.getPeers().length)
-      console.log('closing Database...')
-      this.config.dbconfig.logger.info('closing Database...')
-      this.secChain.chain.chainDB.tokenBlockChainDB.close()
-      this.secChain.chain.txDB.tokenTxDB.close()
-      this.secChain.chain.smartContractTxDB.smartContractDB.close()
-      this.secChain.chain.accTree.accTree.accTreeDB.close()
-      this.secChain.chain.accTree.accDB.accDB.close()
-
-      this.senChain.chain.chainDB.tokenBlockChainDB.close()
-      this.senChain.chain.txDB.tokenTxDB.close()
-      this.senChain.chain.smartContractTxDB.smartContractDB.close()
-      this.senChain.chain.accTree.accTree.accTreeDB.close()
-      this.senChain.chain.accTree.accDB.accDB.close()
-    }, 20000)
-
-    setTimeout(() => {
+      console.log(`NDP peers: ${this.ndp.getPeers().length}`)
+      console.log(`RLP perrs: ${this.rlp.getPeers().length}`)
+      this.config.dbconfig.logger.info(`NDP peers: ${this.ndp.getPeers().length}`)
+      this.config.dbconfig.logger.info(`RLP perrs: ${this.rlp.getPeers().length}`)
       delete this.ndp
       delete this.rlp
-      delete this.secChain
-      delete this.senChain
-      clearInterval(this.secChain.consensus.circleInterval)
-      clearInterval(this.senChain.consensus.circleInterval)
       this.ndp = Object.assign({}, {})
       this.rlp = Object.assign({}, {})
-      this.secChain = Object.assign({}, {})
-      this.senChain = Object.assign({}, {})
       let config = this.config
       config.PRIVATE_KEY = Buffer.from(crypto.randomBytes(32).toString('hex'), 'hex')
       this.ndp = new SECDEVP2P.NDP(config.PRIVATE_KEY, {
@@ -316,32 +325,17 @@ class CenterController {
         address: null,
         timer: null
       }
-      Object.keys(this.NetworkEventContainer).forEach((chainName) => {
-        clearInterval(this.NetworkEventContainer[chainName].syncListeningTimer)
-        clearInterval(this.NetworkEventContainer[chainName].syncNodeTimer)
-      })
-      this.NetworkEventContainer = {}
-      clearInterval(this.refreshDHTTimer)
-      clearInterval(this.displayTimer)
-      this.config.syncInfo = this.syncInfo
-      config.chainName = 'SEC'
-      config.chainID = '010001'
-      config.dbconfig.DBPath = config.dbconfig.SecDBPath
-      this.secChain = new BlockChain(config)
-
-      config.chainName = 'SEN'
-      config.chainID = '010002'
-      config.dbconfig.DBPath = config.dbconfig.SenDBPath
-      config.secChain = this.secChain
-      this.senChain = new BlockChain(config)
-      this.secChain.setSenChain(this.senChain)
+      this.NetworkEventContainer = { SEC: [], SEN: [] }
       this.runningFlag = false
+      this.restartingFlag = true
       if (process.env.network && this.runningFlag === false) {
-        this.initNetwork()
+        this.initNetwork((err) => {
+          if (err) console.error(err)
+          this.config.dbconfig.logger.error('err')
+          this.config.dbconfig.logger.info('resetMainProgramm Finish')
+          console.log('resetMainProgramm Finish')
+        })
       }
-      this.config.dbconfig.logger.info('resetMainProgramm Finish')
-      console.log('resetMainProgramm Finish')
-      this.config.dbconfig.logger.info('Please waiting for reconnection (can more than 2 hours)...')
     }, 25000)
   }
 

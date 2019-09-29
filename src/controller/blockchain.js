@@ -28,7 +28,8 @@ class BlockChain {
     this.config = config
     this.chainID = config.chainID
     this.chainName = config.chainName
-    this.SECAccount = this.config.SECAccount
+    this.SECAccount = config.SECAccount
+    this.CenterController = config.CenterController
 
     // only for SEC chain
     this.senChain = null
@@ -50,11 +51,14 @@ class BlockChain {
 
   init (rlp, callback) {
     this.rlp = rlp
-
-    this.chain.init((err) => {
-      debug(chalk.blue('Blockchain init success'))
-      callback(err)
-    })
+    if (!this.CenterController.restartingFlag) {
+      this.chain.init((err) => {
+        debug(chalk.blue('Blockchain init success'))
+        callback(err)
+      })
+    } else {
+      callback()
+    }
   }
 
   run () {

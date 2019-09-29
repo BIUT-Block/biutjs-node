@@ -19,6 +19,7 @@ class Consensus {
     this.cacheDBPath = config.dbconfig.cacheDBPath
     this.chainName = config.chainName
     this.syncInfo = config.syncInfo
+    this.CenterController = config.CenterController
     this.powEnableFlag = false
 
     // ---------------------------------------  block chain  ---------------------------------------

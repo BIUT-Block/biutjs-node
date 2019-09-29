@@ -20,6 +20,7 @@ const SYNC_CHUNK = 20 // each sync package contains 20 blocks
 
 class NetworkEvent {
   constructor (config) {
+    this.ID = config.ID
     this.logger = config.logger
     this.BlockChain = config.BlockChain
     this.Consensus = config.BlockChain.consensus
