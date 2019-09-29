@@ -77,9 +77,9 @@ class CenterController {
       this.initNetwork((err) => {
         if (err) console.error(err)
         // Only for testing
-        setInterval(() => {
-          this._resetMainProgramm()
-        }, 120000)
+        // setInterval(() => {
+        //   this._resetMainProgramm()
+        // }, 120000)
       })
     }
   }
@@ -156,10 +156,9 @@ class CenterController {
       // remove useless NetworkEvent Instance
       Object.keys(this.NetworkEventContainer).forEach((chainName) => {
         this.NetworkEventContainer[chainName].forEach((networkEvent, index) => {
-          console.log(networkEvent.getInstanceID())
-          console.log(Utils.getPeerAddr(peer))
           if (networkEvent.getInstanceID() === Utils.getPeerAddr(peer)) {
-            console.log('Remove network Event Instance')
+            this.config.dbconfig.logger.info(`Remove NetworkEvent Instance for ${networkEvent.getInstanceID()}`)
+            console.log(`Remove NetworkEvent Instance for ${networkEvent.getInstanceID()}`)
             clearInterval(networkEvent.syncListeningTimer)
             clearInterval(networkEvent.syncNodeTimer)
             delete this.NetworkEventContainer[chainName][index]
@@ -167,6 +166,8 @@ class CenterController {
           }
         })
       })
+      this.rlp._peersLRU.del(peer._hello.id.toString('hex'))
+      // this.rlp._peersLRU.del(peer)
       this.config.dbconfig.logger.info(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
     })
