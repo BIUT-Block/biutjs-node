@@ -197,12 +197,13 @@ class APIs {
   getTokenChainHeight () {
     return this.chain.chain.getCurrentHeight()
   }
+
   getSyncInfo () {
     let response = {
       isSyncing: null,
       lastBlockNumber: null
     }
-    response.isSyncing = this.CenterController.syncInfo.flag
+    response.isSyncing = this.CenterController.syncInfo.syncingfinished
     response.lastBlockNumber = this.chain.chain.getCurrentHeight()
     return response
   }

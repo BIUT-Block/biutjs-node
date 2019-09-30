@@ -50,6 +50,8 @@ class CenterController {
 
     // -------------------  NETWORK STATE MACHINE FLAG  -------------------
     this.syncInfo = {
+      syncingfinished: false,
+      remoteheight: 0,
       flag: false,
       address: null,
       timer: null
@@ -323,6 +325,8 @@ class CenterController {
         listenPort: null
       })
       this.syncInfo = {
+        syncingfinished: false,
+        remoteheight: 0,
         flag: false,
         address: null,
         timer: null

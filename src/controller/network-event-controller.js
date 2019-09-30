@@ -452,7 +452,9 @@ class NetworkEvent {
       }, ms('120s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
-
+      this.syncInfo.remoteheight = (this.syncInfo.remoteheight < remoteHeight ? remoteHeight : this.syncInfo.remoteheight)
+      console.log(`current remote height: ${this.syncInfo.remoteheight}`)
+      this.logger.info(`current remote height: ${this.syncInfo.remoteheight}`)
       // Check if the node is syncronizing blocks from other nodes
       if (this.syncInfo.flag) {
         console.log('localaddress: ' + this.syncInfo.address)
@@ -548,6 +550,11 @@ class NetworkEvent {
                   this.logger.info(remoteHeight)
                   if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
                     // synchronizing finished
+                    if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+                      console.log('Syncing finished!')
+                      this.logger.info('Syncing finished!')
+                      this.syncInfo.syncingfinished = true
+                    }
                     this.syncInfo.flag = false
                     this.syncInfo.address = null
                     this.syncingFlag = false
@@ -619,6 +626,11 @@ class NetworkEvent {
           this.logger.info(remoteHeight)
           if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
             // synchronizing finished
+            if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+              console.log('Syncing finished!')
+              this.logger.info('Syncing finished!')
+              this.syncInfo.syncingfinished = true
+            }
             this.syncInfo.flag = false
             this.syncInfo.address = null
             clearTimeout(this.syncInfo)
@@ -667,6 +679,11 @@ class NetworkEvent {
               })
               if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
                 // synchronizing finished
+                if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+                  console.log('Syncing finished!')
+                  this.logger.info('Syncing finished!')
+                  this.syncInfo.syncingfinished = true
+                }
                 this.syncInfo.flag = false
                 this.syncInfo.address = null
                 this.syncingFlag = false
