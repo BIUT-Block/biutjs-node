@@ -652,16 +652,41 @@ class NetworkEvent {
             this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
             console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
           }
-          this.BlockChain.chain.getHashList((err, hashList) => {
-            this.syncingFlag = false
-            clearTimeout(syncingTimer)
+          console.time('checkTxArray ' + firstBlockNum)
+          this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+            console.timeEnd('checkTxArray ' + firstBlockNum)
             if (err) {
-              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              this.syncingFlag = false
+              clearTimeout(syncingTimer)
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
             } else {
-              // TODO: hashList may has consistent problem
-              hashList = this._hashListCorrection(hashList)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+              // add the removed txs into pool
+              _txArray.forEach((tx) => {
+                this.BlockChain.pool.addTxIntoPool(tx)
+              })
+              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+                // synchronizing finished
+                this.syncInfo.flag = false
+                this.syncInfo.address = null
+                this.syncingFlag = false
+                clearTimeout(syncingTimer)
+                clearTimeout(this.syncInfo)
+              } else {
+                this.BlockChain.chain.getHashList((err, hashList) => {
+                  this.syncingFlag = false
+                  clearTimeout(syncingTimer)
+                  if (err) {
+                    this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                    console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                  } else {
+                    // TODO: hashList may has consistent problem
+                    hashList = this._hashListCorrection(hashList)
+                    console.timeEnd('NEW_BLOCK ' + firstBlockNum)
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                  }
+                })
+              }
             }
           })
         })

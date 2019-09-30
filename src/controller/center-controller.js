@@ -343,27 +343,29 @@ class CenterController {
 
   _refreshDHTConnections () {
     this.refreshDHTTimer = setInterval(() => {
-      let _peers = this.ndp.getPeers()
-      let peers = []
-      _peers.forEach(_peer => {
-        if (peers.map(peer => { return peer.address }).indexOf(_peer.address) < 0) {
-          peers.push(_peer)
-        }
-      })
-      peers.forEach(peer => {
-        this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
-          this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
-          console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
-        }).catch((err) => {
-          this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
-          console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+      if (this.ndp) {
+        let _peers = this.ndp.getPeers()
+        let peers = []
+        _peers.forEach(_peer => {
+          if (peers.map(peer => { return peer.address }).indexOf(_peer.address) < 0) {
+            peers.push(_peer)
+          }
         })
-      })
-      setTimeout(() => {
-        if (this.rlp.getPeers().length === 0) {
-          this._resetMainProgramm()
-        }
-      }, 5000)
+        peers.forEach(peer => {
+          this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
+            this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
+            console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
+          }).catch((err) => {
+            this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+            console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+          })
+        })
+        setTimeout(() => {
+          if (this.rlp.getPeers().length === 0) {
+            this._resetMainProgramm()
+          }
+        }, 5000)
+      }
     }, ms('5m'))
   }
 }
