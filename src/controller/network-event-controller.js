@@ -443,6 +443,8 @@ class NetworkEvent {
   NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+    console.log('syncing Finished: ' + this.syncInfo.syncingfinished)
+    this.logger.info('syncing Finished: ' + this.syncInfo.syncingfinished)
     console.log('syncingFlag: ' + this.syncingFlag)
     this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {

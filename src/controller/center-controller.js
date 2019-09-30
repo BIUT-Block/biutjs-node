@@ -334,7 +334,7 @@ class CenterController {
       this.NetworkEventContainer = { SEC: [], SEN: [] }
       this.runningFlag = false
       this.restartingFlag = true
-      if (process.env.network && this.runningFlag === false) {
+      if (this.runningFlag === false) {
         this.initNetwork((err) => {
           if (err) console.error(err)
           this.config.dbconfig.logger.error('err')
@@ -356,13 +356,15 @@ class CenterController {
           }
         })
         peers.forEach(peer => {
-          this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
-            this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
-            console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
-          }).catch((err) => {
-            this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
-            console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
-          })
+          if (peer.address.substring(0, 9) !== '127.0.0.1') {
+            this.ndp.addPeer({ address: peer.address, udpPort: peer.udpPort, tcpPort: peer.tcpPort }).then((peer) => {
+              this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
+              console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
+            }).catch((err) => {
+              this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+              console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+            })
+          }
         })
         setTimeout(() => {
           if (this.rlp.getPeers().length === 0) {

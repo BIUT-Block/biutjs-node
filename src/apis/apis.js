@@ -203,7 +203,7 @@ class APIs {
       isSyncing: null,
       lastBlockNumber: null
     }
-    response.isSyncing = this.CenterController.syncInfo.syncingfinished
+    response.isSyncing = !this.CenterController.syncInfo.syncingfinished
     response.lastBlockNumber = this.chain.chain.getCurrentHeight()
     return response
   }
