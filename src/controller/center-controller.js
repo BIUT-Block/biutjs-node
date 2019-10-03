@@ -168,7 +168,9 @@ class CenterController {
           }
         })
       })
-      this.rlp._peersLRU.del(peer._hello.id.toString('hex'))
+      if (peer._socket.remoteAddress.substring(0, 9) !== '127.0.0.1') {
+        this.rlp._peersLRU.del(peer._hello.id.toString('hex'))
+      }
       // this.rlp._peersLRU.del(peer)
       this.config.dbconfig.logger.info(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
       console.log(chalk.yellow(`RLP | peer:removed Event | Remove peer: ${Utils.getPeerAddr(peer)} - ${who}, reason: ${peer.getDisconnectPrefix(reasonCode)} (${String(reasonCode)}) (total: ${total})`))
