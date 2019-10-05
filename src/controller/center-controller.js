@@ -168,7 +168,7 @@ class CenterController {
           }
         })
       })
-      if (peer._socket.remoteAddress.substring(0, 9) !== '127.0.0.1') {
+      if (peer._socket.remoteAddress.substring(0, 9) !== '127.0.0.1' && String(reasonCode) !== '10' && String(reasonCode) !== '16' ) {
         this.rlp._peersLRU.del(peer._hello.id.toString('hex'))
       }
       // this.rlp._peersLRU.del(peer)
