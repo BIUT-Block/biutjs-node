@@ -762,7 +762,8 @@ class NetworkEvent {
           return
         }
         if (errPos !== -1) {
-          console.error(`Local hashList invalid: ${hashList}`)
+          console.error(`Local hashList invalid: ${JSON.stringify(hashList)}`)
+          return
           // TODO: local hash list incomplete
         } else {
           let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
