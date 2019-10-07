@@ -495,9 +495,7 @@ class NetworkEvent {
             this.logger.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
             console.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
           } else {
-            console.log(localBlock)
             let firstRemoteBlockHash = new SECBlockChain.SECTokenBlock(payload[1][0]).getBlock().Hash
-            console.log(firstRemoteBlockHash)
             if (localBlock.Hash !== firstRemoteBlockHash) {
               this.logger.info('Remove block from blockchain')
               console.log('Remove block from blockchain')
@@ -601,8 +599,8 @@ class NetworkEvent {
               clearTimeout(syncingTimer)
               this.syncInfo.flag = false
               this.syncInfo.address = null
-              this.logger.error(`Not fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
-              console.error(`Not fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+              this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+              console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
             }
           }
         })

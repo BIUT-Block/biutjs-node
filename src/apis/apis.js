@@ -219,6 +219,10 @@ class APIs {
     }
     callback(result)
   }
+
+  getHashList (callback) {
+    this.chain.chain.getHashList(callback) 
+  }
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 
   // getTokenName(addr, callback) {

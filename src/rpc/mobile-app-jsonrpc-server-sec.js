@@ -814,7 +814,7 @@ let server = jayson.server({
     }
     console.timeEnd('sec_signedTransaction id: ' + requestID)
     callback(null, response)
-  }
+  },
   // _syncFromIp: function (args, callback) {
   //   let response = {}
   //   if (args[0].ip === null) {
@@ -834,6 +834,24 @@ let server = jayson.server({
   //     })
   //   }
   // }
+
+  sec_getHashList: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sec_getHashList id: ' + requestID)
+    let response = {}
+    core.secAPIs.getHashList((err, HashList) => {
+      if (err) {
+        response.status = '0'
+        response.message = err
+      } else {
+        response.status = '1'
+        response.HashList = HashList
+      }
+      console.timeEnd('sec_getHashList id: ' + requestID)
+      callback(null, response)
+    })
+  }
+
 })
 
 exports.runRpc = function (_core) {
