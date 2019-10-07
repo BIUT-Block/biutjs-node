@@ -93,6 +93,7 @@ let server = jayson.server({
     let currentPage = parseInt(args[1] || 1)
     let pageSize = parseInt(args[2] || Number.MAX_SAFE_INTEGER)
     let sortType = args[3]
+    console.log(args)
 
     if (accAddr[0] === '0' && accAddr[1] === 'x') {
       accAddr = accAddr.substr(2)
@@ -144,6 +145,7 @@ let server = jayson.server({
   sec_getMiningTransactions: function (args, callback) {
     let requestID = ++_requestID
     console.time('sen_getMiningTransactions id: ' + requestID)
+    console.log(args)
     let response = {}
     let accAddr = args[0] // address
 
@@ -504,7 +506,6 @@ let server = jayson.server({
   },
 
   sec_getTotalReward: function (args, callback) {
-    console.log('sen_getTotalReward id:   + requestIDcalling')
     let requestID = ++_requestID
     console.time('sen_getTotalReward id: ' + requestID)
     let response = {}
