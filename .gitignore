@@ -12,3 +12,5 @@ biutlogs
 keylib.json
 test
 test/*
+data_backup
+data_backup/*

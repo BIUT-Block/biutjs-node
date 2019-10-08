@@ -20,6 +20,7 @@ const SYNC_CHUNK = 20 // each sync package contains 20 blocks
 
 class NetworkEvent {
   constructor (config) {
+    this.ID = config.ID
     this.logger = config.logger
     this.BlockChain = config.BlockChain
     this.Consensus = config.BlockChain.consensus
@@ -442,6 +443,8 @@ class NetworkEvent {
   NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+    console.log('syncing Finished: ' + this.syncInfo.syncingfinished)
+    this.logger.info('syncing Finished: ' + this.syncInfo.syncingfinished)
     console.log('syncingFlag: ' + this.syncingFlag)
     this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {
@@ -451,7 +454,9 @@ class NetworkEvent {
       }, ms('120s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
-
+      this.syncInfo.remoteheight = (this.syncInfo.remoteheight < remoteHeight ? remoteHeight : this.syncInfo.remoteheight)
+      console.log(`current remote height: ${this.syncInfo.remoteheight}`)
+      this.logger.info(`current remote height: ${this.syncInfo.remoteheight}`)
       // Check if the node is syncronizing blocks from other nodes
       if (this.syncInfo.flag) {
         console.log('localaddress: ' + this.syncInfo.address)
@@ -474,106 +479,132 @@ class NetworkEvent {
         this.syncInfo.address = null
       }, ms('120s'))
 
-      let firstBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
-      console.time('NEW_BLOCK ' + firstBlockNum)
-      debug(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks syncing`)
-      this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstBlockNum}, ${payload[1].length} blocks syncing`)
+      let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
+      console.time('NEW_BLOCK ' + firstRemoteBlockNum)
+      debug(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
+      this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
 
       // find out wether Block removed from Blockchain are needed
-      if (this.BlockChain.chain.getCurrentHeight() > firstBlockNum - 1) {
-        this.logger.info('Remove block from blockchain')
-        console.log('Remove block from blockchain')
-        console.time('delBlockFromHeight ' + firstBlockNum)
-        // remove all the blocks which have a larger block number than the first block to be syncronized
-        this.BlockChain.chain.delBlockFromHeight(firstBlockNum, (err, txArray) => {
-          console.timeEnd('delBlockFromHeight ' + firstBlockNum)
+      if (this.BlockChain.chain.getCurrentHeight() > firstRemoteBlockNum - 1) {
+        this.BlockChain.chain.getBlock(firstRemoteBlockNum, (err, localBlock) => {
           if (err) {
-            this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
-            console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
-          }
-          // wait some time until remove Block finished
-          setTimeout(() => {
-            async.eachSeries(payload[1], (payload, callback) => {
-              // console.log('mingNewBlock', payload)
-              let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
-              let block = cloneDeep(newTokenBlock.getBlock())
-              this.logger.info(`Syncronizing block ${block.Number}`)
-              debug(`Syncronizing block ${block.Number}`)
-              console.time('putBlockToDB ' + block.Number)
-              console.time('writeNewBlock ' + block.Number)
-              this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-                console.timeEnd('putBlockToDB ' + block.Number)
-                if (_err) {
-                  return callback(_err)
-                } else {
-                  this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                  console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                  debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                  if (this.ChainName === 'SEN') {
-                    this.Consensus.resetPOW()
-                  }
-                  this.BlockChain.pool.updateByBlock(block)
-                  console.timeEnd('writeNewBlock ' + block.Number)
-                  console.log()
-                  callback()
-                }
-              })
-              // TODO: put removed block-transactions back to transaction pool
-            }, (err) => {
-              if (err) {
-                this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-                console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-                console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-              }
-              console.time('checkTxArray ' + firstBlockNum)
-              this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
-                console.timeEnd('checkTxArray ' + firstBlockNum)
+            this.syncingFlag = false
+            clearTimeout(syncingTimer)
+            this.syncInfo.flag = false
+            this.syncInfo.address = null
+            this.logger.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
+            console.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
+          } else {
+            let firstRemoteBlockHash = new SECBlockChain.SECTokenBlock(payload[1][0]).getBlock().Hash
+            if (localBlock.Hash !== firstRemoteBlockHash) {
+              this.logger.info('Remove block from blockchain')
+              console.log('Remove block from blockchain')
+              console.time('delBlockFromHeight ' + firstRemoteBlockNum)
+              // remove all the blocks which have a larger block number than the first block to be syncronized
+              this.BlockChain.chain.delBlockFromHeight(firstRemoteBlockNum, (err, txArray) => {
+                console.timeEnd('delBlockFromHeight ' + firstRemoteBlockNum)
                 if (err) {
-                  this.syncingFlag = false
-                  clearTimeout(syncingTimer)
-                  this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-                  console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-                } else {
-                  // add the removed txs into pool
-                  _txArray.forEach((tx) => {
-                    this.BlockChain.pool.addTxIntoPool(tx)
-                  })
-                  // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
-                  this.syncingFlag = false
-                  clearTimeout(syncingTimer)
-                  this.logger.info('Current Height: ')
-                  this.logger.info(this.BlockChain.chain.getCurrentHeight())
-                  this.logger.info('remote Height: ')
-                  this.logger.info(remoteHeight)
-                  if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-                    // synchronizing finished
-                    this.syncInfo.flag = false
-                    this.syncInfo.address = null
-                    this.syncingFlag = false
-                    clearTimeout(syncingTimer)
-                    clearTimeout(this.syncInfo)
-                  } else {
-                    // continue synchronizing
-                    this.BlockChain.chain.getHashList((err, hashList) => {
-                      clearTimeout(syncingTimer)
-                      this.syncingFlag = false
-                      if (err) {
-                        this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                        console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                  this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+                  console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+                }
+                // wait some time until remove Block finished
+                setTimeout(() => {
+                  async.eachSeries(payload[1], (payload, callback) => {
+                    // console.log('mingNewBlock', payload)
+                    let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
+                    let block = cloneDeep(newTokenBlock.getBlock())
+                    this.logger.info(`Syncronizing block ${block.Number}`)
+                    debug(`Syncronizing block ${block.Number}`)
+                    console.time('putBlockToDB ' + block.Number)
+                    console.time('writeNewBlock ' + block.Number)
+                    this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+                      console.timeEnd('putBlockToDB ' + block.Number)
+                      if (_err) {
+                        return callback(_err)
                       } else {
-                        // TODO: hashList may has consistent problem
-                        hashList = this._hashListCorrection(hashList)
-                        console.timeEnd('NEW_BLOCK ' + firstBlockNum)
-                        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                        this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                        console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                        debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                        if (this.ChainName === 'SEN') {
+                          this.Consensus.resetPOW()
+                        }
+                        this.BlockChain.pool.updateByBlock(block)
+                        console.timeEnd('writeNewBlock ' + block.Number)
+                        console.log()
+                        callback()
                       }
                     })
-                  }
-                }
+                    // TODO: put removed block-transactions back to transaction pool
+                  }, (err) => {
+                    if (err) {
+                      this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+                      console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+                      console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+                    }
+                    console.time('checkTxArray ' + firstRemoteBlockNum)
+                    this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+                      console.timeEnd('checkTxArray ' + firstRemoteBlockNum)
+                      if (err) {
+                        this.syncingFlag = false
+                        clearTimeout(syncingTimer)
+                        this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+                        console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+                      } else {
+                        // add the removed txs into pool
+                        _txArray.forEach((tx) => {
+                          this.BlockChain.pool.addTxIntoPool(tx)
+                        })
+                        // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
+                        this.syncingFlag = false
+                        clearTimeout(syncingTimer)
+                        this.logger.info('Current Height: ')
+                        this.logger.info(this.BlockChain.chain.getCurrentHeight())
+                        this.logger.info('remote Height: ')
+                        this.logger.info(remoteHeight)
+                        if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+                          // synchronizing finished
+                          if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+                            console.log('Syncing finished!')
+                            this.logger.info('Syncing finished!')
+                            this.syncInfo.syncingfinished = true
+                          }
+                          this.syncInfo.flag = false
+                          this.syncInfo.address = null
+                          this.syncingFlag = false
+                          clearTimeout(syncingTimer)
+                          clearTimeout(this.syncInfo.timer)
+                        } else {
+                          // continue synchronizing
+                          this.BlockChain.chain.getHashList((err, hashList) => {
+                            clearTimeout(syncingTimer)
+                            this.syncingFlag = false
+                            if (err) {
+                              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                            } else {
+                              // TODO: hashList may has consistent problem
+                              hashList = this._hashListCorrection(hashList)
+                              console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
+                              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                            }
+                          })
+                        }
+                      }
+                    })
+                  })
+                }, 5000)
               })
-            })
-          }, 5000)
+            } else {
+              this.syncingFlag = false
+              clearTimeout(syncingTimer)
+              this.syncInfo.flag = false
+              this.syncInfo.address = null
+              this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+              console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+            }
+          }
         })
-      } else if (this.BlockChain.chain.getCurrentHeight() === firstBlockNum - 1) {
+      } else if (this.BlockChain.chain.getCurrentHeight() === firstRemoteBlockNum - 1) {
         // no Block removed from blockchain needed
         this.logger.info('Do not remove block from blockchain')
         console.log('Do not remove block from blockchain')
@@ -618,9 +649,14 @@ class NetworkEvent {
           this.logger.info(remoteHeight)
           if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
             // synchronizing finished
+            if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+              console.log('Syncing finished!')
+              this.logger.info('Syncing finished!')
+              this.syncInfo.syncingfinished = true
+            }
             this.syncInfo.flag = false
             this.syncInfo.address = null
-            clearTimeout(this.syncInfo)
+            clearTimeout(this.syncInfo.timer)
             this.syncingFlag = false
             clearTimeout(syncingTimer)
           } else {
@@ -634,7 +670,7 @@ class NetworkEvent {
               } else {
                 // TODO: hashList may has consistent problem
                 hashList = this._hashListCorrection(hashList)
-                console.timeEnd('NEW_BLOCK ' + firstBlockNum)
+                console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
               }
             })
@@ -643,24 +679,55 @@ class NetworkEvent {
       } else {
         this.logger.info('Remove block from blockchain with current height')
         console.log('Remove block from blockchai with current height')
-        console.time('delBlockFromHeight ' + this.BlockChain.chain.getCurrentHeight() - 1)
+        let currentHeight = this.BlockChain.chain.getCurrentHeight()
+        console.time('delBlockFromHeight ' + currentHeight)
         // remove all the blocks which have a larger block number than the first block to be syncronized
-        this.BlockChain.chain.delBlockFromHeight(this.BlockChain.chain.getCurrentHeight() - 1, (err, txArray) => {
-          console.timeEnd('delBlockFromHeight ' + firstBlockNum)
+        this.BlockChain.chain.delBlockFromHeight(currentHeight, (err, txArray) => {
+          console.timeEnd('delBlockFromHeight ' + currentHeight)
           if (err) {
             this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
             console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
           }
-          this.BlockChain.chain.getHashList((err, hashList) => {
-            this.syncingFlag = false
-            clearTimeout(syncingTimer)
+          console.time('checkTxArray ' + firstRemoteBlockNum)
+          this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+            console.timeEnd('checkTxArray ' + firstRemoteBlockNum)
             if (err) {
-              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              this.syncingFlag = false
+              clearTimeout(syncingTimer)
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
             } else {
-              // TODO: hashList may has consistent problem
-              hashList = this._hashListCorrection(hashList)
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+              // add the removed txs into pool
+              _txArray.forEach((tx) => {
+                this.BlockChain.pool.addTxIntoPool(tx)
+              })
+              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+                // synchronizing finished
+                if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+                  console.log('Syncing finished!')
+                  this.logger.info('Syncing finished!')
+                  this.syncInfo.syncingfinished = true
+                }
+                this.syncInfo.flag = false
+                this.syncInfo.address = null
+                this.syncingFlag = false
+                clearTimeout(syncingTimer)
+                clearTimeout(this.syncInfo.timer)
+              } else {
+                this.BlockChain.chain.getHashList((err, hashList) => {
+                  this.syncingFlag = false
+                  clearTimeout(syncingTimer)
+                  if (err) {
+                    this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                    console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                  } else {
+                    // TODO: hashList may has consistent problem
+                    hashList = this._hashListCorrection(hashList)
+                    console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                  }
+                })
+              }
             }
           })
         })
@@ -717,10 +784,11 @@ class NetworkEvent {
           return
         }
         if (errPos !== -1) {
-          console.error(`Local hashList invalid: ${hashList}`)
+          console.error(`Local hashList invalid: ${JSON.stringify(hashList)}`)
+          return
           // TODO: local hash list incomplete
         } else {
-          let blockPosition = hashList.filter(block => (block.Hash === remoteLastHash && block.Number === remoteHeight))
+          let blockPosition = hashList.filter(block => { return block.Hash === remoteLastHash && block.Number === remoteHeight })
           if (blockPosition.length > 0) {
             // No fork found, send 'SYNC_CHUNK' blocks to remote node
             debug('No Fork found!')
@@ -917,13 +985,13 @@ class NetworkEvent {
     try {
       let height = hashList[hashList.length - 1].Number
       if (height !== undefined) {
-        for (let i = 0; i < height; i++) {
+        for (let i = 1; i < height; i++) {
           if (hashList[i] === undefined) {
             return i
           }
           let hash = hashList[i].Hash
           let number = hashList[i].Number
-          if (hash === undefined || number === undefined) {
+          if (hash === undefined || number === undefined || number !== i || hashList[i].ParentHash !== hashList[i - 1].Hash) {
             return i
           }
         }
@@ -992,8 +1060,8 @@ class NetworkEvent {
   _startSyncListening () {
     this.syncListeningTimer = setInterval(() => {
       if (this.forkVerified && (this.syncInfo.flag === false)) {
-        this.logger.info(`Auto Syncing mechanism`)
-        console.log(`Auto Syncing mechanism`)
+        // this.logger.info(`Auto Syncing mechanism`)
+        // console.log(`Auto Syncing mechanism`)
         this.BlockChain.chain.getHashList((err, hashList) => {
           if (err) {
             this.logger.error(`Error Sync listening: ${err}`)
@@ -1003,7 +1071,7 @@ class NetworkEvent {
           }
         })
       }
-    }, 300000)
+    }, 180000)
   }
 }
 
