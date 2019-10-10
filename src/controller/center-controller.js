@@ -206,13 +206,13 @@ class CenterController {
     this.secChain.init(this.rlp, (err) => {
       if (err) {
         this.config.dbconfig.logger.error(err)
-        callback(err)
+        return callback(err)
       }
       debug('secChain init finish')
       this.senChain.init(this.rlp, (err) => {
         if (err) {
           this.config.dbconfig.logger.error(err)
-          callback(err)
+          return callback(err)
         }
         debug('senChain init finish')
         this._initNDP()
