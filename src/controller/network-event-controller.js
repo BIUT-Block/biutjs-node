@@ -599,6 +599,8 @@ class NetworkEvent {
               clearTimeout(syncingTimer)
               this.syncInfo.flag = false
               this.syncInfo.address = null
+              this.logger.error(`first Block from remote: ${firstRemoteBlockNum}`)
+              console.error(`first Block from remote: ${firstRemoteBlockNum}`)
               this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
               console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
             }
@@ -806,7 +808,7 @@ class NetworkEvent {
                   blockBuffer,
                   Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
                 ]
-                debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                console.log(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
               }
             })
@@ -834,7 +836,7 @@ class NetworkEvent {
                   console.log('hashList is undefined')
                 }
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
-                  forkPosition = remoteHashList[i].Number
+                  forkPosition = remoteHashList[i].Number + 1
                   debug('Fork Position: ' + forkPosition)
                   break
                 }
@@ -875,7 +877,7 @@ class NetworkEvent {
                     blockBuffer,
                     Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
                   ]
-                  debug(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                  console.log(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length} for fork`)
                   this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
                 }
               })
