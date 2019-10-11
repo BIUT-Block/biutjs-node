@@ -212,41 +212,47 @@ let server = jayson.server({
 
     let currentPage = parseInt(args[1] || 1)
     let pageSize = parseInt(args[2] || 39)
-
-    // verify accAddr
-    if (accAddr[0] === '0' && accAddr[1] === 'x') {
-      accAddr = accAddr.substr(2)
-    }
-    if (accAddr.length !== 40) {
-      response.status = '0'
-      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
-      callback(null, response)
-    } else {
-      core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
-        if (err) {
-          response.status = '0'
-          response.message = `Failed to get user transactions, error info: ${err}`
-          response.resultInChain = []
-          response.resultInPool = []
-        } else {
-          let txArrayInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
-          txArray = txArray.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
-          })
-          txArrayInPool = txArrayInPool.sort((a, b) => {
-            return b.TimeStamp - a.TimeStamp
-          })
-          response.status = '1'
-          response.message = 'OK'
-          response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArrayInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.currentPage = currentPage
-          response.totalNumber = txArray.length
-        }
+    try {
+      // verify accAddr
+      if (accAddr[0] === '0' && accAddr[1] === 'x') {
+        accAddr = accAddr.substr(2)
+      }
+      if (accAddr.length !== 40) {
+        response.status = '0'
+        response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
         console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
         callback(null, response)
-      })
+      } else {
+        core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+          if (err) {
+            response.status = '0'
+            response.message = `Failed to get user transactions, error info: ${err}`
+            response.resultInChain = []
+            response.resultInPool = []
+          } else {
+            let txArrayInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
+            txArray = txArray.sort((a, b) => {
+              return b.TimeStamp - a.TimeStamp
+            })
+            txArrayInPool = txArrayInPool.sort((a, b) => {
+              return b.TimeStamp - a.TimeStamp
+            })
+            response.status = '1'
+            response.message = 'OK'
+            response.resultInChain = txArray.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.resultInPool = txArrayInPool.reverse().slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.currentPage = currentPage
+            response.totalNumber = txArray.length
+          }
+          console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
+          callback(null, response)
+        })
+      }
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('wallet_biut_getTransactions id: ' + requestID)
+      callback(null, response)
     }
   },
 
@@ -262,61 +268,67 @@ let server = jayson.server({
     let currentPage = parseInt(args[1] || 1)
     let pageSize = parseInt(args[2] || 39)
     let sortType = args[3]
-
-    // verify accAddr
-    if (accAddr[0] === '0' && accAddr[1] === 'x') {
-      accAddr = accAddr.substr(2)
-    }
-    if (accAddr.length !== 40) {
-      response.status = '0'
-      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
-      callback(null, response)
-    } else {
-      core.senAPIs.getTokenTxForUser(accAddr, (err, _txArray) => {
-        if (err) {
-          response.status = '0'
-          response.message = `Failed to get user transactions, error info: ${err}`
-          response.resultInChain = []
-          response.resultInPool = []
-        } else {
-          let txArrayInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
-          let lastBlockHeight = core.senAPIs.getTokenChainHeight()
-          let txArray = []
-          let txRemoveArray = []
-          _txArray.forEach((tx, index) => {
-            if (lastBlockHeight - tx.BlockNumber > 1) {
-              txArray.push(Object.assign({}, tx))
-            } else {
-              tx.TxReceiptStatus = 'pending'
-              txRemoveArray.push(Object.assign({}, tx))
-            }
-          })
-          txArrayInPool = txArrayInPool.concat(txRemoveArray)
-          txArray = txArray.sort((a, b) => {
-            if (sortType === 'asc') {
-              return a.TimeStamp - b.TimeStamp
-            } else {
-              return b.TimeStamp - a.TimeStamp
-            }
-          })
-          txArrayInPool = txArrayInPool.sort((a, b) => {
-            if (sortType === 'asc') {
-              return a.TimeStamp - b.TimeStamp
-            } else {
-              return b.TimeStamp - a.TimeStamp
-            }
-          })
-          response.status = '1'
-          response.message = 'OK'
-          response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArrayInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.currentPage = currentPage
-          response.totalNumber = txArray.length
-        }
+    try {
+      // verify accAddr
+      if (accAddr[0] === '0' && accAddr[1] === 'x') {
+        accAddr = accAddr.substr(2)
+      }
+      if (accAddr.length !== 40) {
+        response.status = '0'
+        response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
         console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
         callback(null, response)
-      })
+      } else {
+        core.senAPIs.getTokenTxForUser(accAddr, (err, _txArray) => {
+          if (err) {
+            response.status = '0'
+            response.message = `Failed to get user transactions, error info: ${err}`
+            response.resultInChain = []
+            response.resultInPool = []
+          } else {
+            let txArrayInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+            let lastBlockHeight = core.senAPIs.getTokenChainHeight()
+            let txArray = []
+            let txRemoveArray = []
+            _txArray.forEach((tx, index) => {
+              if (lastBlockHeight - tx.BlockNumber > 1) {
+                txArray.push(Object.assign({}, tx))
+              } else {
+                tx.TxReceiptStatus = 'pending'
+                txRemoveArray.push(Object.assign({}, tx))
+              }
+            })
+            txArrayInPool = txArrayInPool.concat(txRemoveArray)
+            txArray = txArray.sort((a, b) => {
+              if (sortType === 'asc') {
+                return a.TimeStamp - b.TimeStamp
+              } else {
+                return b.TimeStamp - a.TimeStamp
+              }
+            })
+            txArrayInPool = txArrayInPool.sort((a, b) => {
+              if (sortType === 'asc') {
+                return a.TimeStamp - b.TimeStamp
+              } else {
+                return b.TimeStamp - a.TimeStamp
+              }
+            })
+            response.status = '1'
+            response.message = 'OK'
+            response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.resultInPool = txArrayInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.currentPage = currentPage
+            response.totalNumber = txArray.length
+          }
+          console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
+          callback(null, response)
+        })
+      }
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('wallet_biu_getTransactions id: ' + requestID)
+      callback(null, response)
     }
   },
 

@@ -94,48 +94,54 @@ let server = jayson.server({
     let pageSize = parseInt(args[2] || Number.MAX_SAFE_INTEGER)
     let sortType = args[3]
     console.log(args)
-
-    if (accAddr[0] === '0' && accAddr[1] === 'x') {
-      accAddr = accAddr.substr(2)
-    }
-    if (accAddr.length !== 40) {
-      response.status = '0'
-      response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-      console.timeEnd('sen_getTransactions id: ' + requestID)
-      callback(null, response)
-    } else {
-      core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
-        if (err) {
-          response.status = '0'
-          response.message = `Failed to get user transactions, error info: ${err}`
-          response.resultInChain = []
-          response.resultInPool = []
-        } else {
-          let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
-          txArray = txArray.sort((a, b) => {
-            if (sortType === 'asc') {
-              return a.TimeStamp - b.TimeStamp
-            } else {
-              return b.TimeStamp - a.TimeStamp
-            }
-          })
-          txArraryInPool = txArraryInPool.sort((a, b) => {
-            if (sortType === 'asc') {
-              return a.TimeStamp - b.TimeStamp
-            } else {
-              return b.TimeStamp - a.TimeStamp
-            }
-          })
-          response.status = '1'
-          response.message = 'OK'
-          response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.resultInPool = txArraryInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-          response.currentPage = currentPage
-          response.totalNumber = txArray.length
-        }
+    try {
+      if (accAddr[0] === '0' && accAddr[1] === 'x') {
+        accAddr = accAddr.substr(2)
+      }
+      if (accAddr.length !== 40) {
+        response.status = '0'
+        response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
         console.timeEnd('sen_getTransactions id: ' + requestID)
         callback(null, response)
-      })
+      } else {
+        core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+          if (err) {
+            response.status = '0'
+            response.message = `Failed to get user transactions, error info: ${err}`
+            response.resultInChain = []
+            response.resultInPool = []
+          } else {
+            let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+            txArray = txArray.sort((a, b) => {
+              if (sortType === 'asc') {
+                return a.TimeStamp - b.TimeStamp
+              } else {
+                return b.TimeStamp - a.TimeStamp
+              }
+            })
+            txArraryInPool = txArraryInPool.sort((a, b) => {
+              if (sortType === 'asc') {
+                return a.TimeStamp - b.TimeStamp
+              } else {
+                return b.TimeStamp - a.TimeStamp
+              }
+            })
+            response.status = '1'
+            response.message = 'OK'
+            response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.resultInPool = txArraryInPool.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.currentPage = currentPage
+            response.totalNumber = txArray.length
+          }
+          console.timeEnd('sen_getTransactions id: ' + requestID)
+          callback(null, response)
+        })
+      }
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('sen_getTransactions id: ' + requestID)
+      callback(null, response)
     }
   },
 
