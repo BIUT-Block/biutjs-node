@@ -26,7 +26,7 @@
     "@biut-block/biutjs-devp2p": "^1.0.1",
     "@biut-block/biutjs-logger": "^1.0.5",
     "@biut-block/biutjs-pow": "^1.0.1",
-    "@biut-block/biutjs-randomdatagenerator": "^1.0.0",
+    "@biut-block/biutjs-randomdatagenerator": "^1.0.1",
     "@biut-block/biutjs-transactionpool": "^1.0.10",
     "@biut-block/biutjs-tx": "^1.0.3",
     "@biut-block/biutjs-util": "git+ssh://git@gitlab.com/MongoX-BIUT/biutjs-util.git#SenSmartContractTimeLock",
