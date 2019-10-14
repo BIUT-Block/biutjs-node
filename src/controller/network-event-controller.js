@@ -3,6 +3,7 @@ const ms = require('ms')
 const async = require('async')
 const cloneDeep = require('clone-deep')
 const LRUCache = require('lru-cache')
+const zlib = require('zlib')
 const SECConfig = require('../../config/default.json')
 const createDebugLogger = require('debug')
 const debug = createDebugLogger('core:network')
@@ -323,7 +324,8 @@ class NetworkEvent {
               } else {
                 hashList = this._hashListCorrection(hashList)
                 debug(`getBlock() function error condition: hash list is ${hashList}`)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
               }
             })
           } else {
@@ -349,7 +351,8 @@ class NetworkEvent {
                   } else {
                     hashList = this._hashListCorrection(hashList)
                     debug(`Parent hash verification failed, remote node has longer chain than local, hash list: ${hashList}`)
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                    const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
                   }
                 })
               } else {
@@ -428,6 +431,7 @@ class NetworkEvent {
           this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
           console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
         } else {
+          this.syncInfo.newBlockLastTime = new Date().getTime()
           debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
           secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
           this._onNewBlock(secblock)
@@ -522,6 +526,7 @@ class NetworkEvent {
                       if (_err) {
                         return callback(_err)
                       } else {
+                        this.syncInfo.newBlockLastTime = new Date().getTime()
                         this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
                         console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
                         debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
@@ -585,7 +590,8 @@ class NetworkEvent {
                               // TODO: hashList may has consistent problem
                               hashList = this._hashListCorrection(hashList)
                               console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
                             }
                           })
                         }
@@ -625,6 +631,7 @@ class NetworkEvent {
             if (_err) {
               return callback(_err)
             } else {
+              this.syncInfo.newBlockLastTime = new Date().getTime()
               this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
               console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
               debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
@@ -673,14 +680,15 @@ class NetworkEvent {
                 // TODO: hashList may has consistent problem
                 hashList = this._hashListCorrection(hashList)
                 console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
               }
             })
           }
         })
       } else {
         this.logger.info('Remove block from blockchain with current height')
-        console.log('Remove block from blockchai with current height')
+        console.log('Remove block from blockchain with current height')
         let currentHeight = this.BlockChain.chain.getCurrentHeight()
         console.time('delBlockFromHeight ' + currentHeight)
         // remove all the blocks which have a larger block number than the first block to be syncronized
@@ -726,7 +734,8 @@ class NetworkEvent {
                     // TODO: hashList may has consistent problem
                     hashList = this._hashListCorrection(hashList)
                     console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+                    const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
                   }
                 })
               }
@@ -755,7 +764,8 @@ class NetworkEvent {
         console.error(`Error in GET_NODE_DATA state, getHashList: ${err}`)
       } else {
         hashList = this._hashListCorrection(hashList)
-        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+        const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+        this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
       }
     })
     debug(chalk.bold.yellow(`===== End GET_NODE_DATA =====`))
@@ -763,7 +773,12 @@ class NetworkEvent {
 
   NODE_DATA (payload, requests) {
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
-    let remoteHashList = cloneDeep(JSON.parse(payload.toString()))
+    let remoteHashList = []
+    try {
+      remoteHashList = cloneDeep(JSON.parse(zlib.unzipSync(payload)))
+    } catch (err) {
+      remoteHashList = cloneDeep(JSON.parse(payload.toString()))
+    }
     let remoteHeight = remoteHashList[remoteHashList.length - 1].Number
     let remoteLastHash = remoteHashList[remoteHashList.length - 1].Hash
 
@@ -794,7 +809,7 @@ class NetworkEvent {
           if (blockPosition.length > 0) {
             // No fork found, send 'SYNC_CHUNK' blocks to remote node
             debug('No Fork found!')
-            this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK, (err, newBlocks) => {
+            this.BlockChain.chain.getBlocksFromDB(remoteHeight + 1, remoteHeight + SYNC_CHUNK + 1, (err, newBlocks) => {
               if (err) {
                 this.logger.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
                 console.error(`Error in NODE_DATA state, getBlocksFromDB1: ${err}`)
@@ -808,7 +823,7 @@ class NetworkEvent {
                   blockBuffer,
                   Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
                 ]
-                console.log(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                console.log(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK + 1}, newBlocks length: ${newBlocks.length}`)
                 this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
               }
             })
@@ -857,13 +872,13 @@ class NetworkEvent {
                     blockBuffer,
                     Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
                   ]
-                  debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length}`)
+                  debug(`Send blocks from ${forkPosition} to ${forkPosition + SYNC_CHUNK}, newBlocks length: ${newBlocks.length} for fork`)
                   this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
                 }
               })
             } else {
               // if remote hash list is wrong, then force sync remote node
-              this.BlockChain.chain.getBlocksFromDB(_errPos, _errPos + SYNC_CHUNK - 1, (err, newBlocks) => {
+              this.BlockChain.chain.getBlocksFromDB(_errPos, _errPos + SYNC_CHUNK, (err, newBlocks) => {
                 if (err) {
                   this.logger.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
                   console.error(`Error in NODE_DATA state, getBlocksFromDB3: ${err}`)
@@ -877,7 +892,7 @@ class NetworkEvent {
                     blockBuffer,
                     Buffer.from(this.BlockChain.SECAccount.getAddress(), 'hex') // local wallet address
                   ]
-                  console.log(`Send blocks from ${remoteHeight + 1} to ${remoteHeight + SYNC_CHUNK}, newBlocks length: ${newBlocks.length} for fork`)
+                  console.log(`Send blocks from ${_errPos} to ${_errPos + SYNC_CHUNK}, newBlocks length: ${newBlocks.length} for remote hash list error`)
                   this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NEW_BLOCK, [this.ChainIDBuff, sentMsg])
                 }
               })
@@ -1061,7 +1076,7 @@ class NetworkEvent {
 
   _startSyncListening () {
     this.syncListeningTimer = setInterval(() => {
-      if (this.forkVerified && (this.syncInfo.flag === false)) {
+      if (this.forkVerified && (this.syncInfo.flag === false) && (new Date().getTime() - this.syncInfo.newBlockLastTime > 300000)) {
         // this.logger.info(`Auto Syncing mechanism`)
         // console.log(`Auto Syncing mechanism`)
         this.BlockChain.chain.getHashList((err, hashList) => {
@@ -1069,11 +1084,12 @@ class NetworkEvent {
             this.logger.error(`Error Sync listening: ${err}`)
             console.error(`Error Sync listening: ${err}`)
           } else {
-            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, Buffer.from(JSON.stringify(hashList))])
+            const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
           }
         })
       }
-    }, 180000)
+    }, 60000)
   }
 }
 

@@ -54,7 +54,8 @@ class CenterController {
       remoteheight: 0,
       flag: false,
       address: null,
-      timer: null
+      timer: null,
+      newBlockLastTime: new Date().getTime()
     }
     this.NetworkEventContainer = { SEC: [], SEN: [] }
 
@@ -331,7 +332,8 @@ class CenterController {
         remoteheight: 0,
         flag: false,
         address: null,
-        timer: null
+        timer: null,
+        newBlockLastTime: new Date().getTime()
       }
       this.NetworkEventContainer = { SEC: [], SEN: [] }
       this.runningFlag = false
