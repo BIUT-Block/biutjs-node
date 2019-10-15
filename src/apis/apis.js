@@ -42,6 +42,7 @@ class APIs {
     this.chainDB.getTokenBlockChainDB((err, data) => {
       if (err) return callback(err, null)
       data.splice(data.length - 4, 4)
+      return callback(null, data)
     })
   }
 
