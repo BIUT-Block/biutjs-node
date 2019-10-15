@@ -801,8 +801,15 @@ class NetworkEvent {
           return
         }
         if (errPos !== -1) {
-          console.error(`Local hashList invalid: ${JSON.stringify(hashList)}`)
-          return
+          console.error(`Local hashList invalid at: ${hashList[errPos]}`)
+          console.time('delBlockFromHeight ' + errPos)
+          this.BlockChain.chain.delBlockFromHeight(errPos, (err, txArray) => {
+            console.timeEnd('delBlockFromHeight ' + errPos)
+            if (err) {
+              this.logger.error(`Error in NODE_DATA state, delBlockFromHeight: ${err}`)
+              console.error(`Error in NODE_DATA state, delBlockFromHeight: ${err}`)
+            }
+          })
           // TODO: local hash list incomplete
         } else {
           let blockPosition = hashList.filter(block => { return block.Hash === remoteLastHash && block.Number === remoteHeight })
