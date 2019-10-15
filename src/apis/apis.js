@@ -39,7 +39,10 @@ class APIs {
   }
 
   getWholeTokenBlockchain (callback) {
-    this.chainDB.getTokenBlockChainDB(callback)
+    this.chainDB.getTokenBlockChainDB((err, data) => {
+      if (err) return callback(err, null)
+      data.splice(data.length - 4, 4)
+    })
   }
 
   getTokenTx (txHash, callback) {
@@ -221,7 +224,7 @@ class APIs {
   }
 
   getHashList (callback) {
-    this.chain.chain.getHashList(callback) 
+    this.chain.chain.getHashList(callback)
   }
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 

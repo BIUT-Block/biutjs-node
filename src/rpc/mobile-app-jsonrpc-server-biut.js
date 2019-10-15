@@ -291,7 +291,7 @@ let server = jayson.server({
             let txArray = []
             let txRemoveArray = []
             _txArray.forEach((tx, index) => {
-              if (lastBlockHeight - tx.BlockNumber > 1) {
+              if (lastBlockHeight - Number(tx.BlockNumber) > 1) {
                 txArray.push(Object.assign({}, tx))
               } else {
                 tx.TxReceiptStatus = 'pending'

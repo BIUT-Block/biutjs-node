@@ -111,7 +111,18 @@ let server = jayson.server({
             response.resultInChain = []
             response.resultInPool = []
           } else {
+            let ChainHeight = core.senAPIs.getChainHeight()
             let txArraryInPool = core.senAPIs.getTokenTxInPoolByAddress(accAddr)
+            txArray = txArray.sort((a, b) => {
+              return Number(a.BlockNumber) - Number(b.BlockNumber)
+            })
+            for (let i = txArray.length - 1; i > -1; i--) {
+              if (txArray[i].BlockNumber > ChainHeight - 5) {
+                let tx = txArray.pop()
+                tx.TxReceiptStatus = 'pending'
+                txArraryInPool.push(tx)
+              }
+            }
             txArray = txArray.sort((a, b) => {
               if (sortType === 'asc') {
                 return a.TimeStamp - b.TimeStamp
@@ -175,6 +186,15 @@ let server = jayson.server({
           response.resultInChain = []
         } else {
           txArray = txArray.filter(tx => { return tx.TxFrom === '0000000000000000000000000000000000000000' })
+          let ChainHeight = core.senAPIs.getChainHeight()
+          txArray = txArray.sort((a, b) => {
+            return Number(a.BlockNumber) - Number(b.BlockNumber)
+          })
+          for (let i = txArray.length - 1; i > -1; i--) {
+            if (txArray[i].BlockNumber > ChainHeight - 5) {
+              txArray.pop()
+            }
+          }
           txArray = txArray.sort((a, b) => {
             if (sortType === 'asc') {
               return a.TimeStamp - b.TimeStamp
