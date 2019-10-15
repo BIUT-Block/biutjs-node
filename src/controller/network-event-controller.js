@@ -1083,7 +1083,8 @@ class NetworkEvent {
 
   _startSyncListening () {
     this.syncListeningTimer = setInterval(() => {
-      if (this.forkVerified && (this.syncInfo.flag === false) && (new Date().getTime() - this.syncInfo.newBlockLastTime > 300000)) {
+      // if (this.forkVerified && (this.syncInfo.flag === false) && (new Date().getTime() - this.syncInfo.newBlockLastTime > 300000)) {
+      if (this.forkVerified && (this.syncInfo.flag === false)) {
         // this.logger.info(`Auto Syncing mechanism`)
         // console.log(`Auto Syncing mechanism`)
         this.BlockChain.chain.getHashList((err, hashList) => {
@@ -1096,7 +1097,7 @@ class NetworkEvent {
           }
         })
       }
-    }, 60000)
+    }, 180000)
   }
 }
 
