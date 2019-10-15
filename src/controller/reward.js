@@ -107,6 +107,7 @@ class SENReward {
           balance = 0
         }
         let reward = balance * rewardFactor / 100000
+        reward = reward / 100
         console.log(reward)
         this.chain.getLockerContract(addr, (err, contractAddArray) => {
           if (err) {
