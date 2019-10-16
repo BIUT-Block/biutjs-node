@@ -455,7 +455,7 @@ class NetworkEvent {
       this.syncingFlag = true
       let syncingTimer = setTimeout(() => {
         this.syncingFlag = false
-      }, ms('120s'))
+      }, ms('240s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
       this.syncInfo.remoteheight = (this.syncInfo.remoteheight < remoteHeight ? remoteHeight : this.syncInfo.remoteheight)
@@ -481,7 +481,7 @@ class NetworkEvent {
         this.syncingFlag = false
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('120s'))
+      }, ms('240s'))
 
       let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstRemoteBlockNum)
@@ -526,6 +526,7 @@ class NetworkEvent {
                       if (_err) {
                         return callback(_err)
                       } else {
+                        this.syncingFlag = true
                         this.syncInfo.newBlockLastTime = new Date().getTime()
                         this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
                         console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
@@ -631,6 +632,7 @@ class NetworkEvent {
             if (_err) {
               return callback(_err)
             } else {
+              this.syncingFlag = true
               this.syncInfo.newBlockLastTime = new Date().getTime()
               this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
               console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
