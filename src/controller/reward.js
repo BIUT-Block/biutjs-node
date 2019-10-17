@@ -152,6 +152,21 @@ class SENReward {
     })
   }
 
+  verifyReward (block, callback) {
+    let rewardTx = block.Transactions[0]
+    this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
+      if (err) {
+        callback(err, false)
+      } else {
+        if (rewardTx.TxFee === reward.toString()) {
+          callback(null, true)
+        } else {
+          callback(null, false)
+        }
+      }
+    })
+  }
+
   getRewardTx (callback) {
     this._getReward(this.chain.SECAccount.getAddress(), 'SEC', (err, reward) => {
       if (err) {

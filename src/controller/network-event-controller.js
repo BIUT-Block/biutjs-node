@@ -426,20 +426,49 @@ class NetworkEvent {
       let _secblock = cloneDeep(secblock.getBlock())
       debug(`block data after set body: ${JSON.stringify(secblock)}`)
 
-      this.BlockChain.chain.putBlockToDB(_secblock, true, (err) => {
-        if (err) {
-          this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
-          console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
-        } else {
-          this.syncInfo.newBlockLastTime = new Date().getTime()
-          debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
-          secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
-          this._onNewBlock(secblock)
-          if (this.ChainName === 'SEN') {
-            this.Consensus.resetPOW()
+      if (this.Consensus.ChainName === 'SEN') {
+        this.Consensus.secReward.verifyReward(_secblock, (err, result) => {
+          if (err) {
+            this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+            console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+          } else {
+            if (result) {
+              this.BlockChain.chain.putBlockToDB(_secblock, true, (err) => {
+                if (err) {
+                  this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+                  console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+                } else {
+                  this.syncInfo.newBlockLastTime = new Date().getTime()
+                  debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
+                  secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
+                  this._onNewBlock(secblock)
+                  if (this.ChainName === 'SEN') {
+                    this.Consensus.resetPOW()
+                  }
+                }
+              })
+            } else {
+              this.logger.error(`Reward value incorrect`)
+              console.error(`Reward value incorrect`)
+            }
           }
-        }
-      })
+        })
+      } else {
+        this.BlockChain.chain.putBlockToDB(_secblock, true, (err) => {
+          if (err) {
+            this.logger.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+            console.error(`Error in BLOCK_BODIES state, putBlockToDB: ${err}`)
+          } else {
+            this.syncInfo.newBlockLastTime = new Date().getTime()
+            debug(`Get New Block from: ${this.addr} and saved in local Blockchain, block Number: ${secblock.Number}, block Hash: ${secblock.Hash}`)
+            secblock = cloneDeep(new SECBlockChain.SECTokenBlock(_secblock))
+            this._onNewBlock(secblock)
+            if (this.ChainName === 'SEN') {
+              this.Consensus.resetPOW()
+            }
+          }
+        })
+      }
     }
     debug(chalk.bold.yellow(`===== End BLOCK_BODIES =====`))
   }
@@ -521,25 +550,59 @@ class NetworkEvent {
                     debug(`Syncronizing block ${block.Number}`)
                     console.time('putBlockToDB ' + block.Number)
                     console.time('writeNewBlock ' + block.Number)
-                    this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-                      console.timeEnd('putBlockToDB ' + block.Number)
-                      if (_err) {
-                        return callback(_err)
-                      } else {
-                        this.syncingFlag = true
-                        this.syncInfo.newBlockLastTime = new Date().getTime()
-                        this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                        console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                        debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                        if (this.ChainName === 'SEN') {
-                          this.Consensus.resetPOW()
+                    if (this.Consensus.ChainName === 'SEN') {
+                      this.Consensus.secReward.verifyReward(block, (err, result) => {
+                        if (err) {
+                          this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+                          console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+                        } else {
+                          if (result) {
+                            this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+                              console.timeEnd('putBlockToDB ' + block.Number)
+                              if (_err) {
+                                return callback(_err)
+                              } else {
+                                this.syncingFlag = true
+                                this.syncInfo.newBlockLastTime = new Date().getTime()
+                                this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                                console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                                debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                                if (this.ChainName === 'SEN') {
+                                  this.Consensus.resetPOW()
+                                }
+                                this.BlockChain.pool.updateByBlock(block)
+                                console.timeEnd('writeNewBlock ' + block.Number)
+                                console.log()
+                                callback()
+                              }
+                            })
+                          } else {
+                            this.logger.error(`Reward value incorrect`)
+                            console.error(`Reward value incorrect`)
+                          }
                         }
-                        this.BlockChain.pool.updateByBlock(block)
-                        console.timeEnd('writeNewBlock ' + block.Number)
-                        console.log()
-                        callback()
-                      }
-                    })
+                      })
+                    } else {
+                      this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+                        console.timeEnd('putBlockToDB ' + block.Number)
+                        if (_err) {
+                          return callback(_err)
+                        } else {
+                          this.syncingFlag = true
+                          this.syncInfo.newBlockLastTime = new Date().getTime()
+                          this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                          console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                          debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                          if (this.ChainName === 'SEN') {
+                            this.Consensus.resetPOW()
+                          }
+                          this.BlockChain.pool.updateByBlock(block)
+                          console.timeEnd('writeNewBlock ' + block.Number)
+                          console.log()
+                          callback()
+                        }
+                      })
+                    }
                     // TODO: put removed block-transactions back to transaction pool
                   }, (err) => {
                     if (err) {
@@ -627,25 +690,59 @@ class NetworkEvent {
           console.time('writeNewBlock ' + block.Number)
           this.logger.info(block.Number)
           console.log(block.Number)
-          this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-            console.timeEnd('putBlockToDB ' + block.Number)
-            if (_err) {
-              return callback(_err)
-            } else {
-              this.syncingFlag = true
-              this.syncInfo.newBlockLastTime = new Date().getTime()
-              this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-              console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-              debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-              if (this.ChainName === 'SEN') {
-                this.Consensus.resetPOW()
+          if (this.Consensus.ChainName === 'SEN') {
+            this.Consensus.secReward.verifyReward(block, (err, result) => {
+              if (err) {
+                this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+                console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+              } else {
+                if (result) {
+                  this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+                    console.timeEnd('putBlockToDB ' + block.Number)
+                    if (_err) {
+                      return callback(_err)
+                    } else {
+                      this.syncingFlag = true
+                      this.syncInfo.newBlockLastTime = new Date().getTime()
+                      this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                      console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                      debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                      if (this.ChainName === 'SEN') {
+                        this.Consensus.resetPOW()
+                      }
+                      this.BlockChain.pool.updateByBlock(block)
+                      console.timeEnd('writeNewBlock ' + block.Number)
+                      console.log()
+                      callback()
+                    }
+                  })
+                } else {
+                  this.logger.error(`Reward value incorrect`)
+                  console.error(`Reward value incorrect`)
+                }
               }
-              this.BlockChain.pool.updateByBlock(block)
-              console.timeEnd('writeNewBlock ' + block.Number)
-              console.log()
-              callback()
-            }
-          })
+            })
+          } else {
+            this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+              console.timeEnd('putBlockToDB ' + block.Number)
+              if (_err) {
+                return callback(_err)
+              } else {
+                this.syncingFlag = true
+                this.syncInfo.newBlockLastTime = new Date().getTime()
+                this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                if (this.ChainName === 'SEN') {
+                  this.Consensus.resetPOW()
+                }
+                this.BlockChain.pool.updateByBlock(block)
+                console.timeEnd('writeNewBlock ' + block.Number)
+                console.log()
+                callback()
+              }
+            })
+          }
           // TODO: put removed block-transactions back to transaction pool
         }, (err) => {
           if (err) {
