@@ -106,7 +106,7 @@ class SENReward {
         } else if (balance < exports.MIN_MORTGAGE) {
           balance = 0
         }
-        let reward = balance * rewardFactor / 100000
+        let reward = balance * rewardFactor / 10000000
         console.log(reward)
         this.chain.getLockerContract(addr, (err, contractAddArray) => {
           if (err) {
@@ -148,6 +148,21 @@ class SENReward {
             }
           }
         })
+      }
+    })
+  }
+
+  verifyReward (block, callback) {
+    let rewardTx = block.Transactions[0]
+    this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
+      if (err) {
+        callback(err, false)
+      } else {
+        if (rewardTx.TxFee === reward.toString()) {
+          callback(null, true)
+        } else {
+          callback(null, false)
+        }
       }
     })
   }
