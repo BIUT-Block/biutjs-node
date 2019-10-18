@@ -916,7 +916,7 @@ class NetworkEvent {
           return
         }
         if (errPos !== -1) {
-          console.error(`Local hashList invalid at: ${hashList[errPos]}`)
+          console.error(`Local hashList invalid at: ${JSON.stringify(hashList[errPos])}`)
           console.time('delBlockFromHeight ' + errPos)
           this.BlockChain.chain.delBlockFromHeight(errPos, (err, txArray) => {
             console.timeEnd('delBlockFromHeight ' + errPos)
