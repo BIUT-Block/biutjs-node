@@ -154,17 +154,21 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
-      if (err) {
-        callback(err, false)
-      } else {
-        if (rewardTx.TxFee === reward.toString()) {
-          callback(null, true)
+    if (Number(block.Number) > 35500) {
+      this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
+        if (err) {
+          callback(err, false)
         } else {
-          callback(null, false)
+          if (rewardTx.TxFee === reward.toString()) {
+            callback(null, true)
+          } else {
+            callback(null, false)
+          }
         }
-      }
-    })
+      })
+    } else {
+      callback(null, true)
+    }
   }
 
   getRewardTx (callback) {
