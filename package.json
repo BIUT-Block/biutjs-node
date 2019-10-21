@@ -40,7 +40,7 @@
     "jayson": "^2.1.2",
     "jsonwebtoken": "^8.5.1",
     "minimist": "^1.2.0",
-    "mocha": "^6.2.1",
+    "mocha": "^6.2.2",
     "moment": "^2.24.0",
     "public-ip": "^2.5.0",
     "request": "^2.88.0",

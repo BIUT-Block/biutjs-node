@@ -482,7 +482,7 @@ class NetworkEvent {
     this.logger.info('syncingFlag: ' + this.syncingFlag)
     if (!this.syncingFlag) {
       this.syncingFlag = true
-      let syncingTimer = setTimeout(() => {
+      this.syncingTimer = setTimeout(() => {
         this.syncingFlag = false
       }, ms('120s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
@@ -518,13 +518,15 @@ class NetworkEvent {
       this.logger.info(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
 
       // find out wether Block removed from Blockchain are needed
-      if (this.BlockChain.chain.getCurrentHeight() > firstRemoteBlockNum - 1) {
+      if (this.BlockChain.chain.getCurrentHeight() === firstRemoteBlockNum - 1) {
+        // no Block removed from blockchain needed
+        this.logger.info('Normal Syncing Blockchain')
+        console.log('Normal Syncing Blockchain')
+        this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum)
+      } else if (this.BlockChain.chain.getCurrentHeight() > firstRemoteBlockNum - 1) {
         this.BlockChain.chain.getBlock(firstRemoteBlockNum, (err, localBlock) => {
           if (err) {
-            this.syncingFlag = false
-            clearTimeout(syncingTimer)
-            this.syncInfo.flag = false
-            this.syncInfo.address = null
+            this._resetSyncingFlags()
             this.logger.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
             console.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
           } else {
@@ -540,265 +542,37 @@ class NetworkEvent {
                   this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
                   console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
                 }
-                // wait some time until remove Block finished
-                setTimeout(() => {
-                  async.eachSeries(payload[1], (payload, callback) => {
-                    // console.log('mingNewBlock', payload)
-                    let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
-                    let block = cloneDeep(newTokenBlock.getBlock())
-                    this.logger.info(`Syncronizing block ${block.Number}`)
-                    debug(`Syncronizing block ${block.Number}`)
-                    console.time('putBlockToDB ' + block.Number)
-                    console.time('writeNewBlock ' + block.Number)
-                    if (this.Consensus.ChainName === 'SEN') {
-                      this.Consensus.secReward.verifyReward(block, (err, result) => {
-                        if (err) {
-                          this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
-                          console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
-                        } else {
-                          if (result) {
-                            this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-                              console.timeEnd('putBlockToDB ' + block.Number)
-                              if (_err) {
-                                return callback(_err)
-                              } else {
-                                this.syncingFlag = true
-                                clearTimeout(syncingTimer)
-                                syncingTimer = setTimeout(() => {
-                                  this.syncingFlag = false
-                                }, ms('120s'))
-                                this.syncInfo.newBlockLastTime = new Date().getTime()
-                                this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                                console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                                debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                                if (this.ChainName === 'SEN') {
-                                  this.Consensus.resetPOW()
-                                }
-                                this.BlockChain.pool.updateByBlock(block)
-                                console.timeEnd('writeNewBlock ' + block.Number)
-                                console.log()
-                                callback()
-                              }
-                            })
-                          } else {
-                            this.logger.error(`Reward value incorrect`)
-                            console.error(`Reward value incorrect`)
-                          }
-                        }
-                      })
-                    } else {
-                      this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-                        console.timeEnd('putBlockToDB ' + block.Number)
-                        if (_err) {
-                          return callback(_err)
-                        } else {
-                          this.syncingFlag = true
-                          clearTimeout(syncingTimer)
-                          syncingTimer = setTimeout(() => {
-                            this.syncingFlag = false
-                          }, ms('120s'))
-                          this.syncInfo.newBlockLastTime = new Date().getTime()
-                          this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                          console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                          debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                          if (this.ChainName === 'SEN') {
-                            this.Consensus.resetPOW()
-                          }
-                          this.BlockChain.pool.updateByBlock(block)
-                          console.timeEnd('writeNewBlock ' + block.Number)
-                          console.log()
-                          callback()
-                        }
-                      })
-                    }
-                    // TODO: put removed block-transactions back to transaction pool
-                  }, (err) => {
-                    if (err) {
-                      this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-                      console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-                      console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-                    }
-                    console.time('checkTxArray ' + firstRemoteBlockNum)
-                    this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
-                      console.timeEnd('checkTxArray ' + firstRemoteBlockNum)
-                      if (err) {
-                        this.syncingFlag = false
-                        clearTimeout(syncingTimer)
-                        this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-                        console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-                      } else {
-                        // add the removed txs into pool
-                        _txArray.forEach((tx) => {
-                          this.BlockChain.pool.addTxIntoPool(tx)
-                        })
-                        // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
-                        this.syncingFlag = false
-                        clearTimeout(syncingTimer)
-                        this.logger.info('Current Height: ')
-                        this.logger.info(this.BlockChain.chain.getCurrentHeight())
-                        this.logger.info('remote Height: ')
-                        this.logger.info(remoteHeight)
-                        if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-                          // synchronizing finished
-                          if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
-                            console.log('Syncing finished!')
-                            this.logger.info('Syncing finished!')
-                            this.syncInfo.syncingfinished = true
-                          }
-                          this.syncInfo.flag = false
-                          this.syncInfo.address = null
-                          this.syncingFlag = false
-                          clearTimeout(syncingTimer)
-                          clearTimeout(this.syncInfo.timer)
-                        } else {
-                          // continue synchronizing
-                          this.BlockChain.chain.getHashList((err, hashList) => {
-                            clearTimeout(syncingTimer)
-                            this.syncingFlag = false
-                            if (err) {
-                              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                            } else {
-                              // TODO: hashList may has consistent problem
-                              hashList = this._hashListCorrection(hashList)
-                              console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
-                              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
-                            }
-                          })
-                        }
-                      }
+                console.time('checkTxArray ' + firstRemoteBlockNum)
+                this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+                  console.timeEnd('checkTxArray ' + firstRemoteBlockNum)
+                  if (err) {
+                    this._resetSyncingFlags()
+                    this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+                    console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+                  } else {
+                    _txArray.forEach((tx) => {
+                      this.BlockChain.pool.addTxIntoPool(tx)
                     })
-                  })
-                }, 5000)
+                  }
+                  setTimeout(() => {
+                    this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum)
+                  }, 10000)
+                })
               })
             } else {
-              this.syncingFlag = false
-              clearTimeout(syncingTimer)
-              this.syncInfo.flag = false
-              this.syncInfo.address = null
-              this.logger.error(`first Block from remote: ${firstRemoteBlockNum}`)
-              console.error(`first Block from remote: ${firstRemoteBlockNum}`)
-              this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
-              console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+              if (this.BlockChain.chain.getCurrentHeight() === firstRemoteBlockNum && payload[1].length > 1) {
+                this.logger.info('Normal Syncing Blockchain for old version')
+                console.log('Normal Syncing Blockchain for old version')
+                payload[1].shift()
+                this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum + 1)
+              } else {
+                this._resetSyncingFlags()
+                this.logger.error(`first Block from remote: ${firstRemoteBlockNum}`)
+                console.error(`first Block from remote: ${firstRemoteBlockNum}`)
+                this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+                console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+              }
             }
-          }
-        })
-      } else if (this.BlockChain.chain.getCurrentHeight() === firstRemoteBlockNum - 1) {
-        // no Block removed from blockchain needed
-        this.logger.info('Do not remove block from blockchain')
-        console.log('Do not remove block from blockchain')
-        async.eachSeries(payload[1], (payload, callback) => {
-          // console.log('mingNewBlock', payload)
-          let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
-          let block = cloneDeep(newTokenBlock.getBlock())
-          this.logger.info(`Syncronizing block ${block.Number}`)
-          debug(`Syncronizing block ${block.Number}`)
-          console.time('putBlockToDB ' + block.Number)
-          console.time('writeNewBlock ' + block.Number)
-          this.logger.info(block.Number)
-          console.log(block.Number)
-          if (this.Consensus.ChainName === 'SEN') {
-            this.Consensus.secReward.verifyReward(block, (err, result) => {
-              if (err) {
-                this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
-                console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
-              } else {
-                if (result) {
-                  this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-                    console.timeEnd('putBlockToDB ' + block.Number)
-                    if (_err) {
-                      return callback(_err)
-                    } else {
-                      this.syncingFlag = true
-                      clearTimeout(syncingTimer)
-                      syncingTimer = setTimeout(() => {
-                        this.syncingFlag = false
-                      }, ms('120s'))
-                      this.syncInfo.newBlockLastTime = new Date().getTime()
-                      this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                      console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                      debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                      if (this.ChainName === 'SEN') {
-                        this.Consensus.resetPOW()
-                      }
-                      this.BlockChain.pool.updateByBlock(block)
-                      console.timeEnd('writeNewBlock ' + block.Number)
-                      console.log()
-                      callback()
-                    }
-                  })
-                } else {
-                  this.logger.error(`Reward value incorrect`)
-                  console.error(`Reward value incorrect`)
-                }
-              }
-            })
-          } else {
-            this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
-              console.timeEnd('putBlockToDB ' + block.Number)
-              if (_err) {
-                return callback(_err)
-              } else {
-                this.syncingFlag = true
-                clearTimeout(syncingTimer)
-                syncingTimer = setTimeout(() => {
-                  this.syncingFlag = false
-                }, ms('120s'))
-                this.syncInfo.newBlockLastTime = new Date().getTime()
-                this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
-                debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
-                if (this.ChainName === 'SEN') {
-                  this.Consensus.resetPOW()
-                }
-                this.BlockChain.pool.updateByBlock(block)
-                console.timeEnd('writeNewBlock ' + block.Number)
-                console.log()
-                callback()
-              }
-            })
-          }
-          // TODO: put removed block-transactions back to transaction pool
-        }, (err) => {
-          if (err) {
-            this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-            console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-            console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-          }
-          // TODO: if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight || err)
-          this.logger.info('Current Height: ')
-          this.logger.info(this.BlockChain.chain.getCurrentHeight())
-          this.logger.info('remote Height: ')
-          this.logger.info(remoteHeight)
-          if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-            // synchronizing finished
-            if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
-              console.log('Syncing finished!')
-              this.logger.info('Syncing finished!')
-              this.syncInfo.syncingfinished = true
-            }
-            this.syncInfo.flag = false
-            this.syncInfo.address = null
-            clearTimeout(this.syncInfo.timer)
-            this.syncingFlag = false
-            clearTimeout(syncingTimer)
-          } else {
-            // continue synchronizing
-            this.BlockChain.chain.getHashList((err, hashList) => {
-              clearTimeout(syncingTimer)
-              this.syncingFlag = false
-              if (err) {
-                this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              } else {
-                // TODO: hashList may has consistent problem
-                hashList = this._hashListCorrection(hashList)
-                console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
-                this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
-              }
-            })
           }
         })
       } else {
@@ -817,8 +591,7 @@ class NetworkEvent {
           this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
             console.timeEnd('checkTxArray ' + firstRemoteBlockNum)
             if (err) {
-              this.syncingFlag = false
-              clearTimeout(syncingTimer)
+              this._resetSyncingFlags()
               this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
               console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
             } else {
@@ -826,34 +599,19 @@ class NetworkEvent {
               _txArray.forEach((tx) => {
                 this.BlockChain.pool.addTxIntoPool(tx)
               })
-              if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
-                // synchronizing finished
-                if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
-                  console.log('Syncing finished!')
-                  this.logger.info('Syncing finished!')
-                  this.syncInfo.syncingfinished = true
+              this.BlockChain.chain.getHashList((err, hashList) => {
+                this._resetSyncingFlags()
+                if (err) {
+                  this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                  console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+                } else {
+                  // TODO: hashList may has consistent problem
+                  hashList = this._hashListCorrection(hashList)
+                  console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
+                  const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+                  this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
                 }
-                this.syncInfo.flag = false
-                this.syncInfo.address = null
-                this.syncingFlag = false
-                clearTimeout(syncingTimer)
-                clearTimeout(this.syncInfo.timer)
-              } else {
-                this.BlockChain.chain.getHashList((err, hashList) => {
-                  this.syncingFlag = false
-                  clearTimeout(syncingTimer)
-                  if (err) {
-                    this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                    console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-                  } else {
-                    // TODO: hashList may has consistent problem
-                    hashList = this._hashListCorrection(hashList)
-                    console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
-                    const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
-                    this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
-                  }
-                })
-              }
+              })
             }
           })
         })
@@ -1213,6 +971,131 @@ class NetworkEvent {
         })
       }
     }, 180000)
+  }
+
+  _putBlocksToDB (payload, remoteHeight, firstRemoteBlockNum) {
+    async.eachSeries(payload[1], (payload, callback) => {
+      let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
+      let block = cloneDeep(newTokenBlock.getBlock())
+      this.logger.info(`Syncronizing block ${block.Number}`)
+      debug(`Syncronizing block ${block.Number}`)
+      console.time('putBlockToDB ' + block.Number)
+      console.time('writeNewBlock ' + block.Number)
+      if (this.ChainName === 'SEN') {
+        this.Consensus.secReward.verifyReward(block, (err, result) => {
+          if (err) {
+            this.logger.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+            console.error(`Error in BLOCK_BODIES state, verifyReward: ${err}`)
+          } else {
+            if (result) {
+              this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+                console.timeEnd('putBlockToDB ' + block.Number)
+                if (_err) {
+                  return callback(_err)
+                } else {
+                  this.syncingFlag = true
+                  clearTimeout(this.syncingTimer)
+                  this.syncingTimer = setTimeout(() => {
+                    this.syncingFlag = false
+                  }, ms('120s'))
+                  this.syncInfo.newBlockLastTime = new Date().getTime()
+                  this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                  console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+                  debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+                  if (this.ChainName === 'SEN') {
+                    this.Consensus.resetPOW()
+                  }
+                  this.BlockChain.pool.updateByBlock(block)
+                  console.timeEnd('writeNewBlock ' + block.Number)
+                  console.log()
+                  callback()
+                }
+              })
+            } else {
+              this.logger.error(`Reward value incorrect`)
+              console.error(`Reward value incorrect`)
+            }
+          }
+        })
+      } else {
+        this.BlockChain.chain.putBlockToDB(block, true, (_err) => {
+          console.timeEnd('putBlockToDB ' + block.Number)
+          if (_err) {
+            return callback(_err)
+          } else {
+            this.syncingFlag = true
+            clearTimeout(this.syncingTimer)
+            this.syncingTimer = setTimeout(() => {
+              this.syncingFlag = false
+            }, ms('120s'))
+            this.syncInfo.newBlockLastTime = new Date().getTime()
+            this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+            console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
+            debug(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`)
+            if (this.ChainName === 'SEN') {
+              this.Consensus.resetPOW()
+            }
+            this.BlockChain.pool.updateByBlock(block)
+            console.timeEnd('writeNewBlock ' + block.Number)
+            console.log()
+            callback()
+          }
+        })
+      }
+    }, (err) => {
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+        console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+        console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+      }
+      this.syncingFlag = false
+      clearTimeout(this.syncingTimer)
+      this.logger.info('Current Height: ')
+      this.logger.info(this.BlockChain.chain.getCurrentHeight())
+      this.logger.info('Remote Height: ')
+      this.logger.info(remoteHeight)
+      this.logger.info('syncInfo Remote Height: ')
+      this.logger.info(this.syncInfo.remoteheight)
+      if (this.BlockChain.chain.getCurrentHeight() >= remoteHeight) {
+        // synchronizing finished
+        if (this.BlockChain.chain.getCurrentHeight() >= this.syncInfo.remoteheight) {
+          console.log('Syncing finished!')
+          this.logger.info('Syncing finished!')
+          this.syncInfo.syncingfinished = true
+        }
+        this.syncInfo.flag = false
+        this.syncInfo.address = null
+        this.syncingFlag = false
+        clearTimeout(this.syncingTimer)
+        clearTimeout(this.syncInfo.timer)
+      } else {
+        // continue synchronizing
+        this.BlockChain.chain.getHashList((err, hashList) => {
+          clearTimeout(this.syncingTimer)
+          this.syncingFlag = false
+          if (err) {
+            this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+            console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+          } else {
+            // TODO: hashList may has consistent problem
+            hashList = this._hashListCorrection(hashList)
+            console.timeEnd('NEW_BLOCK ' + firstRemoteBlockNum)
+            const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+            this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
+          }
+        })
+      }
+    })
+  }
+
+  _resetSyncingFlags () {
+    console.log('Reset Syncing Flags')
+    this.logger.info('Reset Syncing Flags')
+    this.syncInfo.flag = false
+    this.syncInfo.address = null
+    this.syncingFlag = false
+    clearTimeout(this.syncingTimer)
+    clearTimeout(this.syncInfo.timer)
   }
 }
 
