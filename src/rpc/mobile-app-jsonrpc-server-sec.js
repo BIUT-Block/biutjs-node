@@ -538,6 +538,27 @@ let server = jayson.server({
     })
   },
 
+  sec_getBlocks: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sec_getBlocks id: ' + requestID)
+    let response = {}
+    const blockHeightStart = args[0]
+    const blockHeightEnd = args[1]
+    core.secAPIs.getTokenBlockchain(blockHeightStart, blockHeightEnd, (err, block) => {
+      if (err) {
+        response.status = '0'
+        response.message = `Failed to get block, error info: ${err}`
+        response.blockInfo = []
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.blockInfo = block
+      }
+      console.timeEnd('sec_getBlocks id: ' + requestID)
+      callback(null, response)
+    })
+  },
+
   sec_getWholeTokenBlockchain: function (args, callback) {
     let requestID = ++_requestID
     console.time('sec_getWholeTokenBlockchain id: ' + requestID)
