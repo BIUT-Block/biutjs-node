@@ -877,6 +877,17 @@ let server = jayson.server({
       console.timeEnd('sec_getHashList id: ' + requestID)
       callback(null, response)
     })
+  },
+
+  sec_NodeInfo: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sec_NodeInfo id: ' + requestID)
+    let response = {}
+    const nodes = core.CenterController.nodesIPSync.getNodesTable()
+    response.status = '1'
+    response.nodes = nodes
+    console.timeEnd('sec_NodeInfo id: ' + requestID)
+    callback(null, response)
   }
 
 })
