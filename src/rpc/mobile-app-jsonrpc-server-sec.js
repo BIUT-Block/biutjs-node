@@ -888,6 +888,18 @@ let server = jayson.server({
     response.nodes = nodes
     console.timeEnd('sec_NodeInfo id: ' + requestID)
     callback(null, response)
+  },
+
+  sec_getPoolTransactions: function (args, callback) {
+    const requestID = ++_requestID
+    console.time('sec_getPoolTransactions id: ' + requestID)
+    const response = {}
+    const accAddr = args[0] // address
+    const txArraryInPool = core.secAPIs.getTokenTxInPoolByAddress(accAddr)
+    response.status = '1'
+    response.txArraryInPool = txArraryInPool
+    console.timeEnd('sec_getPoolTransactions id: ' + requestID)
+    callback(null, response)
   }
 
 })
