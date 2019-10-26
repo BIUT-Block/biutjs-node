@@ -98,16 +98,13 @@ class SENReward {
       if (err) {
         callback(err, null)
       } else {
-        console.log(addr)
-        console.log(tokenName)
-        console.log(balance)
         if (balance > MAX_MORTGAGE) {
           balance = MAX_MORTGAGE
         } else if (balance < exports.MIN_MORTGAGE) {
           balance = 0
         }
         let reward = balance * rewardFactor / 10000000
-        console.log(reward)
+        console.log(`Address: ${addr}, Balance: ${balance}, Reward: ${reward}`)
         this.chain.getLockerContract(addr, (err, contractAddArray) => {
           if (err) {
             console.error(err)
@@ -127,15 +124,12 @@ class SENReward {
                         timeLock[address][address].forEach(lockRecord => {
                           if (Date.now() < lockRecord.unlockTime) {
                             reward += parseFloat(lockRecord.lockAmount) * rewardFactor / 100000
-                            console.log('reward ++')
-                            console.log(reward)
+                            console.log(`LockAddress: ${address}, LockAmount: ${lockRecord.lockAmount}, Reward: ${parseFloat(lockRecord.lockAmount) * rewardFactor / 100000}, Current Reward: ${reward}`)
                           }
                         })
                       }
                     }
                     if (counter === contractAddArray.length) {
-                      console.log('all reward')
-                      console.log(reward)
                       callback(null, reward)
                     }
                   })
@@ -154,7 +148,7 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    if (Number(block.Number) > 38500) {
+    if (Number(block.Number) > 42000) {
       this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
         if (err) {
           callback(err, false)
