@@ -803,6 +803,17 @@ let server = jayson.server({
     response.txArraryInPool = txArraryInPool
     console.timeEnd('sen_getPoolTransactions id: ' + requestID)
     callback(null, response)
+  },
+
+  sec_getPool: function (args, callback) {
+    const requestID = ++_requestID
+    console.time('sec_getPool id: ' + requestID)
+    const response = {}
+    const txArraryInPool = core.senAPIs.getAllPool()
+    response.status = '1'
+    response.txArraryInPool = txArraryInPool
+    console.timeEnd('sec_getPool id: ' + requestID)
+    callback(null, response)
   }
 })
 
