@@ -503,6 +503,10 @@ class NetworkEvent {
         this.syncInfo.flag = true
         this.syncInfo.address = remoteAddress
       }
+      if (remoteHeight < this.syncInfo.remoteheight) {
+        this.logger.info('Return because of remoteHeight not the langest')
+        console.log('Return because of remoteHeight not the langest')
+      }
       this.logger.info('Not return')
       console.log('Not return')
       clearTimeout(this.syncInfo.timer)
