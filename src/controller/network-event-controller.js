@@ -506,6 +506,7 @@ class NetworkEvent {
       if (remoteHeight < this.syncInfo.remoteheight) {
         this.logger.info('Return because of remoteHeight not the langest')
         console.log('Return because of remoteHeight not the langest')
+        return
       }
       this.logger.info('Not return')
       console.log('Not return')
