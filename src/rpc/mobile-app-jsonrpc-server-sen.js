@@ -814,6 +814,21 @@ let server = jayson.server({
     response.txArraryInPool = txArraryInPool
     console.timeEnd('sec_getPool id: ' + requestID)
     callback(null, response)
+  },
+
+  sec_removeBlocks: function (args, callback) {
+    const response = {}
+    core.CenterController.getSenChain().chain.delBlockFromHeight(44969, (err, txArray) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Error occurs: ${err}`
+      } else {
+        response.status = '1'
+        response.info = 'OK'
+        response.txArray = txArray
+      }
+      callback(null, response)
+    })
   }
 })
 
