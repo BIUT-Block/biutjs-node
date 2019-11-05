@@ -484,7 +484,7 @@ class NetworkEvent {
       this.syncingFlag = true
       this.syncingTimer = setTimeout(() => {
         this.syncingFlag = false
-      }, ms('120s'))
+      }, ms('180s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
       this.syncInfo.remoteheight = (this.syncInfo.remoteheight < remoteHeight ? remoteHeight : this.syncInfo.remoteheight)
@@ -503,11 +503,6 @@ class NetworkEvent {
         this.syncInfo.flag = true
         this.syncInfo.address = remoteAddress
       }
-      if (remoteHeight < this.syncInfo.remoteheight) {
-        this.logger.info('Return because of remoteHeight not the langest')
-        console.log('Return because of remoteHeight not the langest')
-        return
-      }
       this.logger.info('Not return')
       console.log('Not return')
       clearTimeout(this.syncInfo.timer)
@@ -515,8 +510,12 @@ class NetworkEvent {
         this.syncingFlag = false
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('120s'))
-
+      }, ms('180s'))
+      if (remoteHeight < this.syncInfo.remoteheight) {
+        this.logger.info('Return because of remoteHeight not the langest')
+        console.log('Return because of remoteHeight not the langest')
+        return
+      }
       let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstRemoteBlockNum)
       debug(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
@@ -1002,7 +1001,7 @@ class NetworkEvent {
                   clearTimeout(this.syncingTimer)
                   this.syncingTimer = setTimeout(() => {
                     this.syncingFlag = false
-                  }, ms('120s'))
+                  }, ms('180s'))
                   this.syncInfo.newBlockLastTime = new Date().getTime()
                   this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
                   console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
@@ -1032,7 +1031,7 @@ class NetworkEvent {
             clearTimeout(this.syncingTimer)
             this.syncingTimer = setTimeout(() => {
               this.syncingFlag = false
-            }, ms('120s'))
+            }, ms('180s'))
             this.syncInfo.newBlockLastTime = new Date().getTime()
             this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
