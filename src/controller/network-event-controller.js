@@ -511,11 +511,11 @@ class NetworkEvent {
         this.syncInfo.flag = false
         this.syncInfo.address = null
       }, ms('180s'))
-      if (remoteHeight < this.syncInfo.remoteheight) {
-        this.logger.info('Return because of remoteHeight not the langest')
-        console.log('Return because of remoteHeight not the langest')
-        return
-      }
+      // if (remoteHeight < this.syncInfo.remoteheight) {
+      //   this.logger.info('Return because of remoteHeight not the langest')
+      //   console.log('Return because of remoteHeight not the langest')
+      //   return
+      // }
       let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstRemoteBlockNum)
       debug(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
