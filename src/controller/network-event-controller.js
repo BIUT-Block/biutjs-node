@@ -531,6 +531,7 @@ class NetworkEvent {
         this.BlockChain.chain.getBlock(firstRemoteBlockNum, (err, localBlock) => {
           if (err) {
             this._resetSyncingFlags()
+            this._removeBlocks(firstRemoteBlockNum - 20)
             this.logger.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
             console.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
           } else {
@@ -621,6 +622,43 @@ class NetworkEvent {
         })
       }
     }
+  }
+
+  _removeBlocks (beginNumber) {
+    this.BlockChain.chain.delBlockFromHeight(beginNumber, (err, txArray) => {
+      console.timeEnd('delBlockFromHeight ' + beginNumber)
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+        console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+      }
+      console.time('checkTxArray ' + beginNumber)
+      this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+        console.timeEnd('checkTxArray ' + beginNumber)
+        if (err) {
+          this._resetSyncingFlags()
+          this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+          console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+        } else {
+          // add the removed txs into pool
+          _txArray.forEach((tx) => {
+            this.BlockChain.pool.addTxIntoPool(tx)
+          })
+          this.BlockChain.chain.getHashList((err, hashList) => {
+            this._resetSyncingFlags()
+            if (err) {
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+            } else {
+              // TODO: hashList may has consistent problem
+              hashList = this._hashListCorrection(hashList)
+              console.timeEnd('NEW_BLOCK ' + beginNumber)
+              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
+            }
+          })
+        }
+      })
+    })
   }
 
   TX (payload, requests) {
