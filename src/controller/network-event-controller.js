@@ -476,6 +476,10 @@ class NetworkEvent {
   NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return New Block')
+      return
+    }
     console.log('syncing Finished: ' + this.syncInfo.syncingfinished)
     this.logger.info('syncing Finished: ' + this.syncInfo.syncingfinished)
     console.log('syncingFlag: ' + this.syncingFlag)
@@ -511,11 +515,6 @@ class NetworkEvent {
         this.syncInfo.flag = false
         this.syncInfo.address = null
       }, ms('180s'))
-      // if (remoteHeight < this.syncInfo.remoteheight) {
-      //   this.logger.info('Return because of remoteHeight not the langest')
-      //   console.log('Return because of remoteHeight not the langest')
-      //   return
-      // }
       let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstRemoteBlockNum)
       debug(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
@@ -1016,7 +1015,15 @@ class NetworkEvent {
   }
 
   _putBlocksToDB (payload, remoteHeight, firstRemoteBlockNum) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return New Block')
+      return
+    }
     async.eachSeries(payload[1], (payload, callback) => {
+      if (this.BlockChain.chain.deletingFlag) {
+        console.log('Now deleting Blocks, return New Block')
+        return callback(new Error('Now deleting Blocks, return put block to db'))
+      }
       let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
       let block = cloneDeep(newTokenBlock.getBlock())
       this.logger.info(`Syncronizing block ${block.Number}`)
