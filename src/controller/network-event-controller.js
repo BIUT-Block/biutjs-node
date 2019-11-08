@@ -271,7 +271,6 @@ class NetworkEvent {
 
   BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
-
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
     let blockHash = block.getHeaderHash()
@@ -395,6 +394,10 @@ class NetworkEvent {
   }
 
   BLOCK_BODIES (payload, requests) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return BLOCK_BODIES')
+      return
+    }
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
 
@@ -560,7 +563,7 @@ class NetworkEvent {
                   }
                   setTimeout(() => {
                     this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum)
-                  }, 10000)
+                  }, 15000)
                 })
               })
             } else {
@@ -623,43 +626,6 @@ class NetworkEvent {
     }
   }
 
-  _removeBlocks (beginNumber) {
-    this.BlockChain.chain.delBlockFromHeight(beginNumber, (err, txArray) => {
-      console.timeEnd('delBlockFromHeight ' + beginNumber)
-      if (err) {
-        this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
-        console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
-      }
-      console.time('checkTxArray ' + beginNumber)
-      this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
-        console.timeEnd('checkTxArray ' + beginNumber)
-        if (err) {
-          this._resetSyncingFlags()
-          this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-          console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
-        } else {
-          // add the removed txs into pool
-          _txArray.forEach((tx) => {
-            this.BlockChain.pool.addTxIntoPool(tx)
-          })
-          this.BlockChain.chain.getHashList((err, hashList) => {
-            this._resetSyncingFlags()
-            if (err) {
-              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
-            } else {
-              // TODO: hashList may has consistent problem
-              hashList = this._hashListCorrection(hashList)
-              console.timeEnd('NEW_BLOCK ' + beginNumber)
-              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
-              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
-            }
-          })
-        }
-      })
-    })
-  }
-
   TX (payload, requests) {
     debug(chalk.bold.yellow(`===== TX =====`))
     if (!this.forkVerified) return
@@ -686,6 +652,10 @@ class NetworkEvent {
   }
 
   NODE_DATA (payload, requests) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return NODE_DATA')
+      return
+    }
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
     let remoteHashList = []
     try {
@@ -1014,9 +984,46 @@ class NetworkEvent {
     }, 180000)
   }
 
+  _removeBlocks (beginNumber) {
+    this.BlockChain.chain.delBlockFromHeight(beginNumber, (err, txArray) => {
+      console.timeEnd('delBlockFromHeight ' + beginNumber)
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+        console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+      }
+      console.time('checkTxArray ' + beginNumber)
+      this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+        console.timeEnd('checkTxArray ' + beginNumber)
+        if (err) {
+          this._resetSyncingFlags()
+          this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+          console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+        } else {
+          // add the removed txs into pool
+          _txArray.forEach((tx) => {
+            this.BlockChain.pool.addTxIntoPool(tx)
+          })
+          this.BlockChain.chain.getHashList((err, hashList) => {
+            this._resetSyncingFlags()
+            if (err) {
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+            } else {
+              // TODO: hashList may has consistent problem
+              hashList = this._hashListCorrection(hashList)
+              console.timeEnd('NEW_BLOCK ' + beginNumber)
+              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
+            }
+          })
+        }
+      })
+    })
+  }
+
   _putBlocksToDB (payload, remoteHeight, firstRemoteBlockNum) {
     if (this.BlockChain.chain.deletingFlag) {
-      console.log('Now deleting Blocks, return New Block')
+      console.log('Now deleting Blocks, return _putBlocksToDB')
       return
     }
     async.eachSeries(payload[1], (payload, callback) => {
