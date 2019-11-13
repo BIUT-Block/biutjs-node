@@ -60,6 +60,10 @@ class APIs {
     this.chain.chain.getTxForUser(userAddress, callback)
   }
 
+  getAllPool () {
+    return this.chain.pool.getAllTxFromPool()
+  }
+
   getTokenTxInPool (txHash, callback) {
     let transaction = this.chain.pool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash

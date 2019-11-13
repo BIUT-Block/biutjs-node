@@ -34,7 +34,7 @@ class NetworkEvent {
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     let netType = process.env.netType
-    this.NETWORK_ID = netType === 'main' ? 1 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 1
+    this.NETWORK_ID = netType === 'main' ? 4 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 4
     this.logger.info(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
@@ -271,7 +271,6 @@ class NetworkEvent {
 
   BLOCK_HEADERS (payload, requests) {
     debug(chalk.bold.yellow(`===== BLOCK_HEADERS =====`))
-
     let block = new SECBlockChain.SECTokenBlock()
     block.setHeader(payload)
     let blockHash = block.getHeaderHash()
@@ -395,6 +394,10 @@ class NetworkEvent {
   }
 
   BLOCK_BODIES (payload, requests) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return BLOCK_BODIES')
+      return
+    }
     debug(chalk.bold.yellow(`===== BLOCK_BODIES =====`))
     if (!this.forkVerified) return
 
@@ -476,6 +479,10 @@ class NetworkEvent {
   NEW_BLOCK (payload, requests) {
     debug(chalk.bold.yellow(`===== NEW_BLOCK =====`))
     if (!this.forkVerified) return
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return New Block')
+      return
+    }
     console.log('syncing Finished: ' + this.syncInfo.syncingfinished)
     this.logger.info('syncing Finished: ' + this.syncInfo.syncingfinished)
     console.log('syncingFlag: ' + this.syncingFlag)
@@ -484,7 +491,7 @@ class NetworkEvent {
       this.syncingFlag = true
       this.syncingTimer = setTimeout(() => {
         this.syncingFlag = false
-      }, ms('120s'))
+      }, ms('180s'))
       let remoteHeight = SECDEVP2P._util.buffer2int(payload[0])
       let remoteAddress = payload[2].toString('hex')
       this.syncInfo.remoteheight = (this.syncInfo.remoteheight < remoteHeight ? remoteHeight : this.syncInfo.remoteheight)
@@ -510,8 +517,7 @@ class NetworkEvent {
         this.syncingFlag = false
         this.syncInfo.flag = false
         this.syncInfo.address = null
-      }, ms('120s'))
-
+      }, ms('180s'))
       let firstRemoteBlockNum = new SECBlockChain.SECTokenBlock(payload[1][0]).getHeader().Number
       console.time('NEW_BLOCK ' + firstRemoteBlockNum)
       debug(`Start syncronizing multiple blocks, first block's height is: ${firstRemoteBlockNum}, ${payload[1].length} blocks syncing`)
@@ -527,6 +533,7 @@ class NetworkEvent {
         this.BlockChain.chain.getBlock(firstRemoteBlockNum, (err, localBlock) => {
           if (err) {
             this._resetSyncingFlags()
+            this._removeBlocks(firstRemoteBlockNum - 20)
             this.logger.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
             console.error(`Error in NEW_BLOCK state, get Local Block Error: ${err}`)
           } else {
@@ -556,7 +563,7 @@ class NetworkEvent {
                   }
                   setTimeout(() => {
                     this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum)
-                  }, 10000)
+                  }, 15000)
                 })
               })
             } else {
@@ -645,6 +652,10 @@ class NetworkEvent {
   }
 
   NODE_DATA (payload, requests) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return NODE_DATA')
+      return
+    }
     debug(chalk.bold.yellow(`===== NODE_DATA =====`))
     let remoteHashList = []
     try {
@@ -973,8 +984,53 @@ class NetworkEvent {
     }, 180000)
   }
 
+  _removeBlocks (beginNumber) {
+    this.BlockChain.chain.delBlockFromHeight(beginNumber, (err, txArray) => {
+      console.timeEnd('delBlockFromHeight ' + beginNumber)
+      if (err) {
+        this.logger.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+        console.error(`Error in NEW_BLOCK state, delBlockFromHeight: ${err}`)
+      }
+      console.time('checkTxArray ' + beginNumber)
+      this.BlockChain.checkTxArray(txArray, (err, _txArray) => {
+        console.timeEnd('checkTxArray ' + beginNumber)
+        if (err) {
+          this._resetSyncingFlags()
+          this.logger.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+          console.error(`Error in NEW_BLOCK state, eachSeries else: ${err}`)
+        } else {
+          // add the removed txs into pool
+          _txArray.forEach((tx) => {
+            this.BlockChain.pool.addTxIntoPool(tx)
+          })
+          this.BlockChain.chain.getHashList((err, hashList) => {
+            this._resetSyncingFlags()
+            if (err) {
+              this.logger.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+              console.error(`Error in NEW_BLOCK state, eachSeries getHashList: ${err}`)
+            } else {
+              // TODO: hashList may has consistent problem
+              hashList = this._hashListCorrection(hashList)
+              console.timeEnd('NEW_BLOCK ' + beginNumber)
+              const hashListCompressBuffer = zlib.gzipSync(JSON.stringify(hashList))
+              this.sec.sendMessage(SECDEVP2P.SEC.MESSAGE_CODES.NODE_DATA, [this.ChainIDBuff, hashListCompressBuffer])
+            }
+          })
+        }
+      })
+    })
+  }
+
   _putBlocksToDB (payload, remoteHeight, firstRemoteBlockNum) {
+    if (this.BlockChain.chain.deletingFlag) {
+      console.log('Now deleting Blocks, return _putBlocksToDB')
+      return
+    }
     async.eachSeries(payload[1], (payload, callback) => {
+      if (this.BlockChain.chain.deletingFlag) {
+        console.log('Now deleting Blocks, return New Block')
+        return callback(new Error('Now deleting Blocks, return put block to db'))
+      }
       let newTokenBlock = new SECBlockChain.SECTokenBlock(payload)
       let block = cloneDeep(newTokenBlock.getBlock())
       this.logger.info(`Syncronizing block ${block.Number}`)
@@ -997,7 +1053,7 @@ class NetworkEvent {
                   clearTimeout(this.syncingTimer)
                   this.syncingTimer = setTimeout(() => {
                     this.syncingFlag = false
-                  }, ms('120s'))
+                  }, ms('180s'))
                   this.syncInfo.newBlockLastTime = new Date().getTime()
                   this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
                   console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
@@ -1027,7 +1083,7 @@ class NetworkEvent {
             clearTimeout(this.syncingTimer)
             this.syncingTimer = setTimeout(() => {
               this.syncingFlag = false
-            }, ms('120s'))
+            }, ms('180s'))
             this.syncInfo.newBlockLastTime = new Date().getTime()
             this.logger.info(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
             console.log(chalk.green(`Sync New ${this.ChainName} Block from: ${this.addr} with height ${block.Number} and saved in local Blockchain`))
