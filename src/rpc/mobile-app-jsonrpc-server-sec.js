@@ -51,7 +51,7 @@ function _signTransaction (privateKey, transfer) {
     gasPrice: '0',
     data: '',
     nonce: transfer.nonce,
-    inputData: ''
+    inputData: transfer.inputData || ''
   }]
   const tokenTxBuffer = [
     SECUtil.bufferToInt(transferData[0].timestamp),
