@@ -119,14 +119,16 @@ class SENReward {
                     if (err) {
                       console.error(err)
                     } else {
-                      let timeLock = contractInfo.timeLock
-                      for (let address in timeLock) {
-                        timeLock[address][address].forEach(lockRecord => {
-                          if (Date.now() < lockRecord.unlockTime) {
-                            reward += parseFloat(lockRecord.lockAmount) * rewardFactor / 100000
-                            console.log(`LockAddress: ${address}, LockAmount: ${lockRecord.lockAmount}, Reward: ${parseFloat(lockRecord.lockAmount) * rewardFactor / 100000}, Current Reward: ${reward}`)
-                          }
-                        })
+                      if (contractInfo.creator === addr) {
+                        let timeLock = contractInfo.timeLock
+                        for (let address in timeLock) {
+                          timeLock[address][address].forEach(lockRecord => {
+                            if (Date.now() < lockRecord.unlockTime) {
+                              reward += parseFloat(lockRecord.lockAmount) * rewardFactor / 100000
+                              console.log(`LockAddress: ${address}, LockAmount: ${lockRecord.lockAmount}, Reward: ${parseFloat(lockRecord.lockAmount) * rewardFactor / 100000}, Current Reward: ${reward}`)
+                            }
+                          })
+                        }
                       }
                     }
                     if (counter === contractAddArray.length) {
