@@ -15,7 +15,7 @@ const SECTransactionPool = require('@biut-block/biutjs-transactionpool')
 const SECRandomData = require('@biut-block/biutjs-randomdatagenerator')
 const SECUtils = require('@biut-block/biutjs-util')
 
-const DEC_NUM = 8
+const DEC_NUM = 18
 Big.config({
   ROUNDING_MODE: 0
 })
