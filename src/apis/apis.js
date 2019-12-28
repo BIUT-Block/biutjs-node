@@ -228,8 +228,12 @@ class APIs {
     callback(result)
   }
 
-  getHashList (callback) {
-    this.chain.chain.getHashList(callback)
+  getHashList (callback, start, end) {
+    if (start && end) {
+      this.chain.chain.getHashList(callback, start, end)
+    } else {
+      this.chain.chain.getHashList(callback)
+    }
   }
   // ----------------------------------  SmartContract Mapping DB Functions  ---------------------------------- //
 

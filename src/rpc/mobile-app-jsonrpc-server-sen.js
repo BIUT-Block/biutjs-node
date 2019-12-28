@@ -780,6 +780,8 @@ let server = jayson.server({
     let requestID = ++_requestID
     console.time('sen_getHashList id: ' + requestID)
     let response = {}
+    const start = isNaN(parseInt(args[0])) ? undefined : args[0]
+    const end = isNaN(parseInt(args[1])) ? undefined : args[1]
     core.senAPIs.getHashList((err, HashList) => {
       if (err) {
         response.status = '0'
@@ -790,7 +792,7 @@ let server = jayson.server({
       }
       console.timeEnd('sen_getHashList id: ' + requestID)
       callback(null, response)
-    })
+    }, start, end)
   },
 
   sec_getPoolTransactions: function (args, callback) {

@@ -795,7 +795,7 @@ class NetworkEvent {
         // do nothing if remote node blockchain is longer than local blockchain
       }
       debug(chalk.bold.yellow(`===== End NODE_DATA =====`))
-    })
+    }, remoteHashList[0].Number, remoteHeight)
   }
 
   GET_RECEIPTS (payload, requests) {
@@ -899,7 +899,7 @@ class NetworkEvent {
           }
           let hash = hashList[i].Hash
           let number = hashList[i].Number
-          if (hash === undefined || number === undefined || number !== i || hashList[i].ParentHash !== hashList[i - 1].Hash) {
+          if (hash === undefined || number === undefined || hashList[i].ParentHash !== hashList[i - 1].Hash) {
             return i
           }
         }
