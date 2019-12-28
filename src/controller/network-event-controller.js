@@ -891,22 +891,17 @@ class NetworkEvent {
 
   _checkHashList (hashList) {
     try {
-      let height = hashList[hashList.length - 1].Number
-      if (height !== undefined) {
-        for (let i = 1; i < height; i++) {
-          if (hashList[i] === undefined) {
-            return i
-          }
-          let hash = hashList[i].Hash
-          let number = hashList[i].Number
-          if (hash === undefined || number === undefined || hashList[i].ParentHash !== hashList[i - 1].Hash) {
-            return i
-          }
+      for (let i = 1; i < hashList.length - 1; i++) {
+        if (hashList[i] === undefined) {
+          return i
         }
-        return -1
-      } else {
-        return -2
+        let hash = hashList[i].Hash
+        let number = hashList[i].Number
+        if (hash === undefined || number === undefined || hashList[i].ParentHash !== hashList[i - 1].Hash) {
+          return i
+        }
       }
+      return -1
     } catch (e) {
       this.logger.info(`_checkHashList error: ${JSON.stringify(e)}`)
       console.log(`_checkHashList error: ${JSON.stringify(e)}`)
