@@ -730,7 +730,7 @@ class NetworkEvent {
             if (_errPos === -1) {
               // find fork position
               let forkPosition = 0
-              for (let i = remoteHeight; i >= 0; i--) {
+              for (let i = remoteHashList.length - 1; i >= 0; i--) {
                 if (remoteHashList[i] === undefined) {
                   this.logger.info('remoteHashList not consistent')
                   this.logger.info(JSON.stringify(remoteHashList))
@@ -740,6 +740,7 @@ class NetworkEvent {
                 if (hashList === undefined) {
                   this.logger.info('hashList is undefined')
                   console.log('hashList is undefined')
+                  return
                 }
                 if (hashList.filter(block => (block.Hash === remoteHashList[i].Hash)).length > 0) {
                   forkPosition = remoteHashList[i].Number + 1
