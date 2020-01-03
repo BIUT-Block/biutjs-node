@@ -952,7 +952,7 @@ class NetworkEvent {
     _hashList.push(hashList[0])
     for (let i = 1; i < hashList.length; i++) {
       if (hashList[i] === undefined) break
-      if (hashList[i].ParentHash === hashList[i - 1].Hash && hashList[i].Number === i) {
+      if (hashList[i].ParentHash === hashList[i - 1].Hash) {
         _hashList.push(hashList[i])
       } else {
         break
