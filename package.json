@@ -21,7 +21,7 @@
   },
   "homepage": "https://gitlab.com/MongoX-BIUT/biutjs-node#README",
   "dependencies": {
-    "@biut-block/biutjs-blockchain": "^1.0.41",
+    "@biut-block/biutjs-blockchain": "^1.0.42",
     "@biut-block/biutjs-datahandler": "^1.0.18",
     "@biut-block/biutjs-devp2p": "^1.0.1",
     "@biut-block/biutjs-logger": "^1.0.5",
