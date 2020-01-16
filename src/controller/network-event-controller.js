@@ -574,10 +574,10 @@ class NetworkEvent {
                 this._putBlocksToDB(payload, remoteHeight, firstRemoteBlockNum + 1)
               } else {
                 this._resetSyncingFlags()
-                this.logger.error(`first Block from remote: ${firstRemoteBlockNum}`)
-                console.error(`first Block from remote: ${firstRemoteBlockNum}`)
-                this.logger.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
-                console.error(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+                this.logger.info(`first Block from remote: ${firstRemoteBlockNum}`)
+                console.log(`first Block from remote: ${firstRemoteBlockNum}`)
+                this.logger.info(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
+                console.log(`No fork found! Don't need Sync Blocks from this Peer ${this.addr}`)
               }
             }
           }
