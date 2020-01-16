@@ -365,8 +365,7 @@ class CenterController {
               this.config.dbconfig.logger.info(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
               console.log(chalk.green(`DHT reconnecting mechanism: conntect to node: ${peer.address}`))
             }).catch((err) => {
-              this.config.dbconfig.logger.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
-              console.error(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
+              debug(chalk.red(`ERROR: error on reconnect to node: ${err.stack || err}`))
             })
           }
         })
