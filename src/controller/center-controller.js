@@ -93,8 +93,7 @@ class CenterController {
     this.ndp.on('close', () => debug(chalk.green('NDP | NDP Server closed')))
 
     this.ndp.on('error', err => {
-      this.config.dbconfig.logger.error(`NDP | NDP error: ${err.stack || err}`)
-      console.error(chalk.red(`NDP | NDP error: ${err.stack || err}`))
+      debug(chalk.red(`NDP | NDP error: ${err.stack || err}`))
     })
 
     this.ndp.on('peer:added', peer => {
@@ -125,8 +124,7 @@ class CenterController {
     })
     for (let bootnode of BOOTNODES) {
       this.ndp.bootstrap(bootnode).catch(err => {
-        this.config.dbconfig.logger.error(`${err.stack || err}`)
-        console.error(chalk.bold.red(err.stack || err))
+        debug(chalk.bold.red(err.stack || err))
       })
     }
   }
@@ -182,17 +180,14 @@ class CenterController {
       if (err instanceof assert.AssertionError) {
         const peerId = peer.getId()
         if (peerId !== null) this.ndp.banPeer(peerId, ms('5m'))
-        this.config.dbconfig.logger.error(chalk.red(`RLP | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
-        console.error(chalk.red(`RLP | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
+        debug(chalk.red(`RLP | peer:error Event | Peer Error (${Utils.getPeerAddr(peer)}): ${err.message}`))
         return
       }
-      this.config.dbconfig.logger.error(chalk.red(`RLP | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
-      console.error(chalk.red(`RLP | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
+      debug(chalk.red(`RLP | peer:error Event | Peer error (${Utils.getPeerAddr(peer)}): ${err.stack || err}`))
     })
 
     this.rlp.on('error', err => {
-      this.config.dbconfig.logger.error(chalk.red(`RLP | RLP error: ${err.stack || err}`))
-      console.error(chalk.red(`RLP | RLP error: ${err.stack || err}`))
+      debug(chalk.red(`RLP | RLP error: ${err.stack || err}`))
     })
 
     // Start RLP service and listen port 13331
@@ -342,8 +337,6 @@ class CenterController {
         this.initNetwork((err) => {
           if (err) console.error(err)
           this.config.dbconfig.logger.error('err')
-          this.config.dbconfig.logger.info('resetMainProgramm Finish')
-          console.log('resetMainProgramm Finish')
         })
       }
     }, 25000)

@@ -230,8 +230,10 @@ class APIs {
 
   getHashList (callback, start, end) {
     if (start && end) {
+      console.log(`getHashList API request with start ${start} and end ${end}`)
       this.chain.chain.getHashList(callback, start, end)
     } else {
+      console.log(`getHashList API request without start or end`)
       this.chain.chain.getHashList(callback)
     }
   }
