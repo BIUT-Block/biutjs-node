@@ -1,6 +1,6 @@
 {
   "name": "@biut-block/biutjs-node",
-  "version": "1.0.123",
+  "version": "1.0.124",
   "description": "biut blockchain node",
   "main": "index.js",
   "directories": {
