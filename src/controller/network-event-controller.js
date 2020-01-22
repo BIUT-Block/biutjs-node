@@ -797,7 +797,7 @@ class NetworkEvent {
           // do nothing if remote node blockchain is longer than local blockchain
         }
         debug(chalk.bold.yellow(`===== End NODE_DATA =====`))
-      }, remoteHashList[0].Number, remoteHeight)
+      }, remoteHashList[0].Number, localHeight)
     }
   }
 
