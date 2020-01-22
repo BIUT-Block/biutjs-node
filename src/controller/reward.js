@@ -10,6 +10,7 @@ const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
 const INIT_TX_AMOUNT = 100000
 const INIT_TOT_REWARD = 90000
+const REWARD_FACTOR = 0.03798
 
 class SENReward {
   constructor (chain) {
@@ -92,7 +93,7 @@ class SENReward {
 
   _getReward (addr, tokenName, callback) {
     // TODO: only for short time, later must be corrected
-    let rewardFactor = 0.03798
+    const rewardFactor = REWARD_FACTOR
     // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
@@ -150,19 +151,23 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
-      if (err) {
-        callback(err, false)
-      } else {
-        const blockReward = parseFloat(rewardTx.Value)
-        console.log(`Reward: ${blockReward} | ${reward} & ${Math.abs(blockReward - reward)} | ${reward * 0.5}`)
-        if (Math.abs(blockReward - reward) < reward * 0.5) {
-          callback(null, true)
+    if (Number(block.Number) > 68750) {
+      this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
+        if (err) {
+          callback(err, false)
         } else {
-          callback(null, false)
+          const blockReward = parseFloat(rewardTx.Value)
+          console.log(`Reward: ${blockReward} | ${reward} & ${Math.abs(blockReward - reward)} | ${reward * 0.5}`)
+          if (Math.abs(blockReward - reward) < reward * 0.5) {
+            callback(null, true)
+          } else {
+            callback(null, false)
+          }
         }
-      }
-    })
+      })
+    } else {
+      callback(null, false)
+    }
   }
 
   getRewardTx (callback) {

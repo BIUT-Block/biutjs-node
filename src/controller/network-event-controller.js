@@ -1068,6 +1068,7 @@ class NetworkEvent {
             } else {
               this.logger.error(`Reward value incorrect`)
               console.error(`Reward value incorrect`)
+              callback(new Error('Reward value incorrect'))
             }
           }
         })
