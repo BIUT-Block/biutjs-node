@@ -92,7 +92,7 @@ class SENReward {
 
   _getReward (addr, tokenName, callback) {
     // TODO: only for short time, later must be corrected
-    let rewardFactor = 41.66666666 / 6
+    let rewardFactor = 0.03798
     // let rewardFactor = this._currPeriodOutput() / ((3 * 30 * 24 * 60) / 20)
     this.chain.getBalance(addr, tokenName, (err, balance) => {
       if (err) {
@@ -150,21 +150,19 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    if (Number(block.Number) > 100000) {
-      this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
-        if (err) {
-          callback(err, false)
+    this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
+      if (err) {
+        callback(err, false)
+      } else {
+        const blockReward = parseFloat(rewardTx.Value)
+        console.log(`Reward: ${blockReward} | ${reward} & ${Math.abs(blockReward - reward)} | ${reward * 0.5}`)
+        if (Math.abs(blockReward - reward) < reward * 0.5) {
+          callback(null, true)
         } else {
-          if (rewardTx.TxFee === reward.toString()) {
-            callback(null, true)
-          } else {
-            callback(null, false)
-          }
+          callback(null, false)
         }
-      })
-    } else {
-      callback(null, true)
-    }
+      }
+    })
   }
 
   getRewardTx (callback) {
