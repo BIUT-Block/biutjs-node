@@ -151,7 +151,7 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    if (Number(block.Number) > 68800) {
+    if (Number(block.Number) > 68900) {
       this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
         if (err) {
           callback(err, false)

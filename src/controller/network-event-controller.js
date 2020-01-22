@@ -1100,8 +1100,7 @@ class NetworkEvent {
     }, (err) => {
       if (err) {
         this.logger.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-        console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
-        console.log(`Error in NEW_BLOCK state, eachSeries: ${err}`)
+        return console.error(`Error in NEW_BLOCK state, eachSeries: ${err}`)
       }
       this.syncingFlag = false
       clearTimeout(this.syncingTimer)
