@@ -10,7 +10,7 @@ const START_INSTANT = 1555338208000
 const PERIOD_INTERVAL = 7776000000
 const INIT_TX_AMOUNT = 100000
 const INIT_TOT_REWARD = 90000
-const REWARD_FACTOR = 0.03798
+const REWARD_FACTOR = 0.3798
 
 class SENReward {
   constructor (chain) {
@@ -151,7 +151,7 @@ class SENReward {
 
   verifyReward (block, callback) {
     let rewardTx = block.Transactions[0]
-    if (Number(block.Number) > 69000) {
+    if (Number(block.Number) > 73000) {
       this._getReward(rewardTx.TxTo, 'SEN', (err, reward) => {
         if (err) {
           callback(err, false)
