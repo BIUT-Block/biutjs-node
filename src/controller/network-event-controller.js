@@ -34,7 +34,7 @@ class NetworkEvent {
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     let netType = process.env.netType
-    this.NETWORK_ID = netType === 'main' ? 4 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 4
+    this.NETWORK_ID = netType === 'main' ? 5 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 5
     this.logger.info(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
