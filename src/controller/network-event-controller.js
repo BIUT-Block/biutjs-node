@@ -14,8 +14,8 @@ const SECBlockChain = require('@biut-block/biutjs-blockchain')
 const SECTransaction = require('@biut-block/biutjs-tx')
 
 const MainUtils = require('../utils/utils')
-const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache })
-const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache })
+const txCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.txCache, maxAge: 1000 * 60 * 60 * 24 })
+const blocksCache = new LRUCache({ max: SECConfig.SECBlock.devp2pConfig.blocksCache, maxAge: 1000 * 60 * 60 * 24 })
 
 const SYNC_CHUNK = 20 // each sync package contains 20 blocks
 
@@ -34,7 +34,7 @@ class NetworkEvent {
 
     // ---------------------------  CHECK PARAMETERS  --------------------------
     let netType = process.env.netType
-    this.NETWORK_ID = netType === 'main' ? 5 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 5
+    this.NETWORK_ID = netType === 'main' ? 6 : netType === 'test' ? 2 : netType === 'develop' ? 3 : 6
     this.logger.info(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     console.log(`Working at '${netType}' network, ChainID: ${this.ChainID}, NetworkID: ${this.NETWORK_ID}`)
     this.CHECK_BLOCK_TITLE = SECConfig.SECBlock.checkConfig.CHECK_BLOCK_TITLE
