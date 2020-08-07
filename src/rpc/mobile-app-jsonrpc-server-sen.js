@@ -157,6 +157,64 @@ let server = jayson.server({
   },
 
   /**
+   * get all the previous transactions for a specific address with paging
+   */
+  sec_getTransactionsByBlock: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_getTransactions id: ' + requestID)
+    let response = {}
+    let accAddr = args[0] // address
+    let BlockNumber = parseInt(args[1])
+    let currentPage = parseInt(1)
+    let pageSize = parseInt(Number.MAX_SAFE_INTEGER)
+    let sortType = 'asc'
+
+    try {
+      // verify accAddr
+      if (accAddr[0] === '0' && accAddr[1] === 'x') {
+        accAddr = accAddr.substr(2)
+      }
+      if (accAddr.length !== 40) {
+        response.status = '0'
+        response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
+        console.timeEnd('sen_getTransactions id: ' + requestID)
+        callback(null, response)
+      } else {
+        core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+          if (err) {
+            response.status = '0'
+            response.message = `Failed to get user transactions, error info: ${err}`
+            response.resultInChain = []
+          } else {
+            txArray = txArray.filter((tx) => {
+              return tx.BlockHeight === BlockNumber
+            })
+            txArray = txArray.sort((a, b) => {
+              if (sortType === 'asc') {
+                return a.TimeStamp - b.TimeStamp
+              } else {
+                return b.TimeStamp - a.TimeStamp
+              }
+            })
+            response.status = '1'
+            response.message = 'OK'
+            response.resultInChain = txArray.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+            response.currentPage = currentPage
+            response.totalNumber = txArray.length
+          }
+          console.timeEnd('sen_getTransactions id: ' + requestID)
+          callback(null, response)
+        })
+      }
+    } catch (err) {
+      response.status = '0'
+      response.info = `Unexpected error occurs, error info: ${err}`
+      console.timeEnd('sen_getTransactions id: ' + requestID)
+      callback(null, response)
+    }
+  },
+
+  /**
   * get all the previous transactions for a specific address
   */
   sec_getMiningTransactions: function (args, callback) {

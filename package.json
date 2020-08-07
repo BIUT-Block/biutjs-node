@@ -21,33 +21,27 @@
   },
   "homepage": "https://gitlab.com/MongoX-BIUT/biutjs-node#README",
   "dependencies": {
-    "@biut-block/biutjs-blockchain": "^1.0.45",
-    "@biut-block/biutjs-datahandler": "^1.0.24",
+    "@biut-block/biutjs-blockchain": "^1.0.46",
+    "@biut-block/biutjs-datahandler": "^1.0.25",
     "@biut-block/biutjs-devp2p": "^1.0.1",
     "@biut-block/biutjs-logger": "^1.0.5",
-    "@biut-block/biutjs-pow": "^1.0.3",
+    "@biut-block/biutjs-pow": "^1.0.4",
     "@biut-block/biutjs-randomdatagenerator": "^1.0.1",
     "@biut-block/biutjs-transactionpool": "^1.0.10",
     "@biut-block/biutjs-tx": "^1.0.4",
     "@biut-block/biutjs-util": "^1.0.2",
-    "@maxmind/geoip2-node": "^0.4.0",
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.2",
     "clone-deep": "^4.0.1",
-    "crypto-js": "^3.1.9-1",
-    "geoip-lite": "^1.4.0",
+    "geoip-lite": "^1.4.2",
     "get-folder-size": "^2.0.1",
     "jayson": "^2.1.2",
-    "jsonwebtoken": "^8.5.1",
-    "minimist": "^1.2.0",
-    "mocha": "^6.2.2",
-    "moment": "^2.24.0",
+    "minimist": "^1.2.5",
     "public-ip": "^2.5.0",
-    "request": "^2.88.0",
-    "secp256k1": "3.6.1",
     "systeminformation": "^3.54.0"
   },
   "devDependencies": {
-    "chai": "^4.2.0"
+    "chai": "^4.2.0",
+    "mocha": "^6.2.3"
   }
 }
