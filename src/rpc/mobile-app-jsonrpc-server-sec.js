@@ -484,6 +484,40 @@ let server = jayson.server({
     callback(null, response)
   },
 
+  sec_getLastBlock: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sec_getLastBlock id: ' + requestID)
+    let response = {}
+    let blockHeight = core.secAPIs.getTokenChainHeight()
+    core.secAPIs.getTokenBlockchain(blockHeight, blockHeight, (err, block) => {
+      if (err) {
+        response.status = '0'
+        response.message = `Failed to get block, error info: ${err}`
+        response.blockInfo = []
+      } else {
+        response.status = '1'
+        response.message = 'OK'
+        response.blockInfo = block
+      }
+      console.timeEnd('sec_getLastBlock id: ' + requestID)
+      callback(null, response)
+    })
+  },
+
+  sec_getTransactionByHash: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sec_getTransactionByHash id: ' + requestID)
+    let response = {}
+    let txHash = args[0]
+    core.secAPIs.getTokenTx(txHash, txData => {
+      response.status = '1'
+      response.message = 'OK'
+      response.tx = txData
+      console.timeEnd('sec_getTransactionByHash id: ' + requestID)
+      callback(null, response)
+    })
+  },
+
   sec_getNodeInfo: function (args, callback) {
     let requestID = ++_requestID
     console.time('sec_getNodeInfo id: ' + requestID)
