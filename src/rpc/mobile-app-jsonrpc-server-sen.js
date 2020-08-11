@@ -187,7 +187,7 @@ let server = jayson.server({
             response.resultInChain = []
           } else {
             txArray = txArray.filter((tx) => {
-              return tx.BlockHeight === BlockNumber
+              return tx.BlockNumber === BlockNumber
             })
             txArray = txArray.sort((a, b) => {
               if (sortType === 'asc') {
