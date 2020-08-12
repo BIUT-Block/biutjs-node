@@ -161,7 +161,7 @@ let server = jayson.server({
    */
   sec_getTransactionsByBlock: function (args, callback) {
     let requestID = ++_requestID
-    console.time('sen_getTransactions id: ' + requestID)
+    console.time('sen_getTransactionsByBlock id: ' + requestID)
     let response = {}
     let accAddr = args[0] // address
     let BlockNumber = parseInt(args[1])
@@ -177,10 +177,10 @@ let server = jayson.server({
       if (accAddr.length !== 40) {
         response.status = '0'
         response.message = `Invalid accAddress length (${accAddr.length}), should be 40`
-        console.timeEnd('sen_getTransactions id: ' + requestID)
+        console.timeEnd('sen_getTransactionsByBlock id: ' + requestID)
         callback(null, response)
       } else {
-        core.secAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
+        core.senAPIs.getTokenTxForUser(accAddr, (err, txArray) => {
           if (err) {
             response.status = '0'
             response.message = `Failed to get user transactions, error info: ${err}`
@@ -202,14 +202,14 @@ let server = jayson.server({
             response.currentPage = currentPage
             response.totalNumber = txArray.length
           }
-          console.timeEnd('sen_getTransactions id: ' + requestID)
+          console.timeEnd('sen_getTransactionsByBlock id: ' + requestID)
           callback(null, response)
         })
       }
     } catch (err) {
       response.status = '0'
       response.info = `Unexpected error occurs, error info: ${err}`
-      console.timeEnd('sen_getTransactions id: ' + requestID)
+      console.timeEnd('sen_getTransactionsByBlock id: ' + requestID)
       callback(null, response)
     }
   },
