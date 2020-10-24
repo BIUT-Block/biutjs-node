@@ -64,6 +64,10 @@ class APIs {
     return this.chain.pool.getAllTxFromPool()
   }
 
+  removeAllPool () {
+    this.chain.pool.clear()
+  }
+
   getTokenTxInPool (txHash, callback) {
     let transaction = this.chain.pool.getAllTxFromPool().filter(tx => {
       return tx.TxHash === txHash
@@ -137,7 +141,7 @@ class APIs {
   }
 
   getTokenChainSize (callback) {
-    getSize(this.config.SecDBPath + 'tokenBlockChain', (err, size) => {
+    getSize(this.config.SecDBPath + '/tokenBlockChain', (err, size) => {
       if (err) {
         callback(err, null)
       } else {
@@ -259,13 +263,13 @@ class APIs {
     this.chain.getLockerContract(walletAddress, callback)
   }
 
-  // getTimeLock(addr, callback) {
-  //   this.chain.chain.getTimeLock(addr, callback)
-  // }
+  getTimeLock (addr, callback) {
+    this.chain.chain.getTimeLock(addr, callback)
+  }
 
-  // addTokenMap(tokenInfo, addr, callback) {
-  //   this.chain.chain.addTokenMap(tokenInfo, addr, callback)
-  // }
+  addTokenMap (tokenInfo, addr, callback) {
+    this.chain.chain.addTokenMap(tokenInfo, addr, callback)
+  }
 }
 
 module.exports = APIs

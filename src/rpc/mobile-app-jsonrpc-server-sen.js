@@ -901,29 +901,39 @@ let server = jayson.server({
 
   sec_getPool: function (args, callback) {
     const requestID = ++_requestID
-    console.time('sec_getPool id: ' + requestID)
+    console.time('sen_getPool id: ' + requestID)
     const response = {}
     const txArraryInPool = core.senAPIs.getAllPool()
     response.status = '1'
     response.txArraryInPool = txArraryInPool
-    console.timeEnd('sec_getPool id: ' + requestID)
+    console.timeEnd('sen_getPool id: ' + requestID)
     callback(null, response)
   },
 
-  sec_removeBlocks: function (args, callback) {
+  sec_removePool: function (args, callback) {
+    const requestID = ++_requestID
+    console.time('sen_removePool id: ' + requestID)
     const response = {}
-    core.CenterController.getSenChain().chain.delBlockFromHeight(44969, (err, txArray) => {
-      if (err) {
-        response.status = '0'
-        response.info = `Error occurs: ${err}`
-      } else {
-        response.status = '1'
-        response.info = 'OK'
-        response.txArray = txArray
-      }
-      callback(null, response)
-    })
+    core.senAPIs.removeAllPool()
+    response.status = '1'
+    response.message = 'SEN Pool cleared'
+    console.timeEnd('sen_removePool id: ' + requestID)
+    callback(null, response)
   }
+  // sec_removeBlocks: function (args, callback) {
+  //   const response = {}
+  //   core.CenterController.getSenChain().chain.delBlockFromHeight(44969, (err, txArray) => {
+  //     if (err) {
+  //       response.status = '0'
+  //       response.info = `Error occurs: ${err}`
+  //     } else {
+  //       response.status = '1'
+  //       response.info = 'OK'
+  //       response.txArray = txArray
+  //     }
+  //     callback(null, response)
+  //   })
+  // }
 })
 
 exports.runRpc = function (_core) {

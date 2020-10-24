@@ -440,6 +440,39 @@ let server = jayson.server({
     })
   },
 
+  sec_getTimeLock: function (args, callback) {
+    let requestID = ++_requestID
+    console.time('sen_getTimeLock' + requestID)
+    let response = {}
+    let contractAddress = args[0]
+    let senderAddress = args[1]
+
+    core.secAPIs.getTimeLock(contractAddress, (err, timeLock) => {
+      if (err) {
+        response.status = '0'
+        response.info = `Error occurs: ${err.stack}`
+      } else {
+        if (senderAddress) {
+          if (senderAddress in timeLock && senderAddress in timeLock[senderAddress]) {
+            response.status = '1'
+            response.info = 'OK'
+            response.timeLock = timeLock[senderAddress][senderAddress]
+          } else {
+            response.status = '1'
+            response.info = 'OK'
+            response.timeLock = []
+          }
+        } else {
+          response.status = '1'
+          response.info = 'OK'
+          response.timeLock = timeLock
+        }
+      }
+      console.timeEnd('sen_getTimeLock' + requestID)
+      callback(null, response)
+    })
+  },
+
   sec_getMultiCreatorContract: function (args, callback) {
     let requestID = ++_requestID
     console.time('sec_getCreatorContract id: ' + requestID)
@@ -1004,6 +1037,17 @@ let server = jayson.server({
     response.status = '1'
     response.txArraryInPool = txArraryInPool
     console.timeEnd('sec_getPool id: ' + requestID)
+    callback(null, response)
+  },
+
+  sec_removePool: function (args, callback) {
+    const requestID = ++_requestID
+    console.time('sec_removePool id: ' + requestID)
+    const response = {}
+    core.secAPIs.removeAllPool()
+    response.status = '1'
+    response.message = 'SEC Pool cleared'
+    console.timeEnd('sec_removePool id: ' + requestID)
     callback(null, response)
   }
 })
