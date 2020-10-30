@@ -301,7 +301,7 @@ let server = jayson.server({
         Signature: args[0].data
       }
       tokenTx = core.senAPIs.createSecTxObject(tokenTx).getTx()
-      let txHash = tokenTx.TxHash
+      const txHash = tokenTx.TxHash
       core.CenterController.getSenChain().initiateTokenTx(tokenTx, (err) => {
         if (err) {
           response.status = '0'

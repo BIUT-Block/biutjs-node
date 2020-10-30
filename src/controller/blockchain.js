@@ -144,39 +144,44 @@ class BlockChain {
           // verify tx signature
           if (!freeChargeFlag) {
             if (!tokenTx.verifySignature(this.chainName)) {
-              let err = new Error('Failed to verify transaction signature')
-              return callback(err)
+              return callback(new Error('Failed to verify transaction signature'))
             }
           }
-          this.isTokenTxExist(tokenTx.getTxHash(), (err, _result) => {
+          this.isTokenTxExist(tokenTx.getTxHash(), (err, existed) => {
             if (err) {
-              callback(err)
+              return callback(err)
             } else {
-              if (!_result) {
-                let _tx = tokenTx.getTx()
-                this.pool.addTxIntoPool(_tx)
-                this.sendNewTokenTx(tokenTx)
-                if (_tx.TxFee !== '0') {
-                  let __tx = JSON.parse(JSON.stringify(_tx))
-                  __tx.TxTo = '0000000000000000000000000000000000000000'
-                  __tx.Value = tx.TxFee
-                  __tx.TxFee = '0'
-                  __tx.TxHeight = ''
-                  __tx.InputData = 'Handling fee transaction'
-                  let feeTx = cloneDeep(new SECTransaction.SECTokenTx(__tx))
-                  if (this.chainName === 'SEC') {
-                    this.senChain.pool.addTxIntoPool(feeTx.getTx())
-                    this.senChain.sendNewTokenTx(feeTx)
-                  } else if (this.chainName === 'SEN') {
-                    this.pool.addTxIntoPool(feeTx.getTx())
-                    this.sendNewTokenTx(feeTx)
+              if (!existed) {
+                const _tx = tokenTx.getTx()
+                if ((Number(_tx.TxFee) < 0.5) && (_tx.TxFrom !== '0000000000000000000000000000000000000000') && (_tx.TxFrom !== '0000000000000000000000000000000000000001') && (_tx.TxTo !== '0000000000000000000000000000000000000000') && (_tx.TxTo !== '0000000000000000000000000000000000000001')) {
+                  return callback(new Error('Tx Fee must bigger than 0.5'))
+                } else {
+                  this.pool.addTxIntoPool(_tx)
+                  this.sendNewTokenTx(tokenTx)
+                  if (_tx.TxFee !== '0') {
+                    const __tx = JSON.parse(JSON.stringify(_tx))
+                    __tx.TxTo = '0000000000000000000000000000000000000000'
+                    __tx.Value = tx.TxFee
+                    __tx.TxFee = '0'
+                    __tx.TxHeight = ''
+                    __tx.InputData = 'Handling fee transaction'
+                    const feeTx = cloneDeep(new SECTransaction.SECTokenTx(__tx))
+                    if (this.chainName === 'SEC') {
+                      this.senChain.pool.addTxIntoPool(feeTx.getTx())
+                      this.senChain.sendNewTokenTx(feeTx)
+                    } else if (this.chainName === 'SEN') {
+                      this.pool.addTxIntoPool(feeTx.getTx())
+                      this.sendNewTokenTx(feeTx)
+                    }
+                    debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
+                    this.sendNewTokenTx(tokenTx)
                   }
                   debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
-                  this.sendNewTokenTx(tokenTx)
+                  return callback(null)
                 }
-                debug(`this.pool: ${JSON.stringify(this.pool.getAllTxFromPool())}`)
+              } else {
+                return callback(new Error('Transaction already existed'))
               }
-              callback(null)
             }
           })
         }
@@ -488,12 +493,18 @@ class BlockChain {
 
   isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
-    this.chain.txDB.getTx(txHash, (err, txData) => {
-      if (err) callback(null, false)
-      else {
-        callback(null, true)
-      }
-    })
+    const txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxHash === txHash))
+    if (txArray.length === 0) {
+      this.chain.txDB.getTx(txHash, (err, txData) => {
+        if (err) {
+          callback(null, false)
+        } else {
+          callback(null, true)
+        }
+      })
+    } else {
+      callback(null, true)
+    }
   }
 
   checkTxArray (txArray, cb) {
