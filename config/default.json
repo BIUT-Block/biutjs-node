@@ -77,7 +77,7 @@
         }
       },
       "rlp": {
-        "maxPeers": 250,
+        "maxPeers": 30,
         "timeout": 60000,
         "clientId": "sec",
         "remoteClientIdFilter": [],
