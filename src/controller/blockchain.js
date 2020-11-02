@@ -493,18 +493,12 @@ class BlockChain {
 
   isTokenTxExist (txHash, callback) {
     // check if token tx already in previous blocks
-    const txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxHash === txHash))
-    if (txArray.length === 0) {
-      this.chain.txDB.getTx(txHash, (err, txData) => {
-        if (err) {
-          callback(null, false)
-        } else {
-          callback(null, true)
-        }
-      })
-    } else {
-      callback(null, true)
-    }
+    this.chain.txDB.getTx(txHash, (err, txData) => {
+      if (err) callback(null, false)
+      else {
+        callback(null, true)
+      }
+    })
   }
 
   checkTxArray (txArray, cb) {
