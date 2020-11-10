@@ -14,7 +14,7 @@ process.on('message', blockForPOW => {
 
     blockForPOW.Header = Buffer.from(blockForPOW.Header)
     // blockForPOW.Difficulty = secPow.calcDifficulty(blockForPOW.lastBlockDifficulty, blockForPOW.Number, blockForPOW.lastPowCalcTime)
-    blockForPOW.Difficulty = 1000000
+    blockForPOW.Difficulty = 2000000
     console.time(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
     secPow.mineLight(blockForPOW, blockForPOW.Difficulty, (nonce, result) => {
       console.timeEnd(`POW Calculation Duration with Diffculty ${blockForPOW.Difficulty}`)
@@ -28,7 +28,7 @@ process.on('message', blockForPOW => {
         process.send({
           result: result,
           // Difficulty: blockForPOW.Difficulty,
-          Difficulty: 20000000,
+          Difficulty: 50000000,
           MixHash: blockForPOW.MixHash.toString('hex'),
           Nonce: blockForPOW.Nonce
         })
