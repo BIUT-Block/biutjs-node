@@ -38,7 +38,7 @@
     "jayson": "^2.1.2",
     "minimist": "^1.2.5",
     "public-ip": "^2.5.0",
-    "systeminformation": "^3.54.0"
+    "systeminformation": "^4.27.11"
   },
   "devDependencies": {
     "chai": "^4.2.0",
